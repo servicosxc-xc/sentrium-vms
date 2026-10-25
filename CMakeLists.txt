@@ -65,4 +65,12 @@ endforeach()
 foreach(id RANGE 1 11)
   add_test(NAME I-${id} COMMAND sentrium-integration-tests ${id} $<TARGET_FILE:sentrium-server>)
 endforeach()
+add_test(
+  NAME F002-CLIENT-SMOKE
+  COMMAND powershell.exe -NoProfile -ExecutionPolicy Bypass
+          -File "${CMAKE_SOURCE_DIR}/scripts/windows/sentrium-client-smoke.ps1"
+          -Executable "$<TARGET_FILE:sentrium-client>"
+          -Cycles 10
+)
 set_tests_properties(I-1 I-2 I-3 I-4 I-5 I-6 I-7 I-8 I-9 I-10 I-11 PROPERTIES TIMEOUT 30)
+set_tests_properties(F002-CLIENT-SMOKE PROPERTIES TIMEOUT 120)
