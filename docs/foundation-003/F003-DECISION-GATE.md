@@ -1,6 +1,6 @@
 # F003 DEVICE FOUNDATION — DECISION GATE 0.1
 
-**Estado:** PROPOSED  
+**Estado:** AUTHORIZED FOR EXECUTION  
 **Foundation:** SENTRIUM-CPP-Foundation-003
 
 ## Autorização requerida
@@ -27,4 +27,4 @@ Não poderá:
 
 ## Estado atual
 
-**FOUNDATION-003 — NOT YET AUTHORIZED FOR IMPLEMENTATION**
+**FOUNDATION-003 — AUTHORIZED FOR EXECUTION**
