@@ -10,7 +10,7 @@ function Invoke-SentriumRead([string]$Program, [string[]]$Arguments) {
     if ($LASTEXITCODE -ne 0) { throw "PREFLIGHT FAIL: $Program exit $LASTEXITCODE" }
     return ($lines -join "`n").Trim()
 }
-Assert-Sentrium ($sentriumRoot -eq 'C:\Projetos\SENTRIUM VMS\SENTRIUM-CPP-Foundation-001') 'Unauthorized workspace'
+Assert-Sentrium ($sentriumRoot -eq 'C:\Projetos\SENTRIUM VMS\sentrium-vms') 'Unauthorized workspace'
 foreach ($path in @($sentriumRoot,(Split-Path $sentriumRoot -Parent),'C:\Projetos')) {
     Assert-Sentrium (-not ((Get-Item -LiteralPath $path).Attributes -band [IO.FileAttributes]::ReparsePoint)) 'Workspace reparse point'
 }
@@ -58,6 +58,38 @@ $cmakeVersion = Invoke-SentriumRead $env:SENTRIUM_CMAKE @('--version')
 $ninjaVersion = Invoke-SentriumRead $env:SENTRIUM_NINJA @('--version')
 Assert-Sentrium ($cmakeVersion.Split("`n")[0] -eq 'cmake version 4.4.4') 'CMake mismatch'
 Assert-Sentrium ($ninjaVersion -eq '1.13.2') 'Ninja mismatch'
+
+Assert-Sentrium (-not [string]::IsNullOrWhiteSpace($env:SENTRIUM_QT_ROOT)) 'SENTRIUM_QT_ROOT missing'
+$qtRoot = [IO.Path]::GetFullPath($env:SENTRIUM_QT_ROOT)
+Assert-Sentrium ($qtRoot -eq 'C:\Qt\6.12.0\msvc2022_64') 'Qt root mismatch'
+foreach ($relative in @(
+    'lib\cmake\Qt6\Qt6Config.cmake',
+    'lib\cmake\Qt6Core\Qt6CoreConfig.cmake',
+    'lib\cmake\Qt6Gui\Qt6GuiConfig.cmake',
+    'lib\cmake\Qt6Qml\Qt6QmlConfig.cmake',
+    'lib\cmake\Qt6Quick\Qt6QuickConfig.cmake',
+    'lib\cmake\Qt6QuickControls2\Qt6QuickControls2Config.cmake',
+    'qml\QtQuick\Controls',
+    'plugins\platforms\qwindows.dll',
+    'plugins\platforms\qwindowsd.dll',
+    'bin\Qt6Core.dll',
+    'bin\Qt6Cored.dll',
+    'bin\Qt6Gui.dll',
+    'bin\Qt6Guid.dll',
+    'bin\Qt6Qml.dll',
+    'bin\Qt6Qmld.dll',
+    'bin\Qt6Quick.dll',
+    'bin\Qt6Quickd.dll',
+    'bin\qmake.exe'
+)) {
+    Assert-Sentrium (Test-Path -LiteralPath (Join-Path $qtRoot $relative)) "Qt component missing: $relative"
+}
+$qtVersion = Invoke-SentriumRead (Join-Path $qtRoot 'bin\qmake.exe') @('-query','QT_VERSION')
+$qtPrefix = Invoke-SentriumRead (Join-Path $qtRoot 'bin\qmake.exe') @('-query','QT_INSTALL_PREFIX')
+$qtSpec = Invoke-SentriumRead (Join-Path $qtRoot 'bin\qmake.exe') @('-query','QMAKE_SPEC')
+Assert-Sentrium ($qtVersion -eq '6.12.0') 'Qt version mismatch'
+Assert-Sentrium ($qtPrefix.Replace('/','\') -eq $qtRoot) 'Qt prefix mismatch'
+Assert-Sentrium ($qtSpec -eq 'win32-msvc') 'Qt compiler spec mismatch'
 $manifest = Get-Content -LiteralPath (Join-Path $sentriumRoot 'vcpkg.json') -Raw | ConvertFrom-Json
 $head = Invoke-SentriumRead 'git' @('-C',$env:SENTRIUM_VCPKG_ROOT,'rev-parse','HEAD')
 $tag = Invoke-SentriumRead 'git' @('-C',$env:SENTRIUM_VCPKG_ROOT,'rev-parse','2026.10.16^{commit}')
@@ -75,6 +107,6 @@ if (-not $VerifyOnly -and $EvidenceDirectory) {
     $environment | Where-Object { $_ -match '^(VSCMD|VCTools|VCINSTALLDIR|VSINSTALLDIR|WindowsSDK|WindowsSdk|INCLUDE=|LIB=|LIBPATH=|PATH=)' } | Set-Content -LiteralPath (Join-Path $EvidenceDirectory 'msvc-environment.txt') -Encoding UTF8
     $paths = @($env:SENTRIUM_CL,$env:SENTRIUM_LINK,$rc,$env:SENTRIUM_CMAKE,$env:SENTRIUM_NINJA,(Join-Path $env:SENTRIUM_VCPKG_ROOT 'vcpkg.exe'))
     $paths | ForEach-Object { Get-FileHash -LiteralPath $_ -Algorithm SHA256 } | Select-Object Path,Hash,Algorithm | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $EvidenceDirectory 'toolchain-hashes.json') -Encoding UTF8
-    [ordered]@{Result='PREFLIGHT PASS';Workspace=$sentriumRoot;VS=$vs.installationVersion;VSProduct=$vs.catalog.productDisplayVersion;Installation=$vs.installationPath;VCTools=$env:VCToolsVersion;Compiler=$env:SENTRIUM_CL;Linker=$env:SENTRIUM_LINK;Host=$env:VSCMD_ARG_HOST_ARCH;Target=$env:VSCMD_ARG_TGT_ARCH;SDK='10.0.26100.9457';SDKDirectories=$env:WindowsSDKVersion;CMake=$cmakeVersion;Ninja=$ninjaVersion;VcpkgCommit=$head;VcpkgTag=$tag;VcpkgOrigin=$origin;VcpkgTool=$vcpkgTool} | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $EvidenceDirectory 'preflight.json') -Encoding UTF8
+    [ordered]@{Result='PREFLIGHT PASS';Workspace=$sentriumRoot;VS=$vs.installationVersion;VSProduct=$vs.catalog.productDisplayVersion;Installation=$vs.installationPath;VCTools=$env:VCToolsVersion;Compiler=$env:SENTRIUM_CL;Linker=$env:SENTRIUM_LINK;Host=$env:VSCMD_ARG_HOST_ARCH;Target=$env:VSCMD_ARG_TGT_ARCH;SDK='10.0.26100.9457';SDKDirectories=$env:WindowsSDKVersion;CMake=$cmakeVersion;Ninja=$ninjaVersion;QtVersion=$qtVersion;QtRoot=$qtRoot;QtSpec=$qtSpec;VcpkgCommit=$head;VcpkgTag=$tag;VcpkgOrigin=$origin;VcpkgTool=$vcpkgTool} | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $EvidenceDirectory 'preflight.json') -Encoding UTF8
 }
-Write-Host 'PREFLIGHT PASS: exact R1 lock; official MSVC x64/x64; single vcpkg baseline.'
+Write-Host 'PREFLIGHT PASS: Foundation-002 workspace; exact toolchain lock; Qt 6.12.0 MSVC; single vcpkg baseline.'
