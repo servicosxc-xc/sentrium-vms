@@ -49,12 +49,23 @@ foreach(relative
     "bin/dhnetsdk.lib"
     "bin/dhconfigsdk.lib"
     "bin/dhnetsdk.dll"
-    "bin/dhconfigsdk.dll"
-    "include/dhplay.h"
-    "bin/dhplay.lib"
-    "bin/dhplay.dll")
+    "bin/dhconfigsdk.dll")
   if(NOT EXISTS "${SENTRIUM_INTELBRAS_SDK_ROOT}/${relative}")
-    message(FATAL_ERROR "Foundation-004 Intelbras/PlaySDK component missing: ${relative}")
+    message(FATAL_ERROR "Foundation-004 NetSDK component missing: ${relative}")
+  endif()
+endforeach()
+
+set(SENTRIUM_PLAYSDK_ROOT "$ENV{SENTRIUM_PLAYSDK_ROOT}" CACHE PATH "External Intelbras/Dahua PlaySDK root")
+if(NOT SENTRIUM_PLAYSDK_ROOT)
+  message(FATAL_ERROR "SENTRIUM_PLAYSDK_ROOT is required for Foundation-004")
+endif()
+file(TO_CMAKE_PATH "${SENTRIUM_PLAYSDK_ROOT}" SENTRIUM_PLAYSDK_ROOT)
+foreach(relative
+    "DLL/dhplay.h"
+    "DLL/dhplay.lib"
+    "DLL/dhplay.dll")
+  if(NOT EXISTS "${SENTRIUM_PLAYSDK_ROOT}/${relative}")
+    message(FATAL_ERROR "Foundation-004 PlaySDK component missing: ${relative}")
   endif()
 endforeach()
 
@@ -93,7 +104,9 @@ add_executable(sentrium-media-tests tests/media/main.cpp)
 target_link_libraries(sentrium-media-tests PRIVATE sentrium-media)
 
 add_executable(sentrium-media-lab labs/sentrium-media-lab/main.cpp)
-target_include_directories(sentrium-media-lab SYSTEM PRIVATE "${SENTRIUM_INTELBRAS_SDK_ROOT}/include")
+target_include_directories(sentrium-media-lab SYSTEM PRIVATE
+    "${SENTRIUM_INTELBRAS_SDK_ROOT}/include"
+    "${SENTRIUM_PLAYSDK_ROOT}/DLL")
 target_compile_definitions(sentrium-media-lab PRIVATE UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX)
 target_link_libraries(sentrium-media-lab PRIVATE sentrium-core sentrium-device sentrium-intelbras sentrium-media kernel32)
 
