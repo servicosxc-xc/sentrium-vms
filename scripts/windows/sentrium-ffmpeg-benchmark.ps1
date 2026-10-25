@@ -107,7 +107,7 @@ foreach ($backend in $backends) {
     for ($i = 1; $i -le $Repetitions; $i++) {
         $run = Invoke-SentriumDecode $backend $ffmpeg $input $Loops
         Assert-Sentrium ($run.ExitCode -eq 0) "$backend repetition $i failed: $($run.Stderr)"
-        $run.Repetition = $i
+        $run['Repetition'] = $i
         $results += [pscustomobject]$run
     }
 }
