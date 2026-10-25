@@ -13,7 +13,17 @@ if(NOT check EQUAL 0)
 endif()
 file(READ "${CMAKE_SOURCE_DIR}/vcpkg.json" manifest)
 string(JSON baseline GET "${manifest}" builtin-baseline)
-execute_process(COMMAND git -C "$ENV{SENTRIUM_VCPKG_ROOT}" rev-parse HEAD OUTPUT_VARIABLE head OUTPUT_STRIP_TRAILING_WHITESPACE RESULT_VARIABLE rc)
+get_filename_component(SENTRIUM_WORKSPACE_PARENT "${CMAKE_SOURCE_DIR}" DIRECTORY)
+set(SENTRIUM_VCPKG_ROOT "${SENTRIUM_WORKSPACE_PARENT}/_toolchain/vcpkg")
+if(NOT EXISTS "${SENTRIUM_VCPKG_ROOT}/.git")
+  message(FATAL_ERROR "SENTRIUM approved vcpkg checkout not found")
+endif()
+execute_process(
+  COMMAND git -C "${SENTRIUM_VCPKG_ROOT}" rev-parse HEAD
+  OUTPUT_VARIABLE head
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  RESULT_VARIABLE rc
+)
 if(NOT rc EQUAL 0 OR NOT head STREQUAL baseline)
   message(FATAL_ERROR "SENTRIUM vcpkg checkout differs from the single manifest baseline")
 endif()
