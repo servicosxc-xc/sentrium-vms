@@ -115,6 +115,12 @@ Artefatos esperados:
 - `dhplay.dll`;
 - `dhplay.lib`.
 
+O PlaySDK possui root externo próprio e será localizado por:
+
+`SENTRIUM_PLAYSDK_ROOT`
+
+No kit atualmente validado, NetSDK e PlaySDK permanecem árvores externas separadas; nenhuma delas entra no Git.
+
 Subset mínimo permitido conforme necessidade real do lab:
 
 - `PLAY_GetFreePort`;
