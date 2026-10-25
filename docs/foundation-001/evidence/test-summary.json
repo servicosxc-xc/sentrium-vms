@@ -1,0 +1,38 @@
+﻿[
+    {
+        "Run":  "sentrium-final",
+        "Configuration":  "debug",
+        "Tests":  "19",
+        "Failures":  "0",
+        "Disabled":  "0",
+        "Time":  "0",
+        "BuildId":  "source-b8b6d42374064dc8"
+    },
+    {
+        "Run":  "sentrium-final",
+        "Configuration":  "release",
+        "Tests":  "19",
+        "Failures":  "0",
+        "Disabled":  "0",
+        "Time":  "0",
+        "BuildId":  "source-b8b6d42374064dc8"
+    },
+    {
+        "Run":  "sentrium-reproduction",
+        "Configuration":  "debug",
+        "Tests":  "19",
+        "Failures":  "0",
+        "Disabled":  "0",
+        "Time":  "0",
+        "BuildId":  "source-b8b6d42374064dc8"
+    },
+    {
+        "Run":  "sentrium-reproduction",
+        "Configuration":  "release",
+        "Tests":  "19",
+        "Failures":  "0",
+        "Disabled":  "0",
+        "Time":  "0",
+        "BuildId":  "source-b8b6d42374064dc8"
+    }
+]

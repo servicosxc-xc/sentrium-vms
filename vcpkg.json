@@ -1,0 +1,6 @@
+{
+  "name": "sentrium-foundation-001",
+  "version-string": "0.0.0-foundation001",
+  "builtin-baseline": "9eec002df1cd109f8f104cd966a763daf9751489",
+  "dependencies": []
+}

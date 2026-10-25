@@ -1,0 +1,19 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {"name":"sentrium-base","hidden":true,"generator":"Ninja","cacheVariables":{"CMAKE_MAKE_PROGRAM":"$env{SENTRIUM_NINJA}","CMAKE_CXX_COMPILER":"$env{SENTRIUM_CL}","CMAKE_LINKER":"$env{SENTRIUM_LINK}"}},
+    {"name":"sentrium-debug","inherits":"sentrium-base","binaryDir":"${sourceDir}/out/sentrium-debug","cacheVariables":{"CMAKE_BUILD_TYPE":"Debug"}},
+    {"name":"sentrium-release","inherits":"sentrium-base","binaryDir":"${sourceDir}/out/sentrium-release","cacheVariables":{"CMAKE_BUILD_TYPE":"Release"}},
+    {"name":"sentrium-asan","inherits":"sentrium-base","binaryDir":"${sourceDir}/out/sentrium-asan","cacheVariables":{"CMAKE_BUILD_TYPE":"RelWithDebInfo","SENTRIUM_ASAN":"ON"}}
+  ],
+  "buildPresets": [
+    {"name":"sentrium-debug","configurePreset":"sentrium-debug"},
+    {"name":"sentrium-release","configurePreset":"sentrium-release"},
+    {"name":"sentrium-asan","configurePreset":"sentrium-asan"}
+  ],
+  "testPresets": [
+    {"name":"sentrium-debug","configurePreset":"sentrium-debug","output":{"outputOnFailure":true}},
+    {"name":"sentrium-release","configurePreset":"sentrium-release","output":{"outputOnFailure":true}},
+    {"name":"sentrium-asan","configurePreset":"sentrium-asan","output":{"outputOnFailure":true}}
+  ]
+}

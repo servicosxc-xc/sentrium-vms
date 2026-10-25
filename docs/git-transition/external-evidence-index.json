@@ -1,0 +1,890 @@
+{
+  "historicalBuildId": "source-b8b6d42374064dc8",
+  "archiveRoot": "G:\\Meu Drive\\Projetos\\sentrium-vms\\Foundation-001",
+  "snapshotManifestSha256": "0e74b8899e50ae04b33f4d615dcad5228a137c332681ca0dbba3928114c4f0c2",
+  "cloudSync": "NOT VERIFIED; mounted-copy integrity verified",
+  "files": [
+    {
+      "source": ".gitignore",
+      "destination": "raw-evidence/original-administration/.gitignore",
+      "sha256": "89e69901af2a01eced6f20f4f85d045f55ff4c1448232b0853fe6dcb42eec210",
+      "size": 6
+    },
+    {
+      "source": "docs/foundation-001/evidence/acceptance-matrix.md",
+      "destination": "raw-evidence/docs/foundation-001/evidence/acceptance-matrix.md",
+      "sha256": "274c0469a6096b481b8cf6d5a0c4435fc79bf38b482616f2f28dab5951b10c24",
+      "size": 6291
+    },
+    {
+      "source": "docs/foundation-001/evidence/adr-001-evidence.md",
+      "destination": "raw-evidence/docs/foundation-001/evidence/adr-001-evidence.md",
+      "sha256": "a6e3239346a03938aaae01cc1cf67e5bd11c11dd0817fd51b4bd0f28e0aa64d9",
+      "size": 896
+    },
+    {
+      "source": "docs/foundation-001/evidence/adr-002-evidence.md",
+      "destination": "raw-evidence/docs/foundation-001/evidence/adr-002-evidence.md",
+      "sha256": "972fb06c1aa392e3cdd71a162dad11871e7b1fcd4cd192389c0a90bf3989e803",
+      "size": 1204
+    },
+    {
+      "source": "docs/foundation-001/evidence/architecture-check.md",
+      "destination": "raw-evidence/docs/foundation-001/evidence/architecture-check.md",
+      "sha256": "3111b9ce34dffadb22ed8d8a042c416a943345cb826c229e50b18495e3a0467f",
+      "size": 1564
+    },
+    {
+      "source": "docs/foundation-001/evidence/auxiliary-tool-inventory.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/auxiliary-tool-inventory.json",
+      "sha256": "e94f6ba9a894b8ddf6dff1e44f0abe5ce3dd0307e6d902f05b49f38dae96e30b",
+      "size": 307
+    },
+    {
+      "source": "docs/foundation-001/evidence/dataroot-security.md",
+      "destination": "raw-evidence/docs/foundation-001/evidence/dataroot-security.md",
+      "sha256": "fd5f7dfff2375323a978ab87c688f3d4e382bfb10ffec5f4dfb8188e4d2c00a3",
+      "size": 1972
+    },
+    {
+      "source": "docs/foundation-001/evidence/dependency-inventory.md",
+      "destination": "raw-evidence/docs/foundation-001/evidence/dependency-inventory.md",
+      "sha256": "359d60f34984599e8f1498d515c8c9f075cac5e0d97f9f5a35903f1056b4e9b0",
+      "size": 2289
+    },
+    {
+      "source": "docs/foundation-001/evidence/evidence-inventory.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/evidence-inventory.json",
+      "sha256": "a5d5981b701d2d22f81bfafe79c541e90a6dc587a9e07702556f3a2271c60afb",
+      "size": 25646
+    },
+    {
+      "source": "docs/foundation-001/evidence/filesystem-process-api-audit.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/filesystem-process-api-audit.txt",
+      "sha256": "f9f978338b1b972d4e19c3226275921d50fbe3e4116752b1d444cd29a0873281",
+      "size": 2058
+    },
+    {
+      "source": "docs/foundation-001/evidence/final-verification.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/final-verification.json",
+      "sha256": "dadb7c6c3e5809efbc60e53b96d666135c4439f07f6bfee8ecef4d4dfaa1a5e5",
+      "size": 7915
+    },
+    {
+      "source": "docs/foundation-001/evidence/health-bootstrap.jsonl",
+      "destination": "raw-evidence/docs/foundation-001/evidence/health-bootstrap.jsonl",
+      "sha256": "d1bb36394aeb3ef9f68b6bf85b2ca17f4d76c0d5a8633063099411a4013ac526",
+      "size": 528
+    },
+    {
+      "source": "docs/foundation-001/evidence/health-exit.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/health-exit.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    {
+      "source": "docs/foundation-001/evidence/health-output.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/health-output.json",
+      "sha256": "9cb2955255f31e81466c91da02ede7ae8b81f80887882844831e873f19e1e0cf",
+      "size": 314
+    },
+    {
+      "source": "docs/foundation-001/evidence/health-runtime.jsonl",
+      "destination": "raw-evidence/docs/foundation-001/evidence/health-runtime.jsonl",
+      "sha256": "1990fa196a0bdd7bcff6de16da2efe9f43c23dba0cc932dc940c4ac802d61a8a",
+      "size": 2154
+    },
+    {
+      "source": "docs/foundation-001/evidence/negative-source-audit.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/negative-source-audit.json",
+      "sha256": "bbd8d4d5c1ba4d95cc2f032765e39cb95161886b03320a984fe14df850bad139",
+      "size": 247
+    },
+    {
+      "source": "docs/foundation-001/evidence/preflight-report.md",
+      "destination": "raw-evidence/docs/foundation-001/evidence/preflight-report.md",
+      "sha256": "2cf51c7a913389811ad64863c623e724a33bed5bd1cc0442336af4e6bda92ed6",
+      "size": 2854
+    },
+    {
+      "source": "docs/foundation-001/evidence/rollback-bootstrap.jsonl",
+      "destination": "raw-evidence/docs/foundation-001/evidence/rollback-bootstrap.jsonl",
+      "sha256": "39e8694c99ee65ee51c4e054fe16b00064b0a6256d1f5b2318a3c239dc9e2c54",
+      "size": 528
+    },
+    {
+      "source": "docs/foundation-001/evidence/rollback-health-output.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/rollback-health-output.json",
+      "sha256": "b33d8f11a7f2ba04f0f7b0ea827e302bc16e892b26015ae45318e7f1bb878eed",
+      "size": 312
+    },
+    {
+      "source": "docs/foundation-001/evidence/rollback-report.md",
+      "destination": "raw-evidence/docs/foundation-001/evidence/rollback-report.md",
+      "sha256": "f2384b2b37fbe6fe066bd877bef0c6f7d578bcf4bb4c456b401dd5af5c8e668a",
+      "size": 1623
+    },
+    {
+      "source": "docs/foundation-001/evidence/rollback-result.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/rollback-result.json",
+      "sha256": "eb6dc8f5e1c2a58352facc571bfcf777468666308144056d2de1af4f8b85f374",
+      "size": 2289
+    },
+    {
+      "source": "docs/foundation-001/evidence/runtime-inventory.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/runtime-inventory.json",
+      "sha256": "c0b61180957d650c63414630ba40f1b5ddcad22f516622301491b3680092469d",
+      "size": 5332
+    },
+    {
+      "source": "docs/foundation-001/evidence/runtime-transitive-dependents.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/runtime-transitive-dependents.txt",
+      "sha256": "57de71b0e10e412ab27967c665165709efb228989fb29e9808fa53495837c823",
+      "size": 24633
+    },
+    {
+      "source": "docs/foundation-001/evidence/sanitizer-evaluation.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sanitizer-evaluation.json",
+      "sha256": "380b4bc614e6cf8e95e25ca54057b8499d89d2e583f1136cfcf948e00f872181",
+      "size": 645
+    },
+    {
+      "source": "docs/foundation-001/evidence/sbom-initial.md",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sbom-initial.md",
+      "sha256": "0d47fa6a7e1698e8bbd4763adeecc880f0f17d0c60866a674923376b4e8365cf",
+      "size": 3196
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/build-id.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/build-id.txt",
+      "sha256": "3e28a55e45621718b1836f2a8b107f8c9df9ed10495e2cf755ff181df48ffd63",
+      "size": 28
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/msvc-environment.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/msvc-environment.txt",
+      "sha256": "802b939e25666b0505848d61f65df8e5cdb40b640b4fb57e9329ee617a3d567d",
+      "size": 4051
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/preflight.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/preflight.json",
+      "sha256": "20865c0c7d3492558f20cd03f6c8acb83f0cbdb0605e151024717e6e2e3c80c9",
+      "size": 1213
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sdk-packages.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sdk-packages.json",
+      "sha256": "54f5ee22bee6415b241b83e774a2805a07165b4c15e63883d39982a25763a1cb",
+      "size": 3409
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-debug-binary-hashes.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-debug-binary-hashes.json",
+      "sha256": "94359c17863951f937cb3b93ef0be0d890de80b39e5ad90a0569e3b406350d33",
+      "size": 680
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-debug-build-command.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-debug-build-command.json",
+      "sha256": "1ef14dd462b69985ff7682e98f5870c0a8360af620c11e5066cac89673b04874",
+      "size": 369
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-debug-build-exit.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-debug-build-exit.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-debug-build.log",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-debug-build.log",
+      "sha256": "7535d5a671506acb0fae6d6022b3b20d004509838d0ed0c3892b31f25e1d7777",
+      "size": 709502
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-debug-configure-command.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-debug-configure-command.json",
+      "sha256": "8f3d077846c0c3cabbb5cfad174886c8a9ca1ef8ca0797b728cb77c5f070a877",
+      "size": 369
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-debug-configure-exit.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-debug-configure-exit.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-debug-configure.log",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-debug-configure.log",
+      "sha256": "79a2168aeba35ac0f528a74c756353802ab7bdc7a46862ad4b4a933696cfbf93",
+      "size": 1232
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-debug-headers-command.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-debug-headers-command.json",
+      "sha256": "8d3085d49ca91ec578aa2298e6ab2bf132b43792c29b762466c8dc17e2246b30",
+      "size": 443
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-debug-headers-exit.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-debug-headers-exit.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-debug-headers.log",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-debug-headers.log",
+      "sha256": "819c8756df3d6f4134961d3c4d20ed6d5f10243cb927e2b5c5dcc34d788e18d9",
+      "size": 13752
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-debug-imports-command.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-debug-imports-command.json",
+      "sha256": "689a04eec631d3fc03732e6fa3a2711083b54d154da476fafd3826b9142dffff",
+      "size": 443
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-debug-imports-exit.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-debug-imports-exit.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-debug-imports.log",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-debug-imports.log",
+      "sha256": "259ca898ab4a93f63da7d69db7bf6ee11def39a15c841596dcdf4fb397a1b4d5",
+      "size": 25774
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-debug-junit.xml",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-debug-junit.xml",
+      "sha256": "f92c3684e4db9773306a3d675fd88827766078e32d928d9e651d394b2e0e70f6",
+      "size": 4209
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-debug-LastTest.log",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-debug-LastTest.log",
+      "sha256": "eda5b161d9b4e54248b7a4d175783444ded5ce3c2ae83c81592506bb1b787fa2",
+      "size": 14525
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-debug-test-command.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-debug-test-command.json",
+      "sha256": "843f9f55250260fd83851cd9b0d187a265cefb4c7d90702bb89946bf5e7c6b13",
+      "size": 532
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-debug-test-exit.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-debug-test-exit.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-debug-test.log",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-debug-test.log",
+      "sha256": "10675eaf7e793043eee77297ab282ee89c8e600eea74309bc42b54919dfec6c5",
+      "size": 20142
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-release-binary-hashes.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-release-binary-hashes.json",
+      "sha256": "85bc8328b3ef461ef80b3c6741bf954d4b42b0131f1273bc27be25b53b862376",
+      "size": 686
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-release-build-command.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-release-build-command.json",
+      "sha256": "65d334718ea09e7eca10b50c4a9ef189bd54db0666ae268d584af29add3d3923",
+      "size": 371
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-release-build-exit.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-release-build-exit.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-release-build.log",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-release-build.log",
+      "sha256": "abc5dff23f9e4ac389a7c8755ea2d6e37a1d21b3d4043b9cb1cbce00a101c284",
+      "size": 712810
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-release-configure-command.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-release-configure-command.json",
+      "sha256": "c88f603e551a434f7be7a2e65692b926d86691f8ace55a08f1d1d08a6842cc13",
+      "size": 371
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-release-configure-exit.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-release-configure-exit.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-release-configure.log",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-release-configure.log",
+      "sha256": "9e09e81f95f3005031fae8e49066ed7e0864b5eec35a7be4bfe8bab877f67821",
+      "size": 1236
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-release-headers-command.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-release-headers-command.json",
+      "sha256": "090229237634f65307fa0d316735788ac52b8e06b60de2f37118b2156cb21301",
+      "size": 445
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-release-headers-exit.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-release-headers-exit.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-release-headers.log",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-release-headers.log",
+      "sha256": "ef69f735cc8e45757b89ea58121298a72c75e2639b59f05394c6f5073441aab4",
+      "size": 11410
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-release-imports-command.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-release-imports-command.json",
+      "sha256": "9841be36be7fea563a9cf2e94f83a8c91240ddb639cd5c7eb5a4763a409fdc5d",
+      "size": 445
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-release-imports-exit.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-release-imports-exit.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-release-imports.log",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-release-imports.log",
+      "sha256": "79ad3958fb5684f3b664b660e954d07409570ec7f4035f331b39111a0e71d03f",
+      "size": 25086
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-release-junit.xml",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-release-junit.xml",
+      "sha256": "8b64e6bb0d81f8bb7ee5c11287da0e4781b022d6e8d74a65aa7789acb7327897",
+      "size": 4423
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-release-LastTest.log",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-release-LastTest.log",
+      "sha256": "3c3955d0a73582ff1373185c56b2ae12a7228ee4444b185b3c75bca8c8fcc814",
+      "size": 14838
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-release-test-command.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-release-test-command.json",
+      "sha256": "baea3936ea225e52e499e1da2a8f17212c28168448c1d53c5404ad1f04f86f6a",
+      "size": 536
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-release-test-exit.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-release-test-exit.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/sentrium-release-test.log",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/sentrium-release-test.log",
+      "sha256": "201257217ceac00f88b20673885923478d7e12d36a5d9d0b71724ad5ce944622",
+      "size": 20820
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/source-inventory.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/source-inventory.json",
+      "sha256": "45a8799ea87fe4b8fa80065c0a1a3c1a60cfd1503b22d53bed46fa8319b2b645",
+      "size": 2160
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/toolchain-hashes.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/toolchain-hashes.json",
+      "sha256": "8ca971099ee2f551ece262dbb2f6fc2ad1afc0beed097086f9202a1aaf9e894c",
+      "size": 1445
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-final/vswhere.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-final/vswhere.json",
+      "sha256": "06134c4d30dfebe67d9d020259d3a61c941fddcf9e66f822d8833ca09819827f",
+      "size": 5479
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-initial-automation-error.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-initial-automation-error.txt",
+      "sha256": "7f149c05115e1c6288e3cbf0e3d6a801bdeddbf1c94ea016dea109c8fed8f179",
+      "size": 801
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-initial-automation-stderr.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-initial-automation-stderr.txt",
+      "sha256": "7c14939f22fa0ffe9ec43f0605bf2c6837164903a886f2b6a474a373ce9a50f5",
+      "size": 815
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/build-id.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/build-id.txt",
+      "sha256": "3e28a55e45621718b1836f2a8b107f8c9df9ed10495e2cf755ff181df48ffd63",
+      "size": 28
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/msvc-environment.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/msvc-environment.txt",
+      "sha256": "7f4450cca5188c19e774d76332ef86899b84faf3a1294dcd9a80a3cfde2c6f21",
+      "size": 4051
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/preflight.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/preflight.json",
+      "sha256": "20865c0c7d3492558f20cd03f6c8acb83f0cbdb0605e151024717e6e2e3c80c9",
+      "size": 1213
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sdk-packages.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sdk-packages.json",
+      "sha256": "54f5ee22bee6415b241b83e774a2805a07165b4c15e63883d39982a25763a1cb",
+      "size": 3409
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-binary-hashes.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-binary-hashes.json",
+      "sha256": "4441fb938cca60ca9ca2e08c1c858360298d6a21c49a38aac65eafb72139aaa4",
+      "size": 680
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-build-command.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-build-command.json",
+      "sha256": "1ef14dd462b69985ff7682e98f5870c0a8360af620c11e5066cac89673b04874",
+      "size": 369
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-build-exit.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-build-exit.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-build.log",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-build.log",
+      "sha256": "7535d5a671506acb0fae6d6022b3b20d004509838d0ed0c3892b31f25e1d7777",
+      "size": 709502
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-configure-command.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-configure-command.json",
+      "sha256": "8f3d077846c0c3cabbb5cfad174886c8a9ca1ef8ca0797b728cb77c5f070a877",
+      "size": 369
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-configure-exit.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-configure-exit.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-configure.log",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-configure.log",
+      "sha256": "7eeacecfe42953432dc78f616514eba3f9947335099aeefbbc5cee762c4b71fa",
+      "size": 1232
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-headers-command.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-headers-command.json",
+      "sha256": "8d3085d49ca91ec578aa2298e6ab2bf132b43792c29b762466c8dc17e2246b30",
+      "size": 443
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-headers-exit.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-headers-exit.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-headers.log",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-headers.log",
+      "sha256": "fcbcd7b56845167a7b863768cd063f2a60b1372b513d9ecc1226d5a52c681cc0",
+      "size": 13752
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-imports-command.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-imports-command.json",
+      "sha256": "689a04eec631d3fc03732e6fa3a2711083b54d154da476fafd3826b9142dffff",
+      "size": 443
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-imports-exit.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-imports-exit.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-imports.log",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-imports.log",
+      "sha256": "259ca898ab4a93f63da7d69db7bf6ee11def39a15c841596dcdf4fb397a1b4d5",
+      "size": 25774
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-junit.xml",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-junit.xml",
+      "sha256": "8b7e14d48eafe738ae18184aabcf69e4648a8babcd7be5ad738117f04424b22f",
+      "size": 4205
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-LastTest.log",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-LastTest.log",
+      "sha256": "8d97bc0e855d5754e81a982360d98a211f52d178c543f173bcd29fb1387f3024",
+      "size": 14525
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-test-command.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-test-command.json",
+      "sha256": "bea090b1d9262fee12d01fe5bdf892af1bdb69d6d2456897e3ae11f630bb0fe2",
+      "size": 539
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-test-exit.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-test-exit.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-test.log",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-debug-test.log",
+      "sha256": "270fb473951bb382d324b18d18fe03d8b6e939c8bdd20bf7ed83444035bfa908",
+      "size": 20142
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-binary-hashes.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-binary-hashes.json",
+      "sha256": "d8a57f8df8cd66415c1cd84fbca9096deaa36bc4c6a2a4e35db75610c653fdc4",
+      "size": 686
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-build-command.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-build-command.json",
+      "sha256": "65d334718ea09e7eca10b50c4a9ef189bd54db0666ae268d584af29add3d3923",
+      "size": 371
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-build-exit.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-build-exit.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-build.log",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-build.log",
+      "sha256": "991a86e0e15f356abc68d98024b340e1b635c54efdda78255bb1cba866498634",
+      "size": 712810
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-configure-command.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-configure-command.json",
+      "sha256": "c88f603e551a434f7be7a2e65692b926d86691f8ace55a08f1d1d08a6842cc13",
+      "size": 371
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-configure-exit.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-configure-exit.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-configure.log",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-configure.log",
+      "sha256": "458951c977b2c9cf16dd5e6177e3b059159969a6306ce72e2009af7479eb4871",
+      "size": 1236
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-headers-command.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-headers-command.json",
+      "sha256": "090229237634f65307fa0d316735788ac52b8e06b60de2f37118b2156cb21301",
+      "size": 445
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-headers-exit.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-headers-exit.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-headers.log",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-headers.log",
+      "sha256": "26abe4769de8ac920d2b3504ae027d64dc6f88d7a236ba355f27fea9f136cd0a",
+      "size": 11410
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-imports-command.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-imports-command.json",
+      "sha256": "9841be36be7fea563a9cf2e94f83a8c91240ddb639cd5c7eb5a4763a409fdc5d",
+      "size": 445
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-imports-exit.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-imports-exit.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-imports.log",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-imports.log",
+      "sha256": "79ad3958fb5684f3b664b660e954d07409570ec7f4035f331b39111a0e71d03f",
+      "size": 25086
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-junit.xml",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-junit.xml",
+      "sha256": "655dc48cad5dea4e53a4e0dc44d484090b100ede081b347428a31008648188ef",
+      "size": 4422
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-LastTest.log",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-LastTest.log",
+      "sha256": "b3a84af7a420577edb9c2d1b2dde76f6f6b1e5b070c69de9abc4aba6f002e241",
+      "size": 14838
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-test-command.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-test-command.json",
+      "sha256": "710cabaddabcc5e154732520197505a8e88249e3959170038d64cc4cd4cd6b2f",
+      "size": 543
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-test-exit.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-test-exit.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-test.log",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/sentrium-release-test.log",
+      "sha256": "696a87ea0266d0f33b2d15e121f37ecde6b6a5e103636071b6773a3f319459f7",
+      "size": 20820
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/source-inventory.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/source-inventory.json",
+      "sha256": "45a8799ea87fe4b8fa80065c0a1a3c1a60cfd1503b22d53bed46fa8319b2b645",
+      "size": 2160
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/toolchain-hashes.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/toolchain-hashes.json",
+      "sha256": "8ca971099ee2f551ece262dbb2f6fc2ad1afc0beed097086f9202a1aaf9e894c",
+      "size": 1445
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-reproduction/vswhere.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-reproduction/vswhere.json",
+      "sha256": "06134c4d30dfebe67d9d020259d3a61c941fddcf9e66f822d8833ca09819827f",
+      "size": 5479
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-rollback-ca72cb49-327c-45c4-938e-e2be419c1e3b/runtime/logs/sentrium-0.jsonl",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-rollback-ca72cb49-327c-45c4-938e-e2be419c1e3b/runtime/logs/sentrium-0.jsonl",
+      "sha256": "9830c598f11e141ccc4d69f35c5a98bc7c739a70fb0bcfa781e02321bf6fe234",
+      "size": 2154
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-validation-classification.md",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-validation-classification.md",
+      "sha256": "bc1d525a88bc9a0f1f74e33e565826ab02254398aaabb8285f6f2cdb33be3037",
+      "size": 1290
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-validation/build-id.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-validation/build-id.txt",
+      "sha256": "be0af85f9e9e194bf762fbc3d093496b690454dc44d931d8f8230599e1671df3",
+      "size": 28
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-validation/msvc-environment.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-validation/msvc-environment.txt",
+      "sha256": "802b939e25666b0505848d61f65df8e5cdb40b640b4fb57e9329ee617a3d567d",
+      "size": 4051
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-validation/preflight.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-validation/preflight.json",
+      "sha256": "20865c0c7d3492558f20cd03f6c8acb83f0cbdb0605e151024717e6e2e3c80c9",
+      "size": 1213
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-validation/sdk-packages.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-validation/sdk-packages.json",
+      "sha256": "54f5ee22bee6415b241b83e774a2805a07165b4c15e63883d39982a25763a1cb",
+      "size": 3409
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-validation/sentrium-debug-build-command.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-validation/sentrium-debug-build-command.json",
+      "sha256": "1ef14dd462b69985ff7682e98f5870c0a8360af620c11e5066cac89673b04874",
+      "size": 369
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-validation/sentrium-debug-build-exit.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-validation/sentrium-debug-build-exit.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-validation/sentrium-debug-build.log",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-validation/sentrium-debug-build.log",
+      "sha256": "7535d5a671506acb0fae6d6022b3b20d004509838d0ed0c3892b31f25e1d7777",
+      "size": 709502
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-validation/sentrium-debug-configure-command.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-validation/sentrium-debug-configure-command.json",
+      "sha256": "eaa2594f188e148d41bee5cbd13122e33fa5e0f41aef28edde560e4537499e1d",
+      "size": 369
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-validation/sentrium-debug-configure-exit.txt",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-validation/sentrium-debug-configure-exit.txt",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "size": 3
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-validation/sentrium-debug-configure.log",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-validation/sentrium-debug-configure.log",
+      "sha256": "011e0cf89232672c9df776614743e4077a1f06a7c73ce46113a37fa03880d5f2",
+      "size": 1232
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-validation/sentrium-debug-junit.xml",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-validation/sentrium-debug-junit.xml",
+      "sha256": "86458742d618381cf4685669bb61dafd6b24656af9c909e14aefa6bcf6c80b9f",
+      "size": 4117
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-validation/sentrium-debug-test-command.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-validation/sentrium-debug-test-command.json",
+      "sha256": "665b38732c3925541be5efd30d307a000f54e5e2d87bbc211fa5c3b0a9f22c4e",
+      "size": 537
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-validation/sentrium-debug-test.log",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-validation/sentrium-debug-test.log",
+      "sha256": "86f9aca3567ffea806f234c27735b7ec7697f3f870c412dfa6d9c56a9aef9b74",
+      "size": 20118
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-validation/source-inventory.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-validation/source-inventory.json",
+      "sha256": "ed25ad0159695970d96c052c2e02d286f88e43444074f50a8a59a623f351c1d1",
+      "size": 2160
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-validation/toolchain-hashes.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-validation/toolchain-hashes.json",
+      "sha256": "8ca971099ee2f551ece262dbb2f6fc2ad1afc0beed097086f9202a1aaf9e894c",
+      "size": 1445
+    },
+    {
+      "source": "docs/foundation-001/evidence/sentrium-validation/vswhere.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/sentrium-validation/vswhere.json",
+      "sha256": "06134c4d30dfebe67d9d020259d3a61c941fddcf9e66f822d8833ca09819827f",
+      "size": 5479
+    },
+    {
+      "source": "docs/foundation-001/evidence/test-results.md",
+      "destination": "raw-evidence/docs/foundation-001/evidence/test-results.md",
+      "sha256": "1c584a99af89d7215a1d86e346f50c109b4b83db91147be0c39a1a31be03d591",
+      "size": 3169
+    },
+    {
+      "source": "docs/foundation-001/evidence/test-summary.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/test-summary.json",
+      "sha256": "fb57935414e91b5577ab3eba8c827c687911cfa6c029854e7411a1830f88e932",
+      "size": 966
+    },
+    {
+      "source": "docs/foundation-001/evidence/threat-model.md",
+      "destination": "raw-evidence/docs/foundation-001/evidence/threat-model.md",
+      "sha256": "0470e97351798caf898e528d80de2817605d3d1f35545e8c8083e4bf036250ad",
+      "size": 2493
+    },
+    {
+      "source": "docs/foundation-001/evidence/tool-license-inventory.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/tool-license-inventory.json",
+      "sha256": "34e563a1d8b94521bf16b58326cfaa5092470c740bf862bf7754ef01072730ca",
+      "size": 4337
+    },
+    {
+      "source": "docs/foundation-001/evidence/warnings-check.json",
+      "destination": "raw-evidence/docs/foundation-001/evidence/warnings-check.json",
+      "sha256": "4884012207feaa4aa0daf788e1429b7c809a2aac032da2618484b669c2d529fc",
+      "size": 781
+    },
+    {
+      "source": "out/sentrium-debug/CMakeFiles/CMakeConfigureLog.yaml",
+      "destination": "raw-evidence/out/sentrium-debug/CMakeFiles/CMakeConfigureLog.yaml",
+      "sha256": "e9e6dd946a9be8f35b441b7b9ca00771a2e08e5c48029c782193f952718d22dc",
+      "size": 55445
+    },
+    {
+      "source": "out/sentrium-debug/Testing/Temporary/LastTest.log",
+      "destination": "raw-evidence/out/sentrium-debug/Testing/Temporary/LastTest.log",
+      "sha256": "8d97bc0e855d5754e81a982360d98a211f52d178c543f173bcd29fb1387f3024",
+      "size": 14525
+    },
+    {
+      "source": "out/sentrium-initial-debug/CMakeFiles/CMakeConfigureLog.yaml",
+      "destination": "raw-evidence/out/sentrium-initial-debug/CMakeFiles/CMakeConfigureLog.yaml",
+      "sha256": "1d66fc97764ff05b02cfb146237e10e4c17563cc50380461226eff4671421889",
+      "size": 55445
+    },
+    {
+      "source": "out/sentrium-initial-debug/Testing/Temporary/LastTest.log",
+      "destination": "raw-evidence/out/sentrium-initial-debug/Testing/Temporary/LastTest.log",
+      "sha256": "aa2165f681e345e4e8c520e23c96f4a155570e764b742cbda61cc267d2441932",
+      "size": 14402
+    },
+    {
+      "source": "out/sentrium-initial-debug/Testing/Temporary/LastTestsFailed.log",
+      "destination": "raw-evidence/out/sentrium-initial-debug/Testing/Temporary/LastTestsFailed.log",
+      "sha256": "51137ce656367d750e9a6e93fb7a99360992552d7d0300ae07454b049384b86b",
+      "size": 8
+    },
+    {
+      "source": "out/sentrium-release/CMakeFiles/CMakeConfigureLog.yaml",
+      "destination": "raw-evidence/out/sentrium-release/CMakeFiles/CMakeConfigureLog.yaml",
+      "sha256": "cab18c35ee99cef46c1302e46fe407e08a38fea3db9fa30226d5ec550a826c97",
+      "size": 55455
+    },
+    {
+      "source": "out/sentrium-release/Testing/Temporary/LastTest.log",
+      "destination": "raw-evidence/out/sentrium-release/Testing/Temporary/LastTest.log",
+      "sha256": "b3a84af7a420577edb9c2d1b2dde76f6f6b1e5b070c69de9abc4aba6f002e241",
+      "size": 14838
+    },
+    {
+      "source": "out/sentrium-validated-debug/CMakeFiles/CMakeConfigureLog.yaml",
+      "destination": "raw-evidence/out/sentrium-validated-debug/CMakeFiles/CMakeConfigureLog.yaml",
+      "sha256": "1355f776412e1e95c8e814d5afc8e84b0e6724a7dd2a05acab20b10cf037240a",
+      "size": 55445
+    },
+    {
+      "source": "out/sentrium-validated-debug/Testing/Temporary/LastTest.log",
+      "destination": "raw-evidence/out/sentrium-validated-debug/Testing/Temporary/LastTest.log",
+      "sha256": "eda5b161d9b4e54248b7a4d175783444ded5ce3c2ae83c81592506bb1b787fa2",
+      "size": 14525
+    },
+    {
+      "source": "out/sentrium-validated-release/CMakeFiles/CMakeConfigureLog.yaml",
+      "destination": "raw-evidence/out/sentrium-validated-release/CMakeFiles/CMakeConfigureLog.yaml",
+      "sha256": "1cfb0d2242fe396222edda909ea526fa9ab0849d22e6410c33408fe9c66b949a",
+      "size": 55455
+    },
+    {
+      "source": "out/sentrium-validated-release/Testing/Temporary/LastTest.log",
+      "destination": "raw-evidence/out/sentrium-validated-release/Testing/Temporary/LastTest.log",
+      "sha256": "3c3955d0a73582ff1373185c56b2ae12a7228ee4444b185b3c75bca8c8fcc814",
+      "size": 14838
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+# Administrative import policy: preserve historical bytes, BOMs, encodings and line endings.
+* -text -filter -ident -working-tree-encoding

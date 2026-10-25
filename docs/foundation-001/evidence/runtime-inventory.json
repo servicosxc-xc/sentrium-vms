@@ -1,0 +1,106 @@
+﻿[
+    {
+        "Name":  "SHELL32.dll",
+        "ResolvedCandidate":  "C:\\WINDOWS\\System32\\SHELL32.dll",
+        "Version":  "10.0.26100.9549 (WinBuild.160101.0800)",
+        "Company":  "Microsoft Corporation",
+        "SHA256":  "C55A5F3B6EF059871FE2A0C8D82F086E0998D1154023E3ECF49698B97F9341F6",
+        "Resolution":  "System32 then initialized PATH; import inventory, not loaded-module tracing"
+    },
+    {
+        "Name":  "ole32.dll",
+        "ResolvedCandidate":  "C:\\WINDOWS\\System32\\ole32.dll",
+        "Version":  "10.0.26100.8875 (WinBuild.160101.0800)",
+        "Company":  "Microsoft Corporation",
+        "SHA256":  "1053FFB858CDDBE29EAAA6A5B0836B88C7CD11FBD58605288600E507C06DB443",
+        "Resolution":  "System32 then initialized PATH; import inventory, not loaded-module tracing"
+    },
+    {
+        "Name":  "KERNEL32.dll",
+        "ResolvedCandidate":  "C:\\WINDOWS\\System32\\KERNEL32.dll",
+        "Version":  "10.0.26100.9549 (WinBuild.160101.0800)",
+        "Company":  "Microsoft Corporation",
+        "SHA256":  "E132EBA4166256E2F414B91FE7D5386590BC5EA8626AEE5AF9C9738383CF2AE1",
+        "Resolution":  "System32 then initialized PATH; import inventory, not loaded-module tracing"
+    },
+    {
+        "Name":  "MSVCP140D.dll",
+        "ResolvedCandidate":  "C:\\WINDOWS\\System32\\MSVCP140D.dll",
+        "Version":  "14.44.35211.0",
+        "Company":  "Microsoft Corporation",
+        "SHA256":  "342E5C13FD61F6130F61D85C00A7DFB10289EA7E89740F43EFDABE4DB16333A5",
+        "Resolution":  "System32 then initialized PATH; import inventory, not loaded-module tracing"
+    },
+    {
+        "Name":  "MSVCP140D_ATOMIC_WAIT.dll",
+        "ResolvedCandidate":  "C:\\WINDOWS\\System32\\MSVCP140D_ATOMIC_WAIT.dll",
+        "Version":  "14.44.35211.0",
+        "Company":  "Microsoft Corporation",
+        "SHA256":  "1B89886A5FFF261C79EFD8E668771738390621B576789D322F2ED638ED1EC488",
+        "Resolution":  "System32 then initialized PATH; import inventory, not loaded-module tracing"
+    },
+    {
+        "Name":  "VCRUNTIME140D.dll",
+        "ResolvedCandidate":  "C:\\WINDOWS\\System32\\VCRUNTIME140D.dll",
+        "Version":  "14.44.35211.0",
+        "Company":  "Microsoft Corporation",
+        "SHA256":  "098A800E8D227B2C683274789B93671A668D76FE0BB7817E4921EE473DB4C17E",
+        "Resolution":  "System32 then initialized PATH; import inventory, not loaded-module tracing"
+    },
+    {
+        "Name":  "VCRUNTIME140_1D.dll",
+        "ResolvedCandidate":  "C:\\WINDOWS\\System32\\VCRUNTIME140_1D.dll",
+        "Version":  "14.44.35211.0",
+        "Company":  "Microsoft Corporation",
+        "SHA256":  "C734D0A16D683592286DE2E05C1EBCC3E819F6EDFD501D026CE25AEE0A733EBA",
+        "Resolution":  "System32 then initialized PATH; import inventory, not loaded-module tracing"
+    },
+    {
+        "Name":  "ucrtbased.dll",
+        "ResolvedCandidate":  "C:\\WINDOWS\\System32\\ucrtbased.dll",
+        "Version":  "10.0.26100.9457 (WinBuild.160101.0800)",
+        "Company":  "Microsoft Corporation",
+        "SHA256":  "2CA9AD1C1E81EC2872BD4E9DADE6294D8CD0E880E01227446B84FA607997F1BD",
+        "Resolution":  "System32 then initialized PATH; import inventory, not loaded-module tracing"
+    },
+    {
+        "Name":  "MSVCP140.dll",
+        "ResolvedCandidate":  "C:\\WINDOWS\\System32\\MSVCP140.dll",
+        "Version":  "14.50.35719.0",
+        "Company":  "Microsoft Corporation",
+        "SHA256":  "DEF46AA6A8F72F27BAFAC0C43334419486A4D1DCDB6C479A8EF7034B3E1FA4CB",
+        "Resolution":  "System32 then initialized PATH; import inventory, not loaded-module tracing"
+    },
+    {
+        "Name":  "MSVCP140_ATOMIC_WAIT.dll",
+        "ResolvedCandidate":  "C:\\WINDOWS\\System32\\MSVCP140_ATOMIC_WAIT.dll",
+        "Version":  "14.50.35719.0",
+        "Company":  "Microsoft Corporation",
+        "SHA256":  "E7963645E0D1DB08E300614D4C5FA7194BD8173E9AB7A5558859E6B232ED3241",
+        "Resolution":  "System32 then initialized PATH; import inventory, not loaded-module tracing"
+    },
+    {
+        "Name":  "VCRUNTIME140.dll",
+        "ResolvedCandidate":  "C:\\WINDOWS\\System32\\VCRUNTIME140.dll",
+        "Version":  "14.50.35719.0",
+        "Company":  "Microsoft Corporation",
+        "SHA256":  "184146852727A9DB4EEA06178716BEC3CDBB1015C911F6B0F915B184AD7775B2",
+        "Resolution":  "System32 then initialized PATH; import inventory, not loaded-module tracing"
+    },
+    {
+        "Name":  "VCRUNTIME140_1.dll",
+        "ResolvedCandidate":  "C:\\WINDOWS\\System32\\VCRUNTIME140_1.dll",
+        "Version":  "14.50.35719.0",
+        "Company":  "Microsoft Corporation",
+        "SHA256":  "E6BFB3662AB4B1969A73441DBE35C96D51441B6BFF8CF1FE7430BD5B246CA605",
+        "Resolution":  "System32 then initialized PATH; import inventory, not loaded-module tracing"
+    },
+    {
+        "Name":  "ucrtbase.dll",
+        "ResolvedCandidate":  "C:\\WINDOWS\\System32\\ucrtbase.dll",
+        "Version":  "10.0.26100.9711 (WinBuild.160101.0800)",
+        "Company":  "Microsoft Corporation",
+        "SHA256":  "DEDB7611E1ABC1FF3852DCAC3D4C93A048D729E25B061973B9969F22698F14CA",
+        "Resolution":  "System32 then initialized PATH; import inventory, not loaded-module tracing"
+    }
+]

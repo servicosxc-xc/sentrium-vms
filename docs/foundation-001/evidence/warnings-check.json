@@ -1,0 +1,13 @@
+﻿{
+    "Logs":  [
+                 "C:\\Projetos\\SENTRIUM VMS\\SENTRIUM-CPP-Foundation-001\\docs\\foundation-001\\evidence\\sentrium-final\\sentrium-debug-build.log",
+                 "C:\\Projetos\\SENTRIUM VMS\\SENTRIUM-CPP-Foundation-001\\docs\\foundation-001\\evidence\\sentrium-final\\sentrium-release-build.log",
+                 "C:\\Projetos\\SENTRIUM VMS\\SENTRIUM-CPP-Foundation-001\\docs\\foundation-001\\evidence\\sentrium-reproduction\\sentrium-debug-build.log",
+                 "C:\\Projetos\\SENTRIUM VMS\\SENTRIUM-CPP-Foundation-001\\docs\\foundation-001\\evidence\\sentrium-reproduction\\sentrium-release-build.log"
+             ],
+    "WarningCount":  0,
+    "Warnings":  [
+
+                 ],
+    "Policy":  "/W4 /WX on all five own targets"
+}

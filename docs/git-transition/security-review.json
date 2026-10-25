@@ -1,0 +1,14 @@
+{
+  "utc": "2026-10-25T01:51:13.131Z",
+  "filesReviewed": 163,
+  "bytesReviewed": 4497087,
+  "rules": [
+    "private-key",
+    "github-token",
+    "aws-access-key",
+    "credential-url",
+    "secret-assignment"
+  ],
+  "findings": [],
+  "limits": "Pattern review plus path/content classification. Approved local paths/toolchain metadata are development evidence. Generated binaries/cache excluded."
+}

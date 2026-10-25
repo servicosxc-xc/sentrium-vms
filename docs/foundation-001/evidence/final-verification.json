@@ -1,0 +1,134 @@
+﻿{
+    "SourceInventoryEntries":  14,
+    "SourceMismatches":  [
+
+                         ],
+    "SourceMatchesTestedBuild":  true,
+    "TestRuns":  {
+                     "value":  [
+                                   {
+                                       "Run":  "sentrium-final",
+                                       "Configuration":  "debug",
+                                       "Tests":  "19",
+                                       "Failures":  "0",
+                                       "Disabled":  "0",
+                                       "Time":  "0",
+                                       "BuildId":  "source-b8b6d42374064dc8"
+                                   },
+                                   {
+                                       "Run":  "sentrium-final",
+                                       "Configuration":  "release",
+                                       "Tests":  "19",
+                                       "Failures":  "0",
+                                       "Disabled":  "0",
+                                       "Time":  "0",
+                                       "BuildId":  "source-b8b6d42374064dc8"
+                                   },
+                                   {
+                                       "Run":  "sentrium-reproduction",
+                                       "Configuration":  "debug",
+                                       "Tests":  "19",
+                                       "Failures":  "0",
+                                       "Disabled":  "0",
+                                       "Time":  "0",
+                                       "BuildId":  "source-b8b6d42374064dc8"
+                                   },
+                                   {
+                                       "Run":  "sentrium-reproduction",
+                                       "Configuration":  "release",
+                                       "Tests":  "19",
+                                       "Failures":  "0",
+                                       "Disabled":  "0",
+                                       "Time":  "0",
+                                       "BuildId":  "source-b8b6d42374064dc8"
+                                   }
+                               ],
+                     "Count":  4
+                 },
+    "ExitCodes":  [
+                      {
+                          "File":  "C:\\Projetos\\SENTRIUM VMS\\SENTRIUM-CPP-Foundation-001\\docs\\foundation-001\\evidence\\sentrium-final\\sentrium-debug-build-exit.txt",
+                          "Code":  "0"
+                      },
+                      {
+                          "File":  "C:\\Projetos\\SENTRIUM VMS\\SENTRIUM-CPP-Foundation-001\\docs\\foundation-001\\evidence\\sentrium-final\\sentrium-debug-configure-exit.txt",
+                          "Code":  "0"
+                      },
+                      {
+                          "File":  "C:\\Projetos\\SENTRIUM VMS\\SENTRIUM-CPP-Foundation-001\\docs\\foundation-001\\evidence\\sentrium-final\\sentrium-debug-headers-exit.txt",
+                          "Code":  "0"
+                      },
+                      {
+                          "File":  "C:\\Projetos\\SENTRIUM VMS\\SENTRIUM-CPP-Foundation-001\\docs\\foundation-001\\evidence\\sentrium-final\\sentrium-debug-imports-exit.txt",
+                          "Code":  "0"
+                      },
+                      {
+                          "File":  "C:\\Projetos\\SENTRIUM VMS\\SENTRIUM-CPP-Foundation-001\\docs\\foundation-001\\evidence\\sentrium-final\\sentrium-debug-test-exit.txt",
+                          "Code":  "0"
+                      },
+                      {
+                          "File":  "C:\\Projetos\\SENTRIUM VMS\\SENTRIUM-CPP-Foundation-001\\docs\\foundation-001\\evidence\\sentrium-final\\sentrium-release-build-exit.txt",
+                          "Code":  "0"
+                      },
+                      {
+                          "File":  "C:\\Projetos\\SENTRIUM VMS\\SENTRIUM-CPP-Foundation-001\\docs\\foundation-001\\evidence\\sentrium-final\\sentrium-release-configure-exit.txt",
+                          "Code":  "0"
+                      },
+                      {
+                          "File":  "C:\\Projetos\\SENTRIUM VMS\\SENTRIUM-CPP-Foundation-001\\docs\\foundation-001\\evidence\\sentrium-final\\sentrium-release-headers-exit.txt",
+                          "Code":  "0"
+                      },
+                      {
+                          "File":  "C:\\Projetos\\SENTRIUM VMS\\SENTRIUM-CPP-Foundation-001\\docs\\foundation-001\\evidence\\sentrium-final\\sentrium-release-imports-exit.txt",
+                          "Code":  "0"
+                      },
+                      {
+                          "File":  "C:\\Projetos\\SENTRIUM VMS\\SENTRIUM-CPP-Foundation-001\\docs\\foundation-001\\evidence\\sentrium-final\\sentrium-release-test-exit.txt",
+                          "Code":  "0"
+                      },
+                      {
+                          "File":  "C:\\Projetos\\SENTRIUM VMS\\SENTRIUM-CPP-Foundation-001\\docs\\foundation-001\\evidence\\sentrium-reproduction\\sentrium-debug-build-exit.txt",
+                          "Code":  "0"
+                      },
+                      {
+                          "File":  "C:\\Projetos\\SENTRIUM VMS\\SENTRIUM-CPP-Foundation-001\\docs\\foundation-001\\evidence\\sentrium-reproduction\\sentrium-debug-configure-exit.txt",
+                          "Code":  "0"
+                      },
+                      {
+                          "File":  "C:\\Projetos\\SENTRIUM VMS\\SENTRIUM-CPP-Foundation-001\\docs\\foundation-001\\evidence\\sentrium-reproduction\\sentrium-debug-headers-exit.txt",
+                          "Code":  "0"
+                      },
+                      {
+                          "File":  "C:\\Projetos\\SENTRIUM VMS\\SENTRIUM-CPP-Foundation-001\\docs\\foundation-001\\evidence\\sentrium-reproduction\\sentrium-debug-imports-exit.txt",
+                          "Code":  "0"
+                      },
+                      {
+                          "File":  "C:\\Projetos\\SENTRIUM VMS\\SENTRIUM-CPP-Foundation-001\\docs\\foundation-001\\evidence\\sentrium-reproduction\\sentrium-debug-test-exit.txt",
+                          "Code":  "0"
+                      },
+                      {
+                          "File":  "C:\\Projetos\\SENTRIUM VMS\\SENTRIUM-CPP-Foundation-001\\docs\\foundation-001\\evidence\\sentrium-reproduction\\sentrium-release-build-exit.txt",
+                          "Code":  "0"
+                      },
+                      {
+                          "File":  "C:\\Projetos\\SENTRIUM VMS\\SENTRIUM-CPP-Foundation-001\\docs\\foundation-001\\evidence\\sentrium-reproduction\\sentrium-release-configure-exit.txt",
+                          "Code":  "0"
+                      },
+                      {
+                          "File":  "C:\\Projetos\\SENTRIUM VMS\\SENTRIUM-CPP-Foundation-001\\docs\\foundation-001\\evidence\\sentrium-reproduction\\sentrium-release-headers-exit.txt",
+                          "Code":  "0"
+                      },
+                      {
+                          "File":  "C:\\Projetos\\SENTRIUM VMS\\SENTRIUM-CPP-Foundation-001\\docs\\foundation-001\\evidence\\sentrium-reproduction\\sentrium-release-imports-exit.txt",
+                          "Code":  "0"
+                      },
+                      {
+                          "File":  "C:\\Projetos\\SENTRIUM VMS\\SENTRIUM-CPP-Foundation-001\\docs\\foundation-001\\evidence\\sentrium-reproduction\\sentrium-release-test-exit.txt",
+                          "Code":  "0"
+                      }
+                  ],
+    "RemainingProcesses":  [
+
+                           ],
+    "LicenseNoticeFiles":  10
+}

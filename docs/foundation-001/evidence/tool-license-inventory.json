@@ -1,0 +1,82 @@
+﻿[
+    {
+        "Tool":  "CMake 4.4.4",
+        "ComponentDirectory":  "cmake",
+        "NoticePath":  "C:\\Projetos\\SENTRIUM VMS\\_toolchain\\cmake-4.4.4\\doc\\cmake\\LICENSE.rst",
+        "SHA256":  "CD944D878806FEE998EF3F88CA41EC060AE198BD8BA615E284F7D8D90C25593E",
+        "ComponentVersion":  "Not independently established; bundled with inspected CMake distribution",
+        "ProductDependency":  false
+    },
+    {
+        "Tool":  "CMake 4.4.4",
+        "ComponentDirectory":  "cmcurl",
+        "NoticePath":  "C:\\Projetos\\SENTRIUM VMS\\_toolchain\\cmake-4.4.4\\doc\\cmake\\cmcurl\\COPYING",
+        "SHA256":  "2EB469AEBC37F20DDA0960D9A5B03BFB8C0BB8A9D3FA5BE0A356AA02FD0A8673",
+        "ComponentVersion":  "Not independently established; bundled with inspected CMake distribution",
+        "ProductDependency":  false
+    },
+    {
+        "Tool":  "CMake 4.4.4",
+        "ComponentDirectory":  "cmlibarchive",
+        "NoticePath":  "C:\\Projetos\\SENTRIUM VMS\\_toolchain\\cmake-4.4.4\\doc\\cmake\\cmlibarchive\\COPYING",
+        "SHA256":  "7ED079693E6FCD4D9535360A65E8C3832D6302A2CB9D936EFC00BF7F9FA16909",
+        "ComponentVersion":  "Not independently established; bundled with inspected CMake distribution",
+        "ProductDependency":  false
+    },
+    {
+        "Tool":  "CMake 4.4.4",
+        "ComponentDirectory":  "cmliblzma",
+        "NoticePath":  "C:\\Projetos\\SENTRIUM VMS\\_toolchain\\cmake-4.4.4\\doc\\cmake\\cmliblzma\\COPYING",
+        "SHA256":  "37D1B090446045D3E87418631A6C0AC08A5E49C84A666D8BE089F552B0C48E49",
+        "ComponentVersion":  "Not independently established; bundled with inspected CMake distribution",
+        "ProductDependency":  false
+    },
+    {
+        "Tool":  "CMake 4.4.4",
+        "ComponentDirectory":  "cmlibrhash",
+        "NoticePath":  "C:\\Projetos\\SENTRIUM VMS\\_toolchain\\cmake-4.4.4\\doc\\cmake\\cmlibrhash\\COPYING",
+        "SHA256":  "62FD8327A27A4170361E097FBBFAFAF68CDACADFDCAD993CA251238112947A8F",
+        "ComponentVersion":  "Not independently established; bundled with inspected CMake distribution",
+        "ProductDependency":  false
+    },
+    {
+        "Tool":  "CMake 4.4.4",
+        "ComponentDirectory":  "cmlibuv",
+        "NoticePath":  "C:\\Projetos\\SENTRIUM VMS\\_toolchain\\cmake-4.4.4\\doc\\cmake\\cmlibuv\\LICENSE",
+        "SHA256":  "7AAB26DD7E0E6661ACCC1FD9FC19410E01B466AA0AC36EA668B2013152A8CA23",
+        "ComponentVersion":  "Not independently established; bundled with inspected CMake distribution",
+        "ProductDependency":  false
+    },
+    {
+        "Tool":  "CMake 4.4.4",
+        "ComponentDirectory":  "cmnghttp2",
+        "NoticePath":  "C:\\Projetos\\SENTRIUM VMS\\_toolchain\\cmake-4.4.4\\doc\\cmake\\cmnghttp2\\COPYING",
+        "SHA256":  "296913FDAE167D19F8C463622B7D4CE4012781B9A13D9DCF21A2C7541A96DC39",
+        "ComponentVersion":  "Not independently established; bundled with inspected CMake distribution",
+        "ProductDependency":  false
+    },
+    {
+        "Tool":  "CMake 4.4.4",
+        "ComponentDirectory":  "cmsys",
+        "NoticePath":  "C:\\Projetos\\SENTRIUM VMS\\_toolchain\\cmake-4.4.4\\doc\\cmake\\cmsys\\Copyright.txt",
+        "SHA256":  "0998690E8DC877E5D9D79D852F85630BA42B4061962BAEFC9651675ECF972082",
+        "ComponentVersion":  "Not independently established; bundled with inspected CMake distribution",
+        "ProductDependency":  false
+    },
+    {
+        "Tool":  "CMake 4.4.4",
+        "ComponentDirectory":  "cmzlib",
+        "NoticePath":  "C:\\Projetos\\SENTRIUM VMS\\_toolchain\\cmake-4.4.4\\doc\\cmake\\cmzlib\\Copyright.txt",
+        "SHA256":  "D5BBD7748A19E3FED6EA31242E8DE9814E69A0125AE7758A7491057D5FE76F34",
+        "ComponentVersion":  "Not independently established; bundled with inspected CMake distribution",
+        "ProductDependency":  false
+    },
+    {
+        "Tool":  "CMake 4.4.4",
+        "ComponentDirectory":  "cmzstd",
+        "NoticePath":  "C:\\Projetos\\SENTRIUM VMS\\_toolchain\\cmake-4.4.4\\doc\\cmake\\cmzstd\\LICENSE",
+        "SHA256":  "D3BAADC2E1DD7A7E0B483633E6B39743C16A16F28D696BAFF507FCD451F3D4AD",
+        "ComponentVersion":  "Not independently established; bundled with inspected CMake distribution",
+        "ProductDependency":  false
+    }
+]

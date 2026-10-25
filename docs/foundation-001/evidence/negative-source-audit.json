@@ -1,0 +1,7 @@
+﻿{
+    "Scope":  "libs/ and apps/ source; inspect full sources together with imports",
+    "ForbiddenNetworkIpcGlobalMutationApiMatches":  [
+
+                                                    ],
+    "Result":  "No matching API calls"
+}

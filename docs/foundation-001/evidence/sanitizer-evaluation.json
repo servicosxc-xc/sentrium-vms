@@ -1,0 +1,12 @@
+﻿{
+    "CompilerFileVersion":  "19.44.35229.0",
+    "LibraryDirectory":  "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.44.35207\\lib\\x64",
+    "RuntimeDirectory":  "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.44.35207\\bin\\Hostx64\\x64",
+    "AsanLibraries":  [
+                          null
+                      ],
+    "AsanRuntimeFiles":  [
+                             null
+                         ],
+    "Result":  "NOT AVAILABLE in approved installation: no ASan libs/runtime; no sanitizer test executed; no installation attempted"
+}

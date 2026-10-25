@@ -1,0 +1,677 @@
+﻿[
+    {
+        "Path":  "acceptance-matrix.md",
+        "Bytes":  6291,
+        "SHA256":  "274C0469A6096B481B8CF6D5A0C4435FC79BF38B482616F2F28DAB5951B10C24"
+    },
+    {
+        "Path":  "adr-001-evidence.md",
+        "Bytes":  896,
+        "SHA256":  "A6E3239346A03938AAAE01CC1CF67E5BD11C11DD0817FD51B4BD0F28E0AA64D9"
+    },
+    {
+        "Path":  "adr-002-evidence.md",
+        "Bytes":  1204,
+        "SHA256":  "972FB06C1AA392E3CDD71A162DAD11871E7B1FCD4CD192389C0A90BF3989E803"
+    },
+    {
+        "Path":  "architecture-check.md",
+        "Bytes":  1564,
+        "SHA256":  "3111B9CE34DFFADB22ED8D8A042C416A943345CB826C229E50B18495E3A0467F"
+    },
+    {
+        "Path":  "auxiliary-tool-inventory.json",
+        "Bytes":  307,
+        "SHA256":  "E94F6BA9A894B8DDF6DFF1E44F0ABE5CE3DD0307E6D902F05B49F38DAE96E30B"
+    },
+    {
+        "Path":  "dataroot-security.md",
+        "Bytes":  1972,
+        "SHA256":  "FD5F7DFFF2375323A978AB87C688F3D4E382BFB10FFEC5F4DFB8188E4D2C00A3"
+    },
+    {
+        "Path":  "dependency-inventory.md",
+        "Bytes":  2289,
+        "SHA256":  "359D60F34984599E8F1498D515C8C9F075CAC5E0D97F9F5A35903F1056B4E9B0"
+    },
+    {
+        "Path":  "filesystem-process-api-audit.txt",
+        "Bytes":  2058,
+        "SHA256":  "F9F978338B1B972D4E19C3226275921D50FBE3E4116752B1D444CD29A0873281"
+    },
+    {
+        "Path":  "final-verification.json",
+        "Bytes":  7915,
+        "SHA256":  "DADB7C6C3E5809EFBC60E53B96D666135C4439F07F6BFEE8ECEF4D4DFAA1A5E5"
+    },
+    {
+        "Path":  "health-bootstrap.jsonl",
+        "Bytes":  528,
+        "SHA256":  "D1BB36394AEB3EF9F68B6BF85B2CA17F4D76C0D5A8633063099411A4013AC526"
+    },
+    {
+        "Path":  "health-exit.txt",
+        "Bytes":  3,
+        "SHA256":  "13BF7B3039C63BF5A50491FA3CFD8EB4E699D1BA1436315AEF9CBE5711530354"
+    },
+    {
+        "Path":  "health-output.json",
+        "Bytes":  314,
+        "SHA256":  "9CB2955255F31E81466C91DA02EDE7AE8B81F80887882844831E873F19E1E0CF"
+    },
+    {
+        "Path":  "health-runtime.jsonl",
+        "Bytes":  2154,
+        "SHA256":  "1990FA196A0BDD7BCFF6DE16DA2EFE9F43C23DBA0CC932DC940C4AC802D61A8A"
+    },
+    {
+        "Path":  "negative-source-audit.json",
+        "Bytes":  247,
+        "SHA256":  "BBD8D4D5C1BA4D95CC2F032765E39CB95161886B03320A984FE14DF850BAD139"
+    },
+    {
+        "Path":  "preflight-report.md",
+        "Bytes":  2854,
+        "SHA256":  "2CF51C7A913389811AD64863C623E724A33BED5BD1CC0442336AF4E6BDA92ED6"
+    },
+    {
+        "Path":  "rollback-bootstrap.jsonl",
+        "Bytes":  528,
+        "SHA256":  "39E8694C99EE65EE51C4E054FE16B00064B0A6256D1F5B2318A3C239DC9E2C54"
+    },
+    {
+        "Path":  "rollback-health-output.json",
+        "Bytes":  312,
+        "SHA256":  "B33D8F11A7F2BA04F0F7B0EA827E302BC16E892B26015AE45318E7F1BB878EED"
+    },
+    {
+        "Path":  "rollback-report.md",
+        "Bytes":  1623,
+        "SHA256":  "F2384B2B37FBE6FE066BD877BEF0C6F7D578BCF4BB4C456B401DD5AF5C8E668A"
+    },
+    {
+        "Path":  "rollback-result.json",
+        "Bytes":  2289,
+        "SHA256":  "EB6DC8F5E1C2A58352FACC571BFCF777468666308144056D2DE1AF4F8B85F374"
+    },
+    {
+        "Path":  "runtime-inventory.json",
+        "Bytes":  5332,
+        "SHA256":  "C0B61180957D650C63414630BA40F1B5DDCAD22F516622301491B3680092469D"
+    },
+    {
+        "Path":  "runtime-transitive-dependents.txt",
+        "Bytes":  24633,
+        "SHA256":  "57DE71B0E10E412AB27967C665165709EFB228989FB29E9808FA53495837C823"
+    },
+    {
+        "Path":  "sanitizer-evaluation.json",
+        "Bytes":  645,
+        "SHA256":  "380B4BC614E6CF8E95E25CA54057B8499D89D2E583F1136CFCF948E00F872181"
+    },
+    {
+        "Path":  "sbom-initial.md",
+        "Bytes":  3196,
+        "SHA256":  "0D47FA6A7E1698E8BBD4763ADEECC880F0F17D0C60866A674923376B4E8365CF"
+    },
+    {
+        "Path":  "sentrium-final/build-id.txt",
+        "Bytes":  28,
+        "SHA256":  "3E28A55E45621718B1836F2A8B107F8C9DF9ED10495E2CF755FF181DF48FFD63"
+    },
+    {
+        "Path":  "sentrium-final/msvc-environment.txt",
+        "Bytes":  4051,
+        "SHA256":  "802B939E25666B0505848D61F65DF8E5CDB40B640B4FB57E9329EE617A3D567D"
+    },
+    {
+        "Path":  "sentrium-final/preflight.json",
+        "Bytes":  1213,
+        "SHA256":  "20865C0C7D3492558F20CD03F6C8ACB83F0CBDB0605E151024717E6E2E3C80C9"
+    },
+    {
+        "Path":  "sentrium-final/sdk-packages.json",
+        "Bytes":  3409,
+        "SHA256":  "54F5EE22BEE6415B241B83E774A2805A07165B4C15E63883D39982A25763A1CB"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-debug-binary-hashes.json",
+        "Bytes":  680,
+        "SHA256":  "94359C17863951F937CB3B93EF0BE0D890DE80B39E5AD90A0569E3B406350D33"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-debug-build.log",
+        "Bytes":  709502,
+        "SHA256":  "7535D5A671506ACB0FAE6D6022B3B20D004509838D0ED0C3892B31F25E1D7777"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-debug-build-command.json",
+        "Bytes":  369,
+        "SHA256":  "1EF14DD462B69985FF7682E98F5870C0A8360AF620C11E5066CAC89673B04874"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-debug-build-exit.txt",
+        "Bytes":  3,
+        "SHA256":  "13BF7B3039C63BF5A50491FA3CFD8EB4E699D1BA1436315AEF9CBE5711530354"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-debug-configure.log",
+        "Bytes":  1232,
+        "SHA256":  "79A2168AEBA35AC0F528A74C756353802AB7BDC7A46862AD4B4A933696CFBF93"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-debug-configure-command.json",
+        "Bytes":  369,
+        "SHA256":  "8F3D077846C0C3CABBB5CFAD174886C8A9CA1EF8CA0797B728CB77C5F070A877"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-debug-configure-exit.txt",
+        "Bytes":  3,
+        "SHA256":  "13BF7B3039C63BF5A50491FA3CFD8EB4E699D1BA1436315AEF9CBE5711530354"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-debug-headers.log",
+        "Bytes":  13752,
+        "SHA256":  "819C8756DF3D6F4134961D3C4D20ED6D5F10243CB927E2B5C5DCC34D788E18D9"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-debug-headers-command.json",
+        "Bytes":  443,
+        "SHA256":  "8D3085D49CA91EC578AA2298E6AB2BF132B43792C29B762466C8DC17E2246B30"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-debug-headers-exit.txt",
+        "Bytes":  3,
+        "SHA256":  "13BF7B3039C63BF5A50491FA3CFD8EB4E699D1BA1436315AEF9CBE5711530354"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-debug-imports.log",
+        "Bytes":  25774,
+        "SHA256":  "259CA898AB4A93F63DA7D69DB7BF6EE11DEF39A15C841596DCDF4FB397A1B4D5"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-debug-imports-command.json",
+        "Bytes":  443,
+        "SHA256":  "689A04EEC631D3FC03732E6FA3A2711083B54D154DA476FAFD3826B9142DFFFF"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-debug-imports-exit.txt",
+        "Bytes":  3,
+        "SHA256":  "13BF7B3039C63BF5A50491FA3CFD8EB4E699D1BA1436315AEF9CBE5711530354"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-debug-junit.xml",
+        "Bytes":  4209,
+        "SHA256":  "F92C3684E4DB9773306A3D675FD88827766078E32D928D9E651D394B2E0E70F6"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-debug-LastTest.log",
+        "Bytes":  14525,
+        "SHA256":  "EDA5B161D9B4E54248B7A4D175783444DED5CE3C2AE83C81592506BB1B787FA2"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-debug-test.log",
+        "Bytes":  20142,
+        "SHA256":  "10675EAF7E793043EEE77297AB282EE89C8E600EEA74309BC42B54919DFEC6C5"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-debug-test-command.json",
+        "Bytes":  532,
+        "SHA256":  "843F9F55250260FD83851CD9B0D187A265CEFB4C7D90702BB89946BF5E7C6B13"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-debug-test-exit.txt",
+        "Bytes":  3,
+        "SHA256":  "13BF7B3039C63BF5A50491FA3CFD8EB4E699D1BA1436315AEF9CBE5711530354"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-release-binary-hashes.json",
+        "Bytes":  686,
+        "SHA256":  "85BC8328B3EF461EF80B3C6741BF954D4B42B0131F1273BC27BE25B53B862376"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-release-build.log",
+        "Bytes":  712810,
+        "SHA256":  "ABC5DFF23F9E4AC389A7C8755EA2D6E37A1D21B3D4043B9CB1CBCE00A101C284"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-release-build-command.json",
+        "Bytes":  371,
+        "SHA256":  "65D334718EA09E7ECA10B50C4A9EF189BD54DB0666AE268D584AF29ADD3D3923"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-release-build-exit.txt",
+        "Bytes":  3,
+        "SHA256":  "13BF7B3039C63BF5A50491FA3CFD8EB4E699D1BA1436315AEF9CBE5711530354"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-release-configure.log",
+        "Bytes":  1236,
+        "SHA256":  "9E09E81F95F3005031FAE8E49066ED7E0864B5EEC35A7BE4BFE8BAB877F67821"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-release-configure-command.json",
+        "Bytes":  371,
+        "SHA256":  "C88F603E551A434F7BE7A2E65692B926D86691F8ACE55A08F1D1D08A6842CC13"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-release-configure-exit.txt",
+        "Bytes":  3,
+        "SHA256":  "13BF7B3039C63BF5A50491FA3CFD8EB4E699D1BA1436315AEF9CBE5711530354"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-release-headers.log",
+        "Bytes":  11410,
+        "SHA256":  "EF69F735CC8E45757B89EA58121298A72C75E2639B59F05394C6F5073441AAB4"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-release-headers-command.json",
+        "Bytes":  445,
+        "SHA256":  "090229237634F65307FA0D316735788AC52B8E06B60DE2F37118B2156CB21301"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-release-headers-exit.txt",
+        "Bytes":  3,
+        "SHA256":  "13BF7B3039C63BF5A50491FA3CFD8EB4E699D1BA1436315AEF9CBE5711530354"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-release-imports.log",
+        "Bytes":  25086,
+        "SHA256":  "79AD3958FB5684F3B664B660E954D07409570EC7F4035F331B39111A0E71D03F"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-release-imports-command.json",
+        "Bytes":  445,
+        "SHA256":  "9841BE36BE7FEA563A9CF2E94F83A8C91240DDB639CD5C7EB5A4763A409FDC5D"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-release-imports-exit.txt",
+        "Bytes":  3,
+        "SHA256":  "13BF7B3039C63BF5A50491FA3CFD8EB4E699D1BA1436315AEF9CBE5711530354"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-release-junit.xml",
+        "Bytes":  4423,
+        "SHA256":  "8B64E6BB0D81F8BB7EE5C11287DA0E4781B022D6E8D74A65AA7789ACB7327897"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-release-LastTest.log",
+        "Bytes":  14838,
+        "SHA256":  "3C3955D0A73582FF1373185C56B2AE12A7228EE4444B185B3C75BCA8C8FCC814"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-release-test.log",
+        "Bytes":  20820,
+        "SHA256":  "201257217CEAC00F88B20673885923478D7E12D36A5D9D0B71724AD5CE944622"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-release-test-command.json",
+        "Bytes":  536,
+        "SHA256":  "BAEA3936EA225E52E499E1DA2A8F17212C28168448C1D53C5404AD1F04F86F6A"
+    },
+    {
+        "Path":  "sentrium-final/sentrium-release-test-exit.txt",
+        "Bytes":  3,
+        "SHA256":  "13BF7B3039C63BF5A50491FA3CFD8EB4E699D1BA1436315AEF9CBE5711530354"
+    },
+    {
+        "Path":  "sentrium-final/source-inventory.json",
+        "Bytes":  2160,
+        "SHA256":  "45A8799EA87FE4B8FA80065C0A1A3C1A60CFD1503B22D53BED46FA8319B2B645"
+    },
+    {
+        "Path":  "sentrium-final/toolchain-hashes.json",
+        "Bytes":  1445,
+        "SHA256":  "8CA971099EE2F551ECE262DBB2F6FC2AD1AFC0BEED097086F9202A1AAF9E894C"
+    },
+    {
+        "Path":  "sentrium-final/vswhere.json",
+        "Bytes":  5479,
+        "SHA256":  "06134C4D30DFEBE67D9D020259D3A61C941FDDCF9E66F822D8833CA09819827F"
+    },
+    {
+        "Path":  "sentrium-initial-automation-error.txt",
+        "Bytes":  801,
+        "SHA256":  "7F149C05115E1C6288E3CBF0E3D6A801BDEDDBF1C94EA016DEA109C8FED8F179"
+    },
+    {
+        "Path":  "sentrium-initial-automation-stderr.txt",
+        "Bytes":  815,
+        "SHA256":  "7C14939F22FA0FFE9EC43F0605BF2C6837164903A886F2B6A474A373CE9A50F5"
+    },
+    {
+        "Path":  "sentrium-reproduction/build-id.txt",
+        "Bytes":  28,
+        "SHA256":  "3E28A55E45621718B1836F2A8B107F8C9DF9ED10495E2CF755FF181DF48FFD63"
+    },
+    {
+        "Path":  "sentrium-reproduction/msvc-environment.txt",
+        "Bytes":  4051,
+        "SHA256":  "7F4450CCA5188C19E774D76332EF86899B84FAF3A1294DCD9A80A3CFDE2C6F21"
+    },
+    {
+        "Path":  "sentrium-reproduction/preflight.json",
+        "Bytes":  1213,
+        "SHA256":  "20865C0C7D3492558F20CD03F6C8ACB83F0CBDB0605E151024717E6E2E3C80C9"
+    },
+    {
+        "Path":  "sentrium-reproduction/sdk-packages.json",
+        "Bytes":  3409,
+        "SHA256":  "54F5EE22BEE6415B241B83E774A2805A07165B4C15E63883D39982A25763A1CB"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-debug-binary-hashes.json",
+        "Bytes":  680,
+        "SHA256":  "4441FB938CCA60CA9CA2E08C1C858360298D6A21C49A38AAC65EAFB72139AAA4"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-debug-build.log",
+        "Bytes":  709502,
+        "SHA256":  "7535D5A671506ACB0FAE6D6022B3B20D004509838D0ED0C3892B31F25E1D7777"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-debug-build-command.json",
+        "Bytes":  369,
+        "SHA256":  "1EF14DD462B69985FF7682E98F5870C0A8360AF620C11E5066CAC89673B04874"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-debug-build-exit.txt",
+        "Bytes":  3,
+        "SHA256":  "13BF7B3039C63BF5A50491FA3CFD8EB4E699D1BA1436315AEF9CBE5711530354"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-debug-configure.log",
+        "Bytes":  1232,
+        "SHA256":  "7EEACECFE42953432DC78F616514EBA3F9947335099AEEFBBC5CEE762C4B71FA"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-debug-configure-command.json",
+        "Bytes":  369,
+        "SHA256":  "8F3D077846C0C3CABBB5CFAD174886C8A9CA1EF8CA0797B728CB77C5F070A877"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-debug-configure-exit.txt",
+        "Bytes":  3,
+        "SHA256":  "13BF7B3039C63BF5A50491FA3CFD8EB4E699D1BA1436315AEF9CBE5711530354"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-debug-headers.log",
+        "Bytes":  13752,
+        "SHA256":  "FCBCD7B56845167A7B863768CD063F2A60B1372B513D9ECC1226D5A52C681CC0"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-debug-headers-command.json",
+        "Bytes":  443,
+        "SHA256":  "8D3085D49CA91EC578AA2298E6AB2BF132B43792C29B762466C8DC17E2246B30"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-debug-headers-exit.txt",
+        "Bytes":  3,
+        "SHA256":  "13BF7B3039C63BF5A50491FA3CFD8EB4E699D1BA1436315AEF9CBE5711530354"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-debug-imports.log",
+        "Bytes":  25774,
+        "SHA256":  "259CA898AB4A93F63DA7D69DB7BF6EE11DEF39A15C841596DCDF4FB397A1B4D5"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-debug-imports-command.json",
+        "Bytes":  443,
+        "SHA256":  "689A04EEC631D3FC03732E6FA3A2711083B54D154DA476FAFD3826B9142DFFFF"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-debug-imports-exit.txt",
+        "Bytes":  3,
+        "SHA256":  "13BF7B3039C63BF5A50491FA3CFD8EB4E699D1BA1436315AEF9CBE5711530354"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-debug-junit.xml",
+        "Bytes":  4205,
+        "SHA256":  "8B7E14D48EAFE738AE18184AABCF69E4648A8BABCD7BE5AD738117F04424B22F"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-debug-LastTest.log",
+        "Bytes":  14525,
+        "SHA256":  "8D97BC0E855D5754E81A982360D98A211F52D178C543F173BCD29FB1387F3024"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-debug-test.log",
+        "Bytes":  20142,
+        "SHA256":  "270FB473951BB382D324B18D18FE03D8B6E939C8BDD20BF7ED83444035BFA908"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-debug-test-command.json",
+        "Bytes":  539,
+        "SHA256":  "BEA090B1D9262FEE12D01FE5BDF892AF1BDB69D6D2456897E3AE11F630BB0FE2"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-debug-test-exit.txt",
+        "Bytes":  3,
+        "SHA256":  "13BF7B3039C63BF5A50491FA3CFD8EB4E699D1BA1436315AEF9CBE5711530354"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-release-binary-hashes.json",
+        "Bytes":  686,
+        "SHA256":  "D8A57F8DF8CD66415C1CD84FBCA9096DEAA36BC4C6A2A4E35DB75610C653FDC4"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-release-build.log",
+        "Bytes":  712810,
+        "SHA256":  "991A86E0E15F356ABC68D98024B340E1B635C54EFDDA78255BB1CBA866498634"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-release-build-command.json",
+        "Bytes":  371,
+        "SHA256":  "65D334718EA09E7ECA10B50C4A9EF189BD54DB0666AE268D584AF29ADD3D3923"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-release-build-exit.txt",
+        "Bytes":  3,
+        "SHA256":  "13BF7B3039C63BF5A50491FA3CFD8EB4E699D1BA1436315AEF9CBE5711530354"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-release-configure.log",
+        "Bytes":  1236,
+        "SHA256":  "458951C977B2C9CF16DD5E6177E3B059159969A6306CE72E2009AF7479EB4871"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-release-configure-command.json",
+        "Bytes":  371,
+        "SHA256":  "C88F603E551A434F7BE7A2E65692B926D86691F8ACE55A08F1D1D08A6842CC13"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-release-configure-exit.txt",
+        "Bytes":  3,
+        "SHA256":  "13BF7B3039C63BF5A50491FA3CFD8EB4E699D1BA1436315AEF9CBE5711530354"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-release-headers.log",
+        "Bytes":  11410,
+        "SHA256":  "26ABE4769DE8AC920D2B3504AE027D64DC6F88D7A236BA355F27FEA9F136CD0A"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-release-headers-command.json",
+        "Bytes":  445,
+        "SHA256":  "090229237634F65307FA0D316735788AC52B8E06B60DE2F37118B2156CB21301"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-release-headers-exit.txt",
+        "Bytes":  3,
+        "SHA256":  "13BF7B3039C63BF5A50491FA3CFD8EB4E699D1BA1436315AEF9CBE5711530354"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-release-imports.log",
+        "Bytes":  25086,
+        "SHA256":  "79AD3958FB5684F3B664B660E954D07409570EC7F4035F331B39111A0E71D03F"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-release-imports-command.json",
+        "Bytes":  445,
+        "SHA256":  "9841BE36BE7FEA563A9CF2E94F83A8C91240DDB639CD5C7EB5A4763A409FDC5D"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-release-imports-exit.txt",
+        "Bytes":  3,
+        "SHA256":  "13BF7B3039C63BF5A50491FA3CFD8EB4E699D1BA1436315AEF9CBE5711530354"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-release-junit.xml",
+        "Bytes":  4422,
+        "SHA256":  "655DC48CAD5DEA4E53A4E0DC44D484090B100EDE081B347428A31008648188EF"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-release-LastTest.log",
+        "Bytes":  14838,
+        "SHA256":  "B3A84AF7A420577EDB9C2D1B2DDE76F6F6B1E5B070C69DE9ABC4ABA6F002E241"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-release-test.log",
+        "Bytes":  20820,
+        "SHA256":  "696A87EA0266D0F33B2D15E121F37ECDE6B6A5E103636071B6773A3F319459F7"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-release-test-command.json",
+        "Bytes":  543,
+        "SHA256":  "710CABADDABCC5E154732520197505A8E88249E3959170038D64CC4CD4CD6B2F"
+    },
+    {
+        "Path":  "sentrium-reproduction/sentrium-release-test-exit.txt",
+        "Bytes":  3,
+        "SHA256":  "13BF7B3039C63BF5A50491FA3CFD8EB4E699D1BA1436315AEF9CBE5711530354"
+    },
+    {
+        "Path":  "sentrium-reproduction/source-inventory.json",
+        "Bytes":  2160,
+        "SHA256":  "45A8799EA87FE4B8FA80065C0A1A3C1A60CFD1503B22D53BED46FA8319B2B645"
+    },
+    {
+        "Path":  "sentrium-reproduction/toolchain-hashes.json",
+        "Bytes":  1445,
+        "SHA256":  "8CA971099EE2F551ECE262DBB2F6FC2AD1AFC0BEED097086F9202A1AAF9E894C"
+    },
+    {
+        "Path":  "sentrium-reproduction/vswhere.json",
+        "Bytes":  5479,
+        "SHA256":  "06134C4D30DFEBE67D9D020259D3A61C941FDDCF9E66F822D8833CA09819827F"
+    },
+    {
+        "Path":  "sentrium-rollback-ca72cb49-327c-45c4-938e-e2be419c1e3b/runtime/logs/sentrium-0.jsonl",
+        "Bytes":  2154,
+        "SHA256":  "9830C598F11E141CCC4D69F35C5A98BC7C739A70FB0BCFA781E02321BF6FE234"
+    },
+    {
+        "Path":  "sentrium-rollback-ca72cb49-327c-45c4-938e-e2be419c1e3b/runtime/sentrium.lock",
+        "Bytes":  0,
+        "SHA256":  "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+        "Path":  "sentrium-validation/build-id.txt",
+        "Bytes":  28,
+        "SHA256":  "BE0AF85F9E9E194BF762FBC3D093496B690454DC44D931D8F8230599E1671DF3"
+    },
+    {
+        "Path":  "sentrium-validation/msvc-environment.txt",
+        "Bytes":  4051,
+        "SHA256":  "802B939E25666B0505848D61F65DF8E5CDB40B640B4FB57E9329EE617A3D567D"
+    },
+    {
+        "Path":  "sentrium-validation/preflight.json",
+        "Bytes":  1213,
+        "SHA256":  "20865C0C7D3492558F20CD03F6C8ACB83F0CBDB0605E151024717E6E2E3C80C9"
+    },
+    {
+        "Path":  "sentrium-validation/sdk-packages.json",
+        "Bytes":  3409,
+        "SHA256":  "54F5EE22BEE6415B241B83E774A2805A07165B4C15E63883D39982A25763A1CB"
+    },
+    {
+        "Path":  "sentrium-validation/sentrium-debug-build.log",
+        "Bytes":  709502,
+        "SHA256":  "7535D5A671506ACB0FAE6D6022B3B20D004509838D0ED0C3892B31F25E1D7777"
+    },
+    {
+        "Path":  "sentrium-validation/sentrium-debug-build-command.json",
+        "Bytes":  369,
+        "SHA256":  "1EF14DD462B69985FF7682E98F5870C0A8360AF620C11E5066CAC89673B04874"
+    },
+    {
+        "Path":  "sentrium-validation/sentrium-debug-build-exit.txt",
+        "Bytes":  3,
+        "SHA256":  "13BF7B3039C63BF5A50491FA3CFD8EB4E699D1BA1436315AEF9CBE5711530354"
+    },
+    {
+        "Path":  "sentrium-validation/sentrium-debug-configure.log",
+        "Bytes":  1232,
+        "SHA256":  "011E0CF89232672C9DF776614743E4077A1F06A7C73CE46113A37FA03880D5F2"
+    },
+    {
+        "Path":  "sentrium-validation/sentrium-debug-configure-command.json",
+        "Bytes":  369,
+        "SHA256":  "EAA2594F188E148D41BEE5CBD13122E33FA5E0F41AEF28EDDE560E4537499E1D"
+    },
+    {
+        "Path":  "sentrium-validation/sentrium-debug-configure-exit.txt",
+        "Bytes":  3,
+        "SHA256":  "13BF7B3039C63BF5A50491FA3CFD8EB4E699D1BA1436315AEF9CBE5711530354"
+    },
+    {
+        "Path":  "sentrium-validation/sentrium-debug-junit.xml",
+        "Bytes":  4117,
+        "SHA256":  "86458742D618381CF4685669BB61DAFD6B24656AF9C909E14AEFA6BCF6C80B9F"
+    },
+    {
+        "Path":  "sentrium-validation/sentrium-debug-test.log",
+        "Bytes":  20118,
+        "SHA256":  "86F9ACA3567FFEA806F234C27735B7EC7697F3F870C412DFA6D9C56A9AEF9B74"
+    },
+    {
+        "Path":  "sentrium-validation/sentrium-debug-test-command.json",
+        "Bytes":  537,
+        "SHA256":  "665B38732C3925541BE5EFD30D307A000F54E5E2D87BBC211FA5C3B0A9F22C4E"
+    },
+    {
+        "Path":  "sentrium-validation/source-inventory.json",
+        "Bytes":  2160,
+        "SHA256":  "ED25AD0159695970D96C052C2E02D286F88E43444074F50A8A59A623F351C1D1"
+    },
+    {
+        "Path":  "sentrium-validation/toolchain-hashes.json",
+        "Bytes":  1445,
+        "SHA256":  "8CA971099EE2F551ECE262DBB2F6FC2AD1AFC0BEED097086F9202A1AAF9E894C"
+    },
+    {
+        "Path":  "sentrium-validation/vswhere.json",
+        "Bytes":  5479,
+        "SHA256":  "06134C4D30DFEBE67D9D020259D3A61C941FDDCF9E66F822D8833CA09819827F"
+    },
+    {
+        "Path":  "sentrium-validation-classification.md",
+        "Bytes":  1290,
+        "SHA256":  "BC1D525A88BC9A0F1F74E33E565826AB02254398AAABB8285F6F2CDB33BE3037"
+    },
+    {
+        "Path":  "test-results.md",
+        "Bytes":  3169,
+        "SHA256":  "1C584A99AF89D7215A1D86E346F50C109B4B83DB91147BE0C39A1A31BE03D591"
+    },
+    {
+        "Path":  "test-summary.json",
+        "Bytes":  966,
+        "SHA256":  "FB57935414E91B5577AB3EBA8C827C687911CFA6C029854E7411A1830F88E932"
+    },
+    {
+        "Path":  "threat-model.md",
+        "Bytes":  2493,
+        "SHA256":  "0470E97351798CAF898E528D80DE2817605D3D1F35545E8C8083E4BF036250AD"
+    },
+    {
+        "Path":  "tool-license-inventory.json",
+        "Bytes":  4337,
+        "SHA256":  "34E563A1D8B94521BF16B58326CFAA5092470C740BF862BF7754EF01072730CA"
+    },
+    {
+        "Path":  "warnings-check.json",
+        "Bytes":  781,
+        "SHA256":  "4884012207FEAA4AA0DAF788E1429B7C809A2AAC032DA2618484B669C2D529FC"
+    }
+]
