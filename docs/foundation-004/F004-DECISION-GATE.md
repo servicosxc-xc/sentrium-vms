@@ -1,6 +1,6 @@
 # F004 MEDIA LAB — DECISION GATE 0.1
 
-**Estado:** PROPOSED  
+**Estado:** AUTHORIZED FOR EXECUTION  
 **Foundation:** SENTRIUM-CPP-Foundation-004 — Media Lab
 
 ## Objetivo do gate
@@ -34,4 +34,4 @@ A execução poderá:
 
 ## Estado atual
 
-**FOUNDATION-004 — NOT YET AUTHORIZED FOR IMPLEMENTATION**
+**FOUNDATION-004 — AUTHORIZED FOR EXECUTION**
