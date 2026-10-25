@@ -556,9 +556,12 @@ StreamResult run_stream(
 
         std::atomic<bool> stop_consumer{false};
         std::jthread consumer([&](std::stop_token token) {
-            while (!token.stop_requested() && !stop_consumer.load()) {
+            while (!token.stop_requested()) {
                 auto packet = queue.try_pop();
                 if (!packet) {
+                    if (stop_consumer.load()) {
+                        break;
+                    }
                     std::this_thread::sleep_for(std::chrono::milliseconds(1));
                     continue;
                 }
@@ -597,7 +600,6 @@ StreamResult run_stream(
 
         real_play.stop();
         stop_consumer = true;
-        consumer.request_stop();
         consumer.join();
         play.close();
 
