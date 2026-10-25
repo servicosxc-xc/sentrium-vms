@@ -66,10 +66,8 @@ add_library(sentrium-device libs/sentrium-device/device.cpp)
 target_include_directories(sentrium-device PUBLIC libs/sentrium-device/include)
 
 add_library(sentrium-intelbras libs/sentrium-intelbras/intelbras.cpp)
-target_include_directories(sentrium-intelbras
-  PUBLIC libs/sentrium-intelbras/include
-  PRIVATE "${SENTRIUM_INTELBRAS_SDK_ROOT}/include"
-)
+target_include_directories(sentrium-intelbras PUBLIC libs/sentrium-intelbras/include)
+target_include_directories(sentrium-intelbras SYSTEM PRIVATE "${SENTRIUM_INTELBRAS_SDK_ROOT}/include")
 target_compile_definitions(sentrium-intelbras PRIVATE UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX)
 target_link_libraries(sentrium-intelbras PUBLIC sentrium-device PRIVATE kernel32)
 
