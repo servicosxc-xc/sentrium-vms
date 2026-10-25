@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
             break;
         }
         case 8:
-            require(product == "SENTRIUM VMS" && version == "0.0.0-foundation001" && !build_id.empty(), "build identity");
+            require(product == "SENTRIUM VMS" && version == "0.0.0-foundation002" && !build_id.empty(), "build identity");
             require(health_json(lifecycle.health()).find("\"StartupMs\":null") != std::string::npos, "unavailable metric");
             require(build_configuration == "Debug" || build_configuration == "Release" || build_configuration == "RelWithDebInfo", "configuration");
             break;
