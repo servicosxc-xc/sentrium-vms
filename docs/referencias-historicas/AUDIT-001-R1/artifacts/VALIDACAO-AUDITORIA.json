@@ -1,0 +1,57 @@
+{
+  "status": "PASS",
+  "mandatoryDocuments": 15,
+  "adrsProposed": 10,
+  "components": 377,
+  "testCases": 151,
+  "testSourceMappingMissing": 0,
+  "jsonParsed": 16,
+  "brokenLinks": [],
+  "forbiddenProductOrOperationalFiles": [],
+  "credentialPatternFindings": [],
+  "integrity": {
+    "beforeFiles": 1922,
+    "afterFiles": 1922,
+    "beforeBytes": 723275780,
+    "afterBytes": 723284015,
+    "unreadableBefore": 0,
+    "unreadableAfter": 0,
+    "allHashesIdentical": false,
+    "differences": [
+      {
+        "path": "src/XC.VideoIA.Server/bin/Debug/net10.0/sdk_log/sdk_log.log",
+        "change": "changed",
+        "before": {
+          "Path": "src/XC.VideoIA.Server/bin/Debug/net10.0/sdk_log/sdk_log.log",
+          "Bytes": 267197,
+          "SHA256": "48936650615481E802878E9207FC10E02B217304AEAF3DE17ABA118EBB15234E",
+          "Status": "OK"
+        },
+        "after": {
+          "Path": "src/XC.VideoIA.Server/bin/Debug/net10.0/sdk_log/sdk_log.log",
+          "Bytes": 275432,
+          "SHA256": "3607AD27059557E1928675EAAF46764C94AF69F4993D628BBA5581D4B747494E",
+          "Status": "OK"
+        }
+      }
+    ],
+    "inventoriedSourceDifferences": [],
+    "method": "Content hashes, paths, sizes; no source writes by audit. Existing runtime not stopped; volatile log may change externally."
+  },
+  "limitations": [
+    "static lexical analysis, not AST",
+    "existing 151 test results read, tests not rerun",
+    "no hardware or production validation",
+    "credential scan heuristic; configuration values not exported"
+  ],
+  "intelbrasDocumentaryRevision": {
+    "date": "2026-10-23",
+    "report": "VALIDACAO-REVISAO-INTELBRAS.json",
+    "mandatoryDocuments": 15,
+    "brokenLinks": [],
+    "credentialPatternFindings": [],
+    "cpp001Started": false,
+    "originalIntegrityReportPreserved": true,
+    "newEvidenceOrigin": "user supplied IL/runtime/package findings; not independently rerun"
+  }
+}

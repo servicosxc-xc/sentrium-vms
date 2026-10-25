@@ -1,0 +1,84 @@
+{
+  "status": "PASS",
+  "date": "2026-10-23",
+  "scope": "Documentary Intelbras addendum; no SDK/runtime/capture/product execution",
+  "modifiedFiles": [
+    "AUDIT-001-RESULTADO.md",
+    "XC-VideoIA-v2-CPP-AUDIT-001.zip",
+    "XC-VideoIA-v2-CPP-AUDIT-001.zip.sha256",
+    "artifacts/AUDITORIA-SHA256.json",
+    "artifacts/MATRIZ-PARIDADE.json",
+    "artifacts/VALIDACAO-AUDITORIA.json",
+    "artifacts/VALIDACAO-PACOTE.json",
+    "docs/ARQUITETURA-CPP-PROPOSTA.md",
+    "docs/AUDITORIA-R25-PARA-CPP.md",
+    "docs/DECISAO-ARQUITETURAL-EXECUTIVA.md",
+    "docs/DEPENDENCIAS-E-LICENCAS.md",
+    "docs/MAPA-DEPENDENCIAS.md",
+    "docs/MATRIZ-R25-PARA-CPP.md",
+    "docs/RISCOS-E-BLOQUEIOS.md",
+    "docs/ROADMAP-CPP.md",
+    "docs/SDK-INTELBRAS-NATIVO-NECESSARIO.md",
+    "docs/adrs/ADR-010-interoperability-intelbras.md"
+  ],
+  "addedFiles": [
+    "AUDIT-001-INTELBRAS-CLOUD-ADDENDUM.md",
+    "artifacts/R25-REVISAO-INTELBRAS-ANTES.json",
+    "artifacts/R25-REVISAO-INTELBRAS-DEPOIS.json",
+    "artifacts/REVISAO-INTELBRAS-BASE-AUDITORIA.json",
+    "artifacts/VALIDACAO-REVISAO-INTELBRAS.json"
+  ],
+  "mandatoryDocumentsPresent": 15,
+  "missingDocuments": [],
+  "brokenLinks": [],
+  "jsonFilesParsed": 22,
+  "credentialPatternFindings": [],
+  "credentialCheckLimit": "Heuristic scan, no private credentials extracted or provided for this revision",
+  "forbiddenProductOperationalFiles": [],
+  "cpp001CandidateDirectories": [],
+  "cpp001Started": false,
+  "matrixComponents": 377,
+  "matrixComponentIdsUpdated": [
+    "CMP-ED1AF4EB3A",
+    "CMP-2BC61C3368"
+  ],
+  "testCases": 151,
+  "preservedEvidenceSHA256Checks": {
+    "artifacts/INVENTARIO-R25.json": true,
+    "artifacts/MAPA-TESTES-R25-CPP.json": true,
+    "artifacts/SDK-NATIVE-PE.json": true,
+    "artifacts/SDK-PINVOKE-R25.json": true,
+    "artifacts/SDK-CALLSITES-R25.json": true,
+    "artifacts/SDK-REACHABILITY.json": true,
+    "artifacts/R25-SHA256-ANTES.json": true,
+    "artifacts/R25-SHA256-DEPOIS.json": true,
+    "artifacts/R25-COMPARACAO-SHA256.json": true
+  },
+  "r25IntegrityThisRevision": {
+    "beforeFiles": 1922,
+    "afterFiles": 1922,
+    "allFilesIdentical": true,
+    "differences": [],
+    "inventoriedSourceChanges": [],
+    "writesByRevision": "none; commands only read r25",
+    "caveat": "Full hash comparison is not attribution of volatile log changes; existing processes were not stopped."
+  },
+  "blockersBefore": "Generic C++ SDK unavailable; Cloud treated as managed/API unavailable",
+  "resolvedTechnically": [
+    "Native NetSDK/PlaySDK C++ available",
+    "libt2u identified and exports known",
+    "native Cloud tunnel architecture",
+    "Direct/Relay via proxy, no obligatory .NET architecture"
+  ],
+  "remainingBlockers": [
+    "IB-01 redistribution authorization",
+    "IB-02 official bootstrap/configuration/credential",
+    "IB-03 standalone authorization",
+    "IB-04 clean Windows without SIM Next",
+    "IB-05 reconnect and Direct/Relay failover",
+    "IB-06 legacy SDK/runtime compatibility"
+  ],
+  "decision": "GO WITH BLOCKERS; future decoupled foundation not blocked; no Cloud production readiness",
+  "historicalGenerators": "Existing tools preserved as historical generators; do not rerun original generators to overwrite this documentary revision.",
+  "baselineNote": "Audit-document baseline captured after creating the revision BEFORE source manifest; that manifest is explicitly classified as added by this revision."
+}

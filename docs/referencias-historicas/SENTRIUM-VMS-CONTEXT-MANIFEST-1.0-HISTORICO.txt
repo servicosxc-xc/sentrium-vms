@@ -1,0 +1,808 @@
+# SENTRIUM VMS — Conclusão da validação documental
+
+BASELINE DOCUMENTAL VALIDADA
+
+A análise dos três lotes foi concluída. Os dez ADRs foram lidos integralmente e todos permanecem formalmente no estado `Proposed`. Nenhum foi alterado para `Accepted` ou `Approved`.
+
+O confronto com os documentos técnicos, o roadmap e os riscos revelou uma dependência circular de aprovação: a etapa 0 solicita ADRs aprovados antes da CPP-001, enquanto alguns critérios para aceitar os próprios ADRs exigem builds ou benchmarks previstos para etapas posteriores.
+
+Essa divergência está registrada como pendência de governança que bloqueia a autorização de implementação, mas não impede a validação da baseline documental, porque seu alcance, suas consequências e a decisão humana necessária estão identificados.
+
+Minha conclusão é que podemos promover o manifesto para 1.0 — BASELINE VALIDADA, exclusivamente no sentido documental definido por você. Isso não aprova os ADRs, não autoriza produção e não inicia a Foundation-001.
+
+# 30/30
+
+Documentos dos 3 lotes
+
+# 10/10
+
+ADRs lidos
+
+# 0/10
+
+ADRs aceitos
+
+## 1. Matriz dos dez ADRs
+
+| ADR e título exato               | Status documental | Decisão proposta                        | Condição principal                        |
+| -------------------------------- | ----------------- | --------------------------------------- | ----------------------------------------- |
+| 001 — linguagem-standard         | Proposed          | C++20 e RAII                            | MSVC x64, lifetime e cancelamento         |
+| 002 — build-dependency-manager   | Proposed          | CMake, Ninja e vcpkg                    | Builds reproduzíveis, dependências e SBOM |
+| 003 — server-framework           | Proposed          | Drogon para control plane               | HTTP/TLS/SignalR e event loops seguros    |
+| 004 — client-framework           | Proposed          | Qt Quick                                | 64 canais, DPI, overlays e licença        |
+| 005 — media-pipeline             | Proposed          | FFmpeg candidato; PlaySDK oracle        | RAW/DHAV, timestamps, playback e recovery |
+| 006 — hardware-decode            | Proposed          | D3D11VA prioritário no laboratório      | Cópias, GPU, cor, latência e fallback     |
+| 007 — ai-runtime                 | Proposed          | ONNX Runtime C++                        | Goldens YOLOX, tracker, ROI e drivers     |
+| 008 — lpr-runtime                | Proposed          | Detector/OCR nativos fiéis ao legado    | Pesos, YAML, licenças e corpus            |
+| 009 — persistence                | Proposed          | SQLite compatível com RAII              | WAL, JSON/UTC, DataRoot e segredos        |
+| 010 — interoperability-intelbras | Proposed          | NetSDK/PlaySDK nativos e Cloud separado | ABI, compatibilidade e IB-01–06           |
+
+Os estados e critérios acima foram conferidos diretamente nos arquivos individuais.&#x20;
+
+ADR-001-linguagem-standard.md
+
+ADR-004-client-framework.md
+
+ADR-007-ai-runtime.md
+
+ADR-010-interoperability-intelbras.md
+
+
+
+## 2. Dossiê consolidado dos ADRs
+
+Os ADRs são documentos curtos e possuem um campo genérico de consequências, em vez de análises separadas de vantagens, desvantagens e dependências. No manifesto abaixo, os estados, decisões, alternativas e gates são transcritos das fontes; os impactos positivos, negativos e vínculos entre ADRs são análises derivadas dos documentos técnicos dos Lotes 1 e 2. Essa distinção é essencial para não atribuir ao autor da auditoria decisões que ele não formalizou.
+
+# SENTRIUM-VMS-CONTEXT-MANIFEST 1.0
+
+**BASELINE DOCUMENTAL VALIDADA**
+
+**Produto:** SENTRIUM VMS\
+**Descrição:** Intelligent Video Management System\
+**Data da baseline:** 23/10/2026\
+**Auditoria de origem:** AUDIT-001-R1\
+**Referência legada:** XC Video IA Foundation-007-r25\
+**Status da auditoria:** GO WITH BLOCKERS\
+**Estado de implementação:** Nenhuma Foundation C++ iniciada\
+**Escopo desta validação:** Documental e arquitetural; não operacional nem de produção
+
+---
+
+## 1. Natureza desta baseline
+
+Este manifesto estabelece uma referência documental para o planejamento do SENTRIUM VMS.
+
+A baseline encontra-se validada quanto à identificação de fontes, entendimento do legado, rastreabilidade de componentes e testes, propostas arquiteturais, roadmap, ADRs, blockers e limites de evidência.
+
+Esta validação **não equivale a aprovação dos ADRs ou homologação técnica das tecnologias propostas**.
+
+Permanecem explicitamente pendentes as decisões que exigem provas de laboratório, benchmarks, licenças, autorizações de fornecedores, testes de compatibilidade e aprovação humana.
+
+A CPP-Foundation-001 somente poderá ser planejada e posteriormente autorizada por decisão específica.
+
+---
+
+## 2. Fontes de verdade e integridade
+
+### 2.1. Ordem de referência
+
+1. Handoff oficial do SENTRIUM VMS, como fonte da identidade e das diretrizes do produto.
+2. Código e comportamento da r25, como oracle de compatibilidade.
+3. AUDIT-001-RESULTADO e addendum Intelbras, com suas limitações de evidência.
+4. Documentos técnicos e matrizes estruturadas da AUDIT-001-R1.
+5. Dez ADRs individuais, respeitando o status registrado em cada arquivo.
+6. Relatórios e benchmarks históricos, preservando proveniência, entradas e data.
+7. Este manifesto, como síntese documental, sem sobrescrever os arquivos originais.
+
+### 2.2. Identidade dos artefatos
+
+**ZIP canônico AUDIT-001-R1 — SHA256 confirmado no computador de origem:**
+
+`9984882C20659B9ED47DB8EE0D4B971DF6C8F203BACA3E47955E0E062914C273`
+
+A identidade do pacote canônico foi aceita com base na confirmação fornecida de cálculo direto na origem, coincidente com o arquivo de checksum.
+
+O hash não foi recalculado independentemente neste ambiente.
+
+### 2.3. Integridade histórica da r25
+
+- Inventário integral: 1.922 arquivos.
+- Inventário de fontes/recursos: 377 arquivos.
+- Projetos: 13.
+- Linhas C# físicas: 63.446.
+- Wrapper NetSDK: 36.043 linhas.
+- Demais fontes C#: 27.403 linhas.
+- Casos históricos de teste: 151.
+- Divergências no manifesto integral original: 1 log gerado.
+- Alterações em fontes/recursos inventariados: 0.
+
+A alteração registrada no arquivo `sdk_log.log` impede declarar que a árvore integral permaneceu byte a byte idêntica naquela comparação.
+
+A revisão documental Intelbras posterior possui sua própria comparação de integridade, com escopo temporal distinto.
+
+---
+
+## 3. ADRs — estado formal
+
+**Resultado individual: 10 ADRs Proposed; 0 Accepted.**
+
+Os ADRs compartilham o contexto formal de migração da r25, com paridade, rollback imutável e auditoria sem implementação.
+
+As consequências específicas abaixo são análises arquiteturais derivadas. Os próprios ADRs registram consequências gerais de ownership explícito, contratos testáveis, observabilidade e controle de versões/licenças.
+
+### ADR-001 — linguagem-standard
+
+**Estado:** Proposed.
+
+**Problema:** escolher a linguagem e o padrão de desenvolvimento da nova geração mantendo concorrência, segurança de memória e capacidade de evolução.
+
+**Decisão proposta:** C++20 com RAII.
+
+**Alternativas documentadas:** C++17, com menor disponibilidade de recursos modernos de concorrência; C++23, com maiores exigências de toolchain.
+
+**Benefícios potenciais:** lifetime explícito, composição modular e mecanismos modernos de cancelamento.
+
+**Custos/riscos:** maior responsabilidade de ownership, interop nativa, sincronização e diagnóstico; C++ não elimina custos de decode e IO.
+
+**Dependências analisadas:** ADR-002 para toolchain; ADR-009 e ADR-010 para ownership de dados e SDKs.
+
+**Probes/gate de aceite:** compilação MSVC x64, sanitizadores disponíveis e demonstração de cancelamento/lifetime.
+
+**Implicação para CPP-001:** potencial escolha fundamental de linguagem, ainda sujeita à aprovação formal. A prova completa depende de execução posterior.
+
+### ADR-002 — build-dependency-manager
+
+**Estado:** Proposed.
+
+**Problema:** dependências e builds reproduzíveis, sem instalações ocultas ou bibliotecas incompatíveis.
+
+**Decisão proposta:** CMake, Ninja e vcpkg manifest/baseline.
+
+**Alternativas documentadas:** MSBuild puro e Conan.
+
+**Benefícios potenciais:** rastreabilidade de dependências, automação e consistência entre configurações.
+
+**Custos/riscos:** manutenção de versões transitivas, compatibilidade de CRT, MSVC, SDKs proprietários e configurações Debug/Release.
+
+**Dependências analisadas:** ADR-001; inventário de licenças; compatibilidade das dependências de ADR-003 e ADR-004.
+
+**Gate de aceite:** builds Debug/Release reproduzíveis, dependências fixadas e SBOM.
+
+**Implicação para CPP-001:** define uma proposta de infraestrutura de build, mas sua reprodutibilidade ainda terá de ser demonstrada.
+
+### ADR-003 — server-framework
+
+**Estado:** Proposed.
+
+**Problema:** substituir o plano de controle ASP.NET preservando contratos HTTP, autenticação e eventos.
+
+**Decisão proposta:** Drogon para control plane.
+
+**Alternativas documentadas:** Boost.Beast/Asio ou outro framework, com maior trabalho de infraestrutura.
+
+**Benefícios potenciais:** serviços assíncronos e separação entre transporte e domínio.
+
+**Custos/riscos:** SignalR não é WebSocket comum; TLS, shutdown e contratos precisam de equivalência específica.
+
+**Dependências analisadas:** ADR-001, ADR-002, ADR-009 e contratos de compatibilidade de API.
+
+**Blockers/gates:** resolver HTTP/JSON/ranges/TLS, SignalR e manter processamento pesado fora do event loop.
+
+**Implicação para CPP-001:** health mínimo não deve ser interpretado como aprovação de todo o backend ou de compatibilidade SignalR.
+
+### ADR-004 — client-framework
+
+**Estado:** Proposed.
+
+**Problema:** substituir WPF mantendo a experiência operacional e melhorando a capacidade de evolução do renderer.
+
+**Decisão proposta:** Qt Quick, de maneira condicionada.
+
+**Alternativas documentadas:** Qt Widgets com render nativo e WinUI 3.
+
+**Benefícios potenciais:** interface declarativa e integração possível com superfícies de renderização modernas.
+
+**Custos/riscos:** sincronização scene graph/GPU, ciclo de vida de tiles, DPI, acessibilidade e licenciamento comercial/LGPL/GPL por módulo.
+
+**Dependências analisadas:** ADR-005 e ADR-006 para apresentação de frames; ADR-002 para dependências e distribuição.
+
+**Gate de aceite:** prova de 64 canais, DPI misto, overlays, acessibilidade e licença aprovada.
+
+**Implicação para CPP-001:** um shell mínimo futuro não comprova a adequação de Qt Quick para o mosaico profissional.
+
+### ADR-005 — media-pipeline
+
+**Estado:** Proposed.
+
+**Problema:** definir um pipeline de mídia substituível e mensurável sem perder compatibilidade com os dados da Intelbras.
+
+**Decisão proposta:** FFmpeg candidato; PlaySDK permanece oracle.
+
+**Alternativa documentada:** permanecer com PlaySDK nativo caso FFmpeg não demonstre compatibilidade suficiente.
+
+**Benefícios potenciais:** abstração de demux/decode, suporte a múltiplas fontes e alternativas de hardware.
+
+**Custos/riscos:** formatos RAW/DHAV, timestamps, GOP, discontinuity, codecs e cópias adicionais.
+
+**Dependências analisadas:** ADR-006 e ADR-010; ADR-004 para render.
+
+**Gate de aceite:** demux RAW/DHAV, timestamps, snapshot, playback e recuperação reais.
+
+**Implicação para CPP-001:** nenhuma exigência de trocar decoder na primeira Foundation.
+
+### ADR-006 — hardware-decode
+
+**Estado:** Proposed.
+
+**Problema:** escolher uma estratégia de aceleração de vídeo que não comprometa qualidade, latência ou suporte de hardware.
+
+**Decisão proposta:** investigar D3D11VA primeiro no laboratório Windows.
+
+**Alternativas documentadas:** fallback software; NVDEC/QSV opcionais conforme GPU e codec.
+
+**Benefícios potenciais:** aproveitar aceleração de vídeo disponível sem exigir uma única família de GPUs.
+
+**Custos/riscos:** compatibilidade de textura, cópias CPU/GPU, colorimetria, fences, drivers e fallback.
+
+**Dependências analisadas:** ADR-005, ADR-004 e, para compartilhamento com IA, ADR-007.
+
+**Gate de aceite:** medições de cópias, engines GPU, NV12/colorimetria, latência e fallback.
+
+**Implicação para CPP-001:** nenhuma escolha definitiva de aceleração deve ser exigida no scaffold.
+
+### ADR-007 — ai-runtime
+
+**Estado:** Proposed.
+
+**Problema:** reproduzir os algoritmos de IA com runtime C++ mantendo paridade matemática e operacional.
+
+**Decisão proposta:** ONNX Runtime C++.
+
+**Alternativas documentadas:** avaliação de providers CPU, CUDA, TensorRT, DirectML e WinML.
+
+**Distinção:** providers de execução são alternativas de backend, não necessariamente substitutos arquiteturais do ONNX Runtime.
+
+**Benefícios potenciais:** runtime nativo com providers intercambiáveis por modelo e hardware.
+
+**Custos/riscos:** divergências em tensor, preprocessamento, NMS, precisão, concorrência e versões CUDA/driver.
+
+**Dependências analisadas:** ADR-005 para frames, ADR-006 para interop GPU e ADR-008 para compartilhamento e separação de inferência.
+
+**Gate de aceite:** goldens YOLOX/tracker/ROI e versões/drivers compatíveis.
+
+**Implicação para CPP-001:** interfaces podem ser concebidas futuramente sem escolher provider nem iniciar inferência.
+
+### ADR-008 — lpr-runtime
+
+**Estado:** Proposed.
+
+**Problema:** substituir a bridge Python sem perder fidelidade do reconhecimento de placas.
+
+**Decisão proposta:** pipeline C++ nativo fiel ao detector/OCR observado.
+
+**Alternativa documentada:** utilizar a bridge Python como oracle isolado, não como arquitetura final desejada.
+
+**Benefícios potenciais:** reduzir a complexidade operacional da bridge e melhorar o controle de buffers/lifetime, sujeito a testes.
+
+**Custos/riscos:** pesos ausentes na auditoria, YAML, alfabeto, slots, normalização, variantes, consenso e licenças.
+
+**Dependências analisadas:** ADR-007, ADR-005, ADR-009 e contratos de eventos.
+
+**Gate de aceite:** pesos, YAML, licenças e corpus de detector/OCR/normalização/consenso aprovados.
+
+**Implicação para CPP-001:** não instalar modelos nem construir runtime LPR nesta etapa.
+
+### ADR-009 — persistence
+
+**Estado:** Proposed.
+
+**Problema:** preservar contratos SQLite, arquivos externos, segurança e integridade dos dados.
+
+**Decisão proposta:** SQLite com schema compatível e RAII.
+
+**Alternativas documentadas:** ORM pesado ou troca de banco, sem justificativa suficiente nesta auditoria.
+
+**Benefícios potenciais:** manter compatibilidade sem reformular desnecessariamente os contratos persistidos.
+
+**Custos/riscos:** WAL, concorrência, proteção de credenciais, backups, importação e isolamento de raízes.
+
+**Dependências analisadas:** ADR-001/002 para implementação; ADR-003 para APIs; ADR-008 para leituras/evidências.
+
+**Gate de aceite:** backup WAL, concorrência, JSON/UTC, v2-dev e compatibilidade de segredos.
+
+**Implicação para CPP-001:** a proteção do DataRoot de desenvolvimento é requisito antecipado; migração real e equivalência SQLite completa pertencem a etapas posteriores.
+
+### ADR-010 — interoperability-intelbras
+
+**Estado:** Proposed.
+
+**Problema:** integrar NetSDK/PlaySDK e Cloud de forma nativa e desacoplada, evitando dependência estrutural de .NET/SIM Next.
+
+**Decisão proposta:** NetSDK/PlaySDK C++ com adaptador histórico `xc_intelbras`; biblioteca `xc_cloud` independente sobre libt2u nativa.
+
+**Nomenclatura SENTRIUM:** `sentrium::intelbras` e `sentrium::cloud`.
+
+**Alternativa rejeitada:** reconstrução de headers por P/Invoke não é aceitável.
+
+**Benefícios potenciais:** fronteiras independentes, mocks e gestão própria de CloudTunnel/RealPlay.
+
+**Custos/riscos:** contrato ABI, callbacks, compatibilidade do SDK antigo, direitos de redistribuição e uso standalone.
+
+**Dependências analisadas:** ADR-001/002, ADR-005 e contratos de segurança.
+
+**Gate de aceite:** headers/libs já identificados; faltam provas do subset/ABI/compatibilidade e tratamento de IB-01 a IB-06 para Cloud em produção.
+
+**Implicação para CPP-001:** interfaces falsas/desacopladas poderão ser discutidas no planejamento posterior sem carregar SDK nem exigir SIM Next.
+
+---
+
+## 4. Dependências entre ADRs
+
+As dependências abaixo são **inferidas da arquitetura detalhada**, não uma matriz formal publicada pelos ADRs.
+
+| ADR | Depende conceitualmente de    | Consequência                     |
+| --- | ----------------------------- | -------------------------------- |
+| 001 | Escolha do toolchain          | Base da implementação            |
+| 002 | 001, versões e licenças       | Build rastreável                 |
+| 003 | 001, 002, 009 e contratos API | Plano de controle                |
+| 004 | 002, 005, 006                 | UI/render                        |
+| 005 | 002, 010, 006                 | Entrada e processamento de vídeo |
+| 006 | 005, 004 e interop GPU        | Apresentação acelerada           |
+| 007 | 005, 002, 006                 | Pipeline de inferência           |
+| 008 | 007, 005, 009                 | Reconhecimento e eventos         |
+| 009 | 001, 002 e segurança          | Persistência                     |
+| 010 | 001, 002 e contratos de mídia | Integração proprietária          |
+
+Essas relações explicam por que uma escolha prematura de UI, decoder ou GPU criaria acoplamento antes dos benchmarks.
+
+A ordem de documentação não impõe que todos os módulos estejam implementados simultaneamente.
+
+---
+
+## 5. Arquitetura consolidada do SENTRIUM
+
+### 5.1. Fronteiras propostas
+
+| Namespace conceitual  | Responsabilidade                                    |
+| --------------------- | --------------------------------------------------- |
+| `sentrium::core`      | Domínio, contratos, IDs, relógios, erros e lifetime |
+| `sentrium::media`     | Streams, pacotes, decode, frames e gravação         |
+| `sentrium::intelbras` | NetSDK, canais, PTZ, eventos e RealPlay             |
+| `sentrium::cloud`     | T2U, túneis, estado Direct/Relay e recuperação      |
+| `sentrium::ai`        | Detector, tracking e regras                         |
+| `sentrium::lpr`       | Detector de placas, OCR, variantes e consenso       |
+| `sentrium::storage`   | SQLite, catálogo, retenção e backups                |
+| `sentrium::api`       | REST, comunicação e controle                        |
+| `sentrium::ui`        | Visualização, comandos e interação operacional      |
+
+A auditoria histórica propõe dez targets privados e também separa:
+
+- `platform_win`: abstrações específicas do Windows;
+- `render`: compositor e apresentação GPU;
+- `application`: eventos, ações, evidências, integrações e orquestração.
+
+Essas responsabilidades devem permanecer distinguíveis, mesmo que sejam organizadas futuramente como submódulos dos namespaces SENTRIUM ou targets próprios.
+
+**Os nove namespaces não obrigam a criar somente nove bibliotecas.**
+
+### 5.2. Fronteiras obrigatórias a preservar
+
+- Domínio sem dependência direta de frameworks de interface ou SDKs de fabricante.
+- CloudTunnel independente de RealPlay.
+- NetSDK consumindo endpoint/lease válido, sem conhecer a implementação interna de T2U.
+- Plano de controle separado de decode, inferência e IO pesado.
+- Ownership e cancelamento explícitos.
+- Gerações de sessão para invalidar callbacks e recursos antigos.
+- Compartilhamento de pacotes/frames apenas dentro de fronteiras tecnicamente compatíveis.
+- Sem compartilhamento fictício de decoder entre processos ou máquinas.
+
+---
+
+## 6. Baseline comportamental da r25
+
+### 6.1. LEGACY BEHAVIOR
+
+- Physical Stream Broker por Device + Channel + Stream.
+- Principal e Extra como streams físicos distintos.
+- Subscribers limitados e lifetime próprio.
+- Processamento headless compartilhado quando compatível.
+- Sampling monotônico depois do decode.
+- Recovery com gerações, watchdog e histerese.
+- Master LPR hard OFF/ON sem apagar perfis.
+- ROI/gate/direção, bursts, consenso e dedup LPR.
+- Persistência de eventos, readings e evidências.
+- Outbox Unknown sem repetição cega.
+- SQLite/JSON, APIs e transporte XCVI.
+- Modo Automático promovendo tile maximizado para Principal.
+- Reprodução local de DAV de evidência.
+
+### 6.2. IMPLEMENTAÇÃO PARCIAL
+
+- LatestFrameSlot/RenderCadence não controlam o PLAY_Play produtivo.
+- Snapshot contextual.
+- Áudio e talk.
+- Instant playback no menu de visualização.
+- Gravação manual contextual.
+- SaveVideo LPR sem produção completa de DAV.
+- E-mail registrado apenas em log.
+- Webhook/AlarmOutput tipados, mas sem executor.
+- Favoritos com estado de sessão, sem durabilidade demonstrada.
+- Telemetria de draw sem comprovação de apresentação real no DWM.
+
+### 6.3. BACKLOG / FUTURE REQUIREMENT
+
+- REQ-LISTS-001: listas whitelist/blacklist/customizadas.
+- REQ-USERS-001: usuários completos, papéis e escopos.
+- REQ-RECORDING-001: gravação contínua e reprodução remota.
+- REQ-ATTR-001: atributos veiculares avançados.
+- REQ-SMTP-001: transportes reais de notificações e ações.
+- Homologação Official Muralha.
+- Ampliação dos recursos profissionais de reprodução, operação e instalação.
+
+A equivalência não significa reproduzir problemas ou placeholders como se fossem funções completas.
+
+---
+
+## 7. Testes e contratos de compatibilidade
+
+### 7.1. Matriz histórica
+
+**151 casos individualmente identificados e reconciliados.**
+
+| Categoria     | Quantidade |
+| ------------- | ---------- |
+| Unit          | 81         |
+| Integration   | 62         |
+| Compatibility | 7          |
+| Performance   | 1          |
+| Total         | 151        |
+
+- 151 resultados `Passed` nos relatórios históricos.
+- 151 casos mapeados documentalmente.
+- Zero casos reexecutados pela auditoria.
+- Zero testes C++ do SENTRIUM implementados.
+
+Os nomes completos conferem entre `MAPA-TESTES-R25-PARA-CPP.md` e `INVENTARIO-R25.json`.
+
+O mapeamento contém descrições genéricas e exige enriquecimento semântico. Isso não invalida a rastreabilidade, mas impede tratá-lo como especificação executável completa.
+
+### 7.2. Requisitos de paridade
+
+- Goldens de JSON, DTOs, erros HTTP e estados.
+- Equivalência do header XCVI v1 de 36 bytes quando necessária.
+- Estratégia versionada ou adaptador para SignalR.
+- Schema SQLite, índices, UTC e transações.
+- Golden de frames→tensores→detections→tracker→eventos.
+- Golden de normalização, ROI/gate, consenso e dedup LPR.
+- Testes de falha de escrita e persist-before-publish.
+- Testes de Master, recovery e lifecycle.
+- Testes de evidência, retenção, pins e Unknown.
+- Testes nativos adicionais de SDK, hardware, render e soak.
+
+A r25 continuará sendo oracle funcional em ambiente isolado.
+
+---
+
+## 8. Roadmap proposto
+
+O roadmap foi lido integralmente e está classificado como **PROPOSTA DOCUMENTADA**, sem autorização de execução.
+
+| Ordem   | Etapa                          |
+| ------- | ------------------------------ |
+| 0       | Decisão arquitetural           |
+| CPP-001 | Scaffold mínimo                |
+| 2       | Contratos, segurança e storage |
+| 3       | SDK Intelbras                  |
+| 4       | Laboratório mídia/UI           |
+| 5       | Live/render                    |
+| 6       | IA                             |
+| 7       | LPR                            |
+| 8       | Eventos/evidências             |
+| 9       | Integrações                    |
+| 10      | Ampliação funcional            |
+| 11      | Release                        |
+
+A CPP-001 está descrita como scaffold com C++20/toolchain, core/platform, health mínimo, builds, CI, testes básicos e isolamento de DataRoot.
+
+Ela não inclui, por consequência automática, implementação real de Cloud, IA, LPR, FFmpeg ou mosaico profissional.
+
+Cada etapa futura exige aprovação individual de escopo e aceite.
+
+---
+
+## 9. Governança e contradições identificadas
+
+### GOV-01 — Dependência circular de aprovação dos ADRs
+
+**Natureza:** divergência procedimental material, identificada nesta validação. `GOV-01` é identificador local do manifesto, não ID oficial da auditoria.
+
+O roadmap estabelece, na etapa 0, aprovação explícita dos ADRs antes da CPP-001.
+
+Entretanto:
+
+- ADR-001 exige compilação MSVC e demonstração de lifetime.
+- ADR-002 exige builds Debug/Release reproduzíveis.
+- ADR-003 exige contratos HTTP/TLS/SignalR resolvidos.
+- ADR-004 exige benchmark de UI com 64 canais.
+- ADR-005/006 exigem provas de mídia e GPU.
+- ADR-007/008 exigem goldens de IA/LPR.
+- ADR-009 exige provas completas de persistência.
+- ADR-010 exige validações de ABI/SDK e Cloud para produção.
+
+Grande parte dessas provas pertence às etapas 2–9 ou a laboratórios posteriores.
+
+**Consequência:** não é possível interpretar literalmente a aprovação final de todos os dez ADRs como pré-condição já satisfeita para um scaffold que produziria parte da evidência.
+
+**Tratamento documental:** conflito registrado e execução bloqueada até decisão humana.
+
+**Decisão ainda necessária:** estabelecer formalmente quais ADRs exigem aceitação antes da CPP-001 e quais podem permanecer Proposed, condicionados a provas futuras; ou revisar os critérios do roadmap e dos próprios ADRs.
+
+Nenhum ADR teve seu status modificado.
+
+### GOV-02 — Handoff e integridade histórica
+
+O handoff apresenta a árvore r25 como integralmente idêntica; o relatório SHA256 detalhado registra uma alteração no log SDK gerado.
+
+**Tratamento:** adotar o relatório detalhado para a afirmação de integridade histórica e conservar a frase do handoff como declaração anterior superada pela evidência específica.
+
+### GOV-03 — Nomenclatura
+
+Os ADRs utilizam nomes `xc_*`, enquanto a identidade nova exige `sentrium::*`.
+
+**Tratamento:** nomenclatura histórica preservada em citações; propostas futuras usam SENTRIUM. Mapeamento de namespaces/targets permanece decisão de desenho.
+
+### GOV-04 — DataRoot proposto com identidade antiga
+
+A arquitetura histórica propõe raiz de desenvolvimento com referência a XCVideoIA.
+
+**Tratamento:** preservar a exigência de isolamento e proteção contra acesso à raiz legada; escolher o caminho definitivo SENTRIUM durante a fase de definição, sem apontar qualquer writer ao root operacional.
+
+### GOV-05 — Aprovação de tecnologias
+
+Uma tecnologia candidata aparecer no roadmap ou no resumo executivo não significa que seu ADR tenha sido aceito.
+
+**Tratamento:** prevalecem os estados individuais `Proposed` e os gates específicos.
+
+---
+
+## 10. Matriz consolidada de blockers
+
+**Legenda:** "CPP-001" refere-se a eventual scaffold estritamente desacoplado, e não à autorização de implementação atual.
+
+| ID / prioridade | Bloqueio                         | Área         | Impede scaffold isolado? | Impede a capacidade em produção?  | Evidência de encerramento                 |
+| --------------- | -------------------------------- | ------------ | ------------------------ | --------------------------------- | ----------------------------------------- |
+| GOV-01 local    | Governança circular de aprovação | Arquitetura  | Sim, até decisão         | Sim, indiretamente                | Aprovação humana de estratégia por etapas |
+| IB-01           | Redistribuição libt2u            | Cloud        | Não                      | Sim                               | Autorização/licença                       |
+| IB-02           | Bootstrap e credenciais          | Cloud        | Não                      | Sim                               | Fornecimento oficial                      |
+| IB-03           | Standalone                       | Cloud        | Não                      | Sim                               | Confirmação Intelbras                     |
+| IB-04           | Windows limpo                    | Cloud        | Não                      | Sim                               | Teste sem SIM Next                        |
+| IB-05           | Recovery Direct/Relay            | Cloud        | Não                      | Sim                               | Testes de falha/failover                  |
+| IB-06           | Compatibilidade SDK              | Intelbras    | Não                      | Sim                               | ABI/firmware/runtime                      |
+| P0 mídia        | RAW/DHAV                         | Media        | Não                      | Sim, para substituir PlaySDK      | Demux/paridade                            |
+| P0 LPR          | Pesos/YAML/licenças              | AI/LPR       | Não                      | Sim, para LPR afetado             | Dossiê de modelos                         |
+| P0 dados        | DataProtection/DPAPI             | Storage      | Não                      | Sim, para migração de segredos    | Processo autorizado                       |
+| P0 Official     | Homologação e Outbox             | Integrações  | Não                      | Sim, para Official                | Contrato, homologação e testes            |
+| P1 API          | SignalR                          | API          | Depende do escopo        | Sim, para compatibilidade afetada | Adaptador ou protocolo versionado         |
+| P1 UI           | Qt/render                        | UI           | Não                      | Sim, para UI escolhida            | Benchmark/licença                         |
+| P1 GPU          | Decode e zero-copy               | Media/Render | Não                      | Sim, para aceleração escolhida    | Probes                                    |
+| P1 Segurança    | Auth, scopes e evidências        | API/Storage  | Depende do escopo        | Sim                               | Testes e revisão de segurança             |
+| P1 Licenças     | Frameworks, codecs, SDKs         | Distribuição | Depende do pacote        | Sim                               | SBOM e aprovação aplicável                |
+| P1 Concorrência | Callback/teardown                | Core/SDK     | Não                      | Sim, para capacidade afetada      | Ensaios de lifecycle                      |
+
+O documento oficial não fornece IDs individuais para todos os riscos não Intelbras; suas prioridades foram preservadas.
+
+O conflito GOV-01 não é uma constatação de falha de código, e sim um gate de governança para a próxima fase.
+
+---
+
+## 11. Dependências e licenciamento
+
+Tecnologias candidatas documentadas:
+
+- C++20, MSVC v143 x64, CMake/Ninja/vcpkg.
+- Drogon 1.9.14.
+- Qt 6.12 LTS.
+- FFmpeg 9.0.2.
+- SQLite com versão a fixar.
+- ONNX Runtime C++ com versão a fixar.
+- D3D11VA e backends opcionais.
+- CUDA/NVDEC/TensorRT conforme matriz.
+- DirectML/WinML conforme compatibilidade.
+- OpenCV e bibliotecas auxiliares.
+- Intelbras NetSDK/PlaySDK e libt2u.
+- Modelos YOLOX, detector de placas e OCR.
+
+**Nenhuma versão candidata deve ser tratada como lockfile aprovado.**
+
+Questões de licenciamento ainda abertas:
+
+- Módulos Qt GPL/LGPL/comercial.
+- FFmpeg configurado com opções GPL/nonfree.
+- Direitos relativos a codecs/patentes.
+- Licenças e obrigações transitivas.
+- Redistribuição dos SDKs proprietários.
+- Termos de drivers/providers GPU.
+- Licenças e proveniência de pesos/modelos.
+- Instalação, avisos e direitos aplicáveis ao usuário final.
+
+A adequação técnica e a adequação para distribuição comercial são avaliações distintas.
+
+---
+
+## 12. Performance — baseline e laboratório
+
+### 12.1. Baseline r25 preservada
+
+Cenário de referência: 16 streams Principal.
+
+| Indicador        | Master LPR OFF | Master LPR ON |
+| ---------------- | -------------- | ------------- |
+| CPU host         | \~41,4%        | \~67,7%       |
+| CPU Server       | \~1,45%        | \~24,39%      |
+| CPU Client       | \~26,27%       | \~26,59%      |
+| GPU agregada     | \~9,21%        | \~9,43%       |
+| Physical streams | 17             | 25            |
+
+LPR ON registrou aproximadamente 45,6 FPS de LPR, 10,1 FPS de IA, dez decoders headless e 11 perfis LPR.
+
+Essas métricas são histórico de comparação, sem promessa de ganho em C++.
+
+### 12.2. Probes obrigatórios
+
+- Formato de mídia RAW/DHAV.
+- PlaySDK versus FFmpeg.
+- D3D11VA/NVDEC/QSV conforme hardware.
+- Interop e cópias CPU/GPU.
+- Renderização real e p95/p99.
+- Mosaico 1/4/16/64.
+- Providers e modelos de IA.
+- OCR/consenso LPR.
+- Callbacks SDK e recuperação.
+- Cloud Direct/Relay.
+- SQLite/WAL, credenciais e segurança.
+- Soak, shutdown e recuperação em falhas.
+
+Metas numéricas deverão ser estabelecidas antes de qualquer benchmark, com versões, hardware, drivers, entradas e CSV bruto preservados.
+
+---
+
+## 13. Segurança e DataRoot
+
+Requisitos obrigatórios desde a arquitetura:
+
+- Credenciais fora do código e logs.
+- Sem reutilização de segredos privados do SIM Next.
+- Não expor caminhos físicos nas APIs de evidência.
+- IDs opacos, HTTPS, autorização, TTL e auditoria.
+- Outbox Unknown sem retry cego.
+- Retenção protegendo evidências referenciadas.
+- Controle de writers e concorrência no SQLite.
+- Backups consistentes com WAL.
+- Root de desenvolvimento separado.
+- Rejeição explícita dos roots da r25/r24 em operações de escrita.
+- Migração operacional apenas por cópia autorizada e plano próprio.
+
+A autenticação/RBAC mínima deve ser tratada separadamente do backlog de administração completa de usuários.
+
+O novo produto não deverá depender do DataRoot legado para inicializar.
+
+---
+
+## 14. Gates documentais de promoção para 1.0
+
+| Requisito                       | Resultado                         |
+| ------------------------------- | --------------------------------- |
+| Handoff e identidade do produto | Satisfeito                        |
+| Documentos do Lote 1            | 10/10                             |
+| Documentos/JSONs do Lote 2      | 10/10                             |
+| ADRs do Lote 3                  | 10/10                             |
+| Estados individuais dos ADRs    | 10 Proposed                       |
+| Componentes                     | 377 reconciliados                 |
+| Testes                          | 151 rastreados                    |
+| Integridade histórica           | Divergência registrada            |
+| Arquitetura                     | Compreendida como proposta        |
+| Roadmap                         | Compreendido como proposta        |
+| Dependências e licenças         | Inventariadas, não homologadas    |
+| Blockers                        | Identificados e classificados     |
+| Contradições materiais          | Registradas com gate de resolução |
+| Limitações da auditoria         | Preservadas                       |
+
+**Resultado: critérios de baseline documental satisfeitos.**
+
+A dependência circular GOV-01 continua sendo impedimento para autorização de implementação, mas não para registrar fielmente o estado arquitetural existente.
+
+---
+
+## 15. Decisão de encerramento
+
+**SENTRIUM-VMS-CONTEXT-MANIFEST 1.0 — BASELINE VALIDADA**
+
+Validação limitada ao escopo documental.
+
+**Estados preservados:**
+
+- 10 ADRs Proposed.
+- Nenhuma tecnologia condicionada automaticamente aprovada.
+- Nenhum ganho de performance C++ demonstrado.
+- Nenhuma integração Cloud homologada.
+- Nenhum bloqueio comercial de distribuição encerrado por inferência.
+- Nenhum teste nativo do SENTRIUM executado.
+- Nenhuma Foundation iniciada.
+
+**Próximo gate de governança:** definir e aprovar a estratégia para a CPP-Foundation-001, inclusive a resolução formal do conflito entre aceitação antecipada dos ADRs e testes exigidos posteriormente.
+
+**Não escrever código. Não iniciar Foundation. Não gerar prompt para Codex nesta etapa.**
+
+## 3. Conflito principal entre ADRs e roadmap
+
+Este é o ponto que merece maior atenção na transição da validação documental para o planejamento.
+
+Dependência de aprovação identificada
+
+Roadmap — Etapa 0
+
+Solicita ADRs explicitamente aprovados antes da CPP-001
+
+ADRs — Critérios de Accepted
+
+Exigem builds, integração ou benchmarks ainda não realizados
+
+Decisão humana necessária
+
+Definir aprovação por etapa ou revisar os gates antes de autorizar implementação
+
+O roadmap estabelece a aprovação dos ADRs como critério da etapa 0.&#x20;
+
+ROADMAP-CPP.md
+
+
+
+Já os ADRs condicionam sua aceitação a evidências futuras. Isso aparece explicitamente, por exemplo, no ADR-002 para builds reproduzíveis, no ADR-004 para benchmark de UI e no ADR-005 para testes de mídia.&#x20;
+
+ADR-002-build-dependency-manager.md
+
+ADR-004-client-framework.md
+
+ADR-005-media-pipeline.md
+
+
+
+Não escolhi uma solução automaticamente. A próxima fase deverá decidir se teremos aceitação arquitetural restrita por estágio, mantendo as aprovações técnicas finais condicionadas, ou se será necessário revisar formalmente os critérios dos ADRs e do roadmap.
+
+## 4. Parecer separado sobre a futura CPP-Foundation-001
+
+Apto para definição de escopo
+
+Sim. Estamos documentalmente aptos a entrar na fase de definição da `SENTRIUM-CPP-Foundation-001`.
+
+Isso significa que já conhecemos a arquitetura proposta, o comportamento essencial da r25, as fronteiras entre módulos, o roadmap, os riscos e as decisões ainda não aceitas.
+
+A futura etapa de planejamento deverá limitar-se a estabelecer o objetivo da Foundation, seus requisitos obrigatórios, dependências, exclusões, critérios de aceite, segurança do DataRoot e mecanismo de autorização. Ela também deverá resolver o gate de governança dos ADRs.
+
+Não estamos autorizados a iniciar a implementação. A aptidão documental para definir o escopo não equivale à aprovação de C++20, Qt, Drogon, FFmpeg ou qualquer outra tecnologia, nem substitui a aprovação expressa da Foundation.
+
+O encerramento dos três lotes fica, portanto, registrado como:
+
+SENTRIUM-VMS-CONTEXT-MANIFEST
+
+1.0
+
+### BASELINE DOCUMENTAL VALIDADA
+
+Lotes documentais
+
+3/3 concluídos
+
+ADRs individuais
+
+10 Proposed
+
+Início da CPP-001
+
+Não autorizado
+
+Prompt para Codex
+
+Não gerado
+
+A próxima fase poderá ser dedicada exclusivamente à definição e aprovação arquitetural do escopo da SENTRIUM-CPP-Foundation-001, antes de qualquer implementação.
