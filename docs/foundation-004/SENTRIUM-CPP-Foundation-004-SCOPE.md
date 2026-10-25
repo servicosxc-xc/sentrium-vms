@@ -3,7 +3,7 @@
 **Produto:** SENTRIUM VMS — Intelligent Video Management System  
 **Foundation:** SENTRIUM-CPP-Foundation-004  
 **Branch:** `foundation/004-media-lab`  
-**Estado:** **PROPOSED — NOT YET AUTHORIZED FOR IMPLEMENTATION**  
+**Estado:** **AUTHORIZED / IN IMPLEMENTATION**  
 **Princípio:** medir antes de escolher a pipeline definitiva.
 
 ---
@@ -17,7 +17,7 @@ Construir um laboratório de mídia C++ controlado para responder, com vídeo re
 3. o payload recebido pelo NetSDK é ou não compatível com FFmpeg;
 4. caso FFmpeg seja compatível, comparar software decode e D3D11VA;
 5. separar custo de ingest, decode e render;
-6. produzir evidência suficiente para escolher a pipeline da Foundation-005 Live View.
+6. produzir evidência suficiente para escolher a pipeline da future Live View Foundation.
 
 A F004 é laboratório. Ela **não transforma nenhuma opção em pipeline de produção por teoria**.
 
@@ -88,7 +88,7 @@ Adicionar somente o subset de mídia necessário:
 
 - `CLIENT_RealPlayEx`;
 - `CLIENT_SetRealDataCallBackEx2`;
-- `CLIENT_StopRealPlay`.
+- `CLIENT_StopRealPlayEx`.
 
 Requisitos:
 
@@ -211,7 +211,7 @@ O render inicial pode usar janela nativa controlada do laboratório.
 
 Não construir mosaico definitivo do SENTRIUM nesta Foundation.
 
-A integração definitiva com Qt Quick pertence à F005 depois da decisão de mídia.
+A integração definitiva com Qt Quick pertence a uma futura Foundation de Live View, depois da decisão de mídia e da Foundation de conectividade.
 
 ---
 
@@ -394,7 +394,7 @@ Proibido nesta Foundation:
 **F004-AC-17** — zero processo residual após ciclos.  
 **F004-AC-18** — nenhuma alegação de ganho de performance sem medição.  
 **F004-AC-19** — nenhuma pipeline é promovida a produção automaticamente.  
-**F004-AC-20** — relatório final recomenda ou rejeita candidatos para F005 com base nos dados.
+**F004-AC-20** — relatório final recomenda ou rejeita candidatos para a futura pipeline de Live View com base nos dados.
 
 ---
 
