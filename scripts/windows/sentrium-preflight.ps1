@@ -111,10 +111,7 @@ $sdkRequired = @(
     'bin\dhnetsdk.lib',
     'bin\dhconfigsdk.lib',
     'bin\dhnetsdk.dll',
-    'bin\dhconfigsdk.dll',
-    'include\dhplay.h',
-    'bin\dhplay.lib',
-    'bin\dhplay.dll'
+    'bin\dhconfigsdk.dll'
 )
 foreach ($relative in $sdkRequired) {
     Assert-Sentrium (Test-Path -LiteralPath (Join-Path $sdkRoot $relative) -PathType Leaf) "Intelbras SDK component missing: $relative"
@@ -140,7 +137,17 @@ foreach ($symbol in @(
 Assert-SentriumPeAmd64 (Join-Path $sdkRoot 'bin\dhnetsdk.dll') 'dhnetsdk.dll'
 Assert-SentriumPeAmd64 (Join-Path $sdkRoot 'bin\dhconfigsdk.dll') 'dhconfigsdk.dll'
 
-$dhplayHeader = Join-Path $sdkRoot 'include\dhplay.h'
+Assert-Sentrium (-not [string]::IsNullOrWhiteSpace($env:SENTRIUM_PLAYSDK_ROOT)) 'SENTRIUM_PLAYSDK_ROOT missing'
+$playSdkRoot = [IO.Path]::GetFullPath($env:SENTRIUM_PLAYSDK_ROOT)
+Assert-Sentrium (Test-Path -LiteralPath $playSdkRoot -PathType Container) 'Intelbras PlaySDK root unavailable'
+Assert-Sentrium (
+    -not $playSdkRoot.Equals($sentriumRoot,[StringComparison]::OrdinalIgnoreCase) -and
+    -not $playSdkRoot.StartsWith($repoPrefix,[StringComparison]::OrdinalIgnoreCase)
+) 'PlaySDK must remain external to the repository'
+foreach ($relative in @('DLL\dhplay.h','DLL\dhplay.lib','DLL\dhplay.dll')) {
+    Assert-Sentrium (Test-Path -LiteralPath (Join-Path $playSdkRoot $relative) -PathType Leaf) "PlaySDK component missing: $relative"
+}
+$dhplayHeader = Join-Path $playSdkRoot 'DLL\dhplay.h'
 $playHeaderText = Get-Content -LiteralPath $dhplayHeader -Raw
 foreach ($symbol in @(
     'PLAY_GetFreePort',
@@ -159,8 +166,9 @@ foreach ($symbol in @(
 )) {
     Assert-Sentrium ($playHeaderText.Contains($symbol)) "Intelbras PlaySDK header contract missing: $symbol"
 }
-Assert-SentriumPeAmd64 (Join-Path $sdkRoot 'bin\dhplay.dll') 'dhplay.dll'
+Assert-SentriumPeAmd64 (Join-Path $playSdkRoot 'DLL\dhplay.dll') 'dhplay.dll'
 $env:SENTRIUM_INTELBRAS_SDK_ROOT = $sdkRoot
+$env:SENTRIUM_PLAYSDK_ROOT = $playSdkRoot
 
 $manifest = Get-Content -LiteralPath (Join-Path $sentriumRoot 'vcpkg.json') -Raw | ConvertFrom-Json
 $head = Invoke-SentriumRead 'git' @('-C',$env:SENTRIUM_VCPKG_ROOT,'rev-parse','HEAD')
@@ -188,12 +196,12 @@ if (-not $VerifyOnly -and $EvidenceDirectory) {
         $dhplayHeader,
         (Join-Path $sdkRoot 'bin\dhnetsdk.lib'),
         (Join-Path $sdkRoot 'bin\dhconfigsdk.lib'),
-        (Join-Path $sdkRoot 'bin\dhplay.lib'),
+        (Join-Path $playSdkRoot 'DLL\dhplay.lib'),
         (Join-Path $sdkRoot 'bin\dhnetsdk.dll'),
         (Join-Path $sdkRoot 'bin\dhconfigsdk.dll'),
-        (Join-Path $sdkRoot 'bin\dhplay.dll')
+        (Join-Path $playSdkRoot 'DLL\dhplay.dll')
     )
     $paths | ForEach-Object { Get-FileHash -LiteralPath $_ -Algorithm SHA256 } | Select-Object Path,Hash,Algorithm | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $EvidenceDirectory 'toolchain-hashes.json') -Encoding UTF8
-    [ordered]@{Result='PREFLIGHT PASS';Workspace=$sentriumRoot;VS=$vs.installationVersion;VSProduct=$vs.catalog.productDisplayVersion;Installation=$vs.installationPath;VCTools=$env:VCToolsVersion;Compiler=$env:SENTRIUM_CL;Linker=$env:SENTRIUM_LINK;Host=$env:VSCMD_ARG_HOST_ARCH;Target=$env:VSCMD_ARG_TGT_ARCH;SDK='10.0.26100.9457';SDKDirectories=$env:WindowsSDKVersion;CMake=$cmakeVersion;Ninja=$ninjaVersion;QtVersion=$qtVersion;QtRoot=$qtRoot;QtSpec=$qtSpec;IntelbrasSDKRoot=$sdkRoot;PlaySDK='validated-x64';VcpkgCommit=$head;VcpkgTag=$tag;VcpkgOrigin=$origin;VcpkgTool=$vcpkgTool} | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $EvidenceDirectory 'preflight.json') -Encoding UTF8
+    [ordered]@{Result='PREFLIGHT PASS';Workspace=$sentriumRoot;VS=$vs.installationVersion;VSProduct=$vs.catalog.productDisplayVersion;Installation=$vs.installationPath;VCTools=$env:VCToolsVersion;Compiler=$env:SENTRIUM_CL;Linker=$env:SENTRIUM_LINK;Host=$env:VSCMD_ARG_HOST_ARCH;Target=$env:VSCMD_ARG_TGT_ARCH;SDK='10.0.26100.9457';SDKDirectories=$env:WindowsSDKVersion;CMake=$cmakeVersion;Ninja=$ninjaVersion;QtVersion=$qtVersion;QtRoot=$qtRoot;QtSpec=$qtSpec;IntelbrasSDKRoot=$sdkRoot;PlaySDKRoot=$playSdkRoot;PlaySDK='validated-x64';VcpkgCommit=$head;VcpkgTag=$tag;VcpkgOrigin=$origin;VcpkgTool=$vcpkgTool} | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $EvidenceDirectory 'preflight.json') -Encoding UTF8
 }
 Write-Host 'PREFLIGHT PASS: Foundation-004 workspace; exact toolchain lock; Qt 6.12.0 MSVC; external NetSDK/PlaySDK x64; single vcpkg baseline.'
