@@ -41,7 +41,7 @@ qt_standard_project_setup(REQUIRES 6.12)
 
 set(SENTRIUM_INTELBRAS_SDK_ROOT "$ENV{SENTRIUM_INTELBRAS_SDK_ROOT}" CACHE PATH "External Intelbras/Dahua NetSDK root")
 if(NOT SENTRIUM_INTELBRAS_SDK_ROOT)
-  message(FATAL_ERROR "SENTRIUM_INTELBRAS_SDK_ROOT is required for Foundation-003")
+  message(FATAL_ERROR "SENTRIUM_INTELBRAS_SDK_ROOT is required for Foundation-004")
 endif()
 file(TO_CMAKE_PATH "${SENTRIUM_INTELBRAS_SDK_ROOT}" SENTRIUM_INTELBRAS_SDK_ROOT)
 foreach(relative
@@ -49,9 +49,12 @@ foreach(relative
     "bin/dhnetsdk.lib"
     "bin/dhconfigsdk.lib"
     "bin/dhnetsdk.dll"
-    "bin/dhconfigsdk.dll")
+    "bin/dhconfigsdk.dll"
+    "include/dhplay.h"
+    "bin/dhplay.lib"
+    "bin/dhplay.dll")
   if(NOT EXISTS "${SENTRIUM_INTELBRAS_SDK_ROOT}/${relative}")
-    message(FATAL_ERROR "Foundation-003 Intelbras SDK component missing: ${relative}")
+    message(FATAL_ERROR "Foundation-004 Intelbras/PlaySDK component missing: ${relative}")
   endif()
 endforeach()
 
@@ -71,6 +74,9 @@ target_include_directories(sentrium-intelbras SYSTEM PRIVATE "${SENTRIUM_INTELBR
 target_compile_definitions(sentrium-intelbras PRIVATE UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX)
 target_link_libraries(sentrium-intelbras PUBLIC sentrium-device PRIVATE kernel32)
 
+add_library(sentrium-media libs/sentrium-media/media.cpp)
+target_include_directories(sentrium-media PUBLIC libs/sentrium-media/include)
+
 add_executable(sentrium-server apps/sentrium-server/main.cpp)
 target_link_libraries(sentrium-server PRIVATE sentrium-platform-win)
 add_subdirectory(apps/sentrium-client)
@@ -83,7 +89,15 @@ target_link_libraries(sentrium-integration-tests PRIVATE sentrium-platform-win)
 add_executable(sentrium-device-tests tests/device/main.cpp)
 target_link_libraries(sentrium-device-tests PRIVATE sentrium-device)
 
-foreach(target sentrium-core sentrium-platform-win sentrium-device sentrium-intelbras sentrium-server sentrium-client sentrium-unit-tests sentrium-integration-tests sentrium-device-tests)
+add_executable(sentrium-media-tests tests/media/main.cpp)
+target_link_libraries(sentrium-media-tests PRIVATE sentrium-media)
+
+add_executable(sentrium-media-lab labs/sentrium-media-lab/main.cpp)
+target_include_directories(sentrium-media-lab SYSTEM PRIVATE "${SENTRIUM_INTELBRAS_SDK_ROOT}/include")
+target_compile_definitions(sentrium-media-lab PRIVATE UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX)
+target_link_libraries(sentrium-media-lab PRIVATE sentrium-core sentrium-device sentrium-intelbras sentrium-media kernel32)
+
+foreach(target sentrium-core sentrium-platform-win sentrium-device sentrium-intelbras sentrium-media sentrium-server sentrium-client sentrium-media-lab sentrium-unit-tests sentrium-integration-tests sentrium-device-tests sentrium-media-tests)
   target_compile_options(${target} PRIVATE /W4 /WX /permissive- /utf-8)
   if(SENTRIUM_ASAN)
     target_compile_options(${target} PRIVATE /fsanitize=address /Zi)
@@ -98,6 +112,9 @@ foreach(id RANGE 1 11)
 endforeach()
 foreach(id RANGE 1 7)
   add_test(NAME D-${id} COMMAND sentrium-device-tests ${id})
+endforeach()
+foreach(id RANGE 1 6)
+  add_test(NAME M-${id} COMMAND sentrium-media-tests ${id})
 endforeach()
 add_test(
   NAME F002-CLIENT-SMOKE
