@@ -60,6 +60,10 @@ $evidence = [IO.Path]::GetFullPath($EvidenceDirectory)
 
 $ffprobeVersion = (& $ffprobe -version | Select-Object -First 1).Trim()
 $ffmpegVersion = (& $ffmpeg -version | Select-Object -First 1).Trim()
+Assert-Sentrium ($ffprobeVersion.StartsWith('ffprobe version 9.0.2')) 'ffprobe version must be 9.0.2'
+Assert-Sentrium ($ffmpegVersion.StartsWith('ffmpeg version 9.0.2')) 'ffmpeg version must be 9.0.2'
+
+$quotedInput = '"' + $input + '"'
 
 $probeStdout = Join-Path $evidence 'ffprobe.stdout.json'
 $probeStderr = Join-Path $evidence 'ffprobe.stderr.txt'
@@ -68,7 +72,7 @@ $softwareStderr = Join-Path $evidence 'software-decode.stderr.txt'
 $d3dStdout = Join-Path $evidence 'd3d11va-decode.stdout.txt'
 $d3dStderr = Join-Path $evidence 'd3d11va-decode.stderr.txt'
 
-$probe = Invoke-SentriumProcess $ffprobe @('-hide_banner','-v','error','-show_format','-show_streams','-print_format','json',$input) $probeStdout $probeStderr
+$probe = Invoke-SentriumProcess $ffprobe @('-hide_banner','-v','error','-show_format','-show_streams','-print_format','json',$quotedInput) $probeStdout $probeStderr
 
 $probeJson = $null
 $videoStreams = @()
@@ -92,7 +96,7 @@ $demuxSupported = ($probe.ExitCode -eq 0 -and $null -ne $probeJson -and $videoSt
 $softwareDecision = 'NOT RUN'
 $softwareExit = $null
 if ($demuxSupported) {
-    $software = Invoke-SentriumProcess $ffmpeg @('-hide_banner','-v','error','-nostdin','-benchmark','-i',$input,'-map','0:v:0','-an','-sn','-dn','-f','null','NUL') $softwareStdout $softwareStderr
+    $software = Invoke-SentriumProcess $ffmpeg @('-hide_banner','-v','error','-nostdin','-benchmark','-i',$quotedInput,'-map','0:v:0','-an','-sn','-dn','-f','null','NUL') $softwareStdout $softwareStderr
     $softwareExit = $software.ExitCode
     $softwareDecision = if ($software.ExitCode -eq 0) { 'SUPPORTED' } else { 'UNSUPPORTED' }
 } else {
@@ -102,7 +106,7 @@ if ($demuxSupported) {
 $d3dDecision = 'NOT APPLICABLE'
 $d3dExit = $null
 if ($softwareDecision -eq 'SUPPORTED') {
-    $d3d = Invoke-SentriumProcess $ffmpeg @('-hide_banner','-v','error','-nostdin','-benchmark','-hwaccel','d3d11va','-i',$input,'-map','0:v:0','-an','-sn','-dn','-f','null','NUL') $d3dStdout $d3dStderr
+    $d3d = Invoke-SentriumProcess $ffmpeg @('-hide_banner','-v','error','-nostdin','-benchmark','-hwaccel','d3d11va','-i',$quotedInput,'-map','0:v:0','-an','-sn','-dn','-f','null','NUL') $d3dStdout $d3dStderr
     $d3dExit = $d3d.ExitCode
     $d3dDecision = if ($d3d.ExitCode -eq 0) { 'SUPPORTED' } else { 'UNSUPPORTED' }
 } else {
