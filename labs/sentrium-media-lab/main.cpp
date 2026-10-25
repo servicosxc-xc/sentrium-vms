@@ -397,6 +397,7 @@ public:
         const std::filesystem::path& root,
         sentrium::device::Session session,
         int channel,
+        DH_RealPlayType stream_type,
         CallbackContext& context)
         : module_(root / L"bin" / L"dhnetsdk.dll") {
         real_play_ = load_export<decltype(&CLIENT_RealPlayEx)>(
@@ -412,7 +413,7 @@ public:
             static_cast<LLONG>(session.value),
             channel,
             nullptr,
-            DH_RType_Realplay);
+            stream_type);
         if (handle_ == 0) {
             throw std::runtime_error(
                 "CLIENT_RealPlayEx failed (sdk_error="
@@ -478,12 +479,20 @@ int main() {
             integer_environment("SENTRIUM_MEDIA_DURATION", 10, 2, 3600);
         const auto capture_path_text = environment("SENTRIUM_MEDIA_CAPTURE", false);
 
-        // First authorized slice intentionally proves Principal only. Extra mapping
-        // is added after the official enum values are inspected in the local kit.
         const auto requested_stream = environment("SENTRIUM_MEDIA_STREAM", false);
-        if (!requested_stream.empty() && requested_stream != "principal") {
-            throw std::runtime_error(
-                "this first Media Lab slice accepts SENTRIUM_MEDIA_STREAM=principal only");
+        std::string stream_name = "Principal";
+        DH_RealPlayType stream_type = DH_RType_Realplay;
+        if (!requested_stream.empty()) {
+            if (requested_stream == "principal") {
+                stream_name = "Principal";
+                stream_type = DH_RType_Realplay;
+            } else if (requested_stream == "extra") {
+                stream_name = "Extra";
+                stream_type = DH_RType_Realplay_1;
+            } else {
+                throw std::runtime_error(
+                    "SENTRIUM_MEDIA_STREAM must be principal or extra");
+            }
         }
 
         device::LoginRequest request{
@@ -530,6 +539,7 @@ int main() {
             netsdk_root(),
             login.session,
             channel,
+            stream_type,
             callback_context);
 
         std::atomic<bool> stop_consumer{false};
@@ -605,7 +615,7 @@ int main() {
             << "\"BuildId\":\"" << core::build_id << "\","
             << "\"Backend\":\"PlaySDK\","
             << "\"Transport\":\"NetSDK-LAN\","
-            << "\"Stream\":\"Principal\","
+            << "\"Stream\":\"" << stream_name << "\","
             << "\"ChannelIndex\":" << channel << ","
             << "\"DurationSeconds\":" << elapsed << ","
             << "\"Packets\":" << packet_count << ","
