@@ -1,0 +1,310 @@
+{
+  "scope": "All audit payload files except this manifest and packaging outputs; no r25 source contents copied",
+  "files": [
+    {
+      "path": "artifacts/API-ENDPOINTS-R25.json",
+      "bytes": 17255,
+      "sha256": "D6D959A43057B38B29713977C66CBF1F1D51ECC6AC44DA1342D0A2E237282544"
+    },
+    {
+      "path": "artifacts/API-OUTROS-TRANSPORTES.json",
+      "bytes": 287,
+      "sha256": "D53FB28C05E0F3F8EED65634E41178CA369C8279B5A20B6C449562830091E0C4"
+    },
+    {
+      "path": "artifacts/DEPENDENCIAS-PYTHON-OBSERVADAS.json",
+      "bytes": 2612,
+      "sha256": "2CCA366A9733D9406F1F4368FDED4B7712A10F813DF7EE287F7598ACB1318156"
+    },
+    {
+      "path": "artifacts/DEPENDENCY-GRAPH.json",
+      "bytes": 1956,
+      "sha256": "0C5F066CACD75077EAAEBB1E5BFFAAD1D53C15CEBF985101D91AF6847A86AE44"
+    },
+    {
+      "path": "artifacts/INVENTARIO-R25.json",
+      "bytes": 820287,
+      "sha256": "3E4ECBA05C5367BE05E54A2F1C5B70CC489CDFD6345D4C04DB0D5700C8DB109D"
+    },
+    {
+      "path": "artifacts/MAPA-TESTES-R25-CPP.json",
+      "bytes": 88824,
+      "sha256": "CD53C69C79CC3CC50727ED4878AF8456D786557752B4F21555BDACC83B59E3B6"
+    },
+    {
+      "path": "artifacts/MATRIZ-PARIDADE.json",
+      "bytes": 347311,
+      "sha256": "D345C295431B950AE6DEB6B15BC03C746A79682C51D2F3C6B151FF7BAFAF4D88"
+    },
+    {
+      "path": "artifacts/R25-COMPARACAO-SHA256.json",
+      "bytes": 1006,
+      "sha256": "379AA3C4E8AE0C04507586B91ED46A1C7472E2F94F0726BB9914E0FC200431F3"
+    },
+    {
+      "path": "artifacts/R25-REVISAO-INTELBRAS-ANTES.json",
+      "bytes": 648263,
+      "sha256": "0C69F16F863B7306168137818F797ED64AA002743964636965F18F00649FB444"
+    },
+    {
+      "path": "artifacts/R25-REVISAO-INTELBRAS-DEPOIS.json",
+      "bytes": 648262,
+      "sha256": "D8C980D917AB493362ECFD81A0C5D3408063AF1D764EC39B02E8164CA99D02F1"
+    },
+    {
+      "path": "artifacts/R25-SHA256-ANTES.json",
+      "bytes": 648425,
+      "sha256": "405EA2264C5E7D3CFC5C2093476E26578AB875B14F186DBB9A44D39DFE7A5327"
+    },
+    {
+      "path": "artifacts/R25-SHA256-DEPOIS.json",
+      "bytes": 648362,
+      "sha256": "8FD4670198A048566CD4547BB10219BA4F01639D630EED06601399B55BA6438E"
+    },
+    {
+      "path": "artifacts/REVISAO-INTELBRAS-BASE-AUDITORIA.json",
+      "bytes": 6820,
+      "sha256": "34B5F9E6C4BE2F10B41B65137BD8C820570D4C5ED015F788F2190195EB8126E4"
+    },
+    {
+      "path": "artifacts/SDK-CALLSITES-R25.json",
+      "bytes": 11349,
+      "sha256": "40BCEA00B7FF73904F515CC2F5EA69BE0DBB729E4FD54E6D2F1409BA27FEC5FC"
+    },
+    {
+      "path": "artifacts/SDK-NATIVE-PE.json",
+      "bytes": 263175,
+      "sha256": "08324DAEA61FFA5E5EE6EC4D04388411E9A241A1F47F000035E1F502A37355EF"
+    },
+    {
+      "path": "artifacts/SDK-PINVOKE-R25.json",
+      "bytes": 96554,
+      "sha256": "15ABBF238E62D4CDDDF7316C86246133AE2BD440085A7ACE193C3E3BA49B01C8"
+    },
+    {
+      "path": "artifacts/SDK-REACHABILITY.json",
+      "bytes": 2019,
+      "sha256": "F2E6A47629BDD2FC188B1EEF9EF5966DD5413118FA6AA62471F4C35185BD7694"
+    },
+    {
+      "path": "artifacts/SQLITE-SCHEMA-R25.json",
+      "bytes": 2001,
+      "sha256": "C1DBA7C30075CBEEB273698E32EE2057765254229C971B1A79A4F2FDA86F5BE2"
+    },
+    {
+      "path": "artifacts/VALIDACAO-AUDITORIA.json",
+      "bytes": 1978,
+      "sha256": "9097442854CAFBEA0007A5876B79927457709633DB723A685DBC5B4C2BB13718"
+    },
+    {
+      "path": "artifacts/VALIDACAO-REVISAO-INTELBRAS.json",
+      "bytes": 3514,
+      "sha256": "391B4FE5B045E490EC03F113EF0923947F600C255AC654B7A5A62F45F5848CE4"
+    },
+    {
+      "path": "AUDIT-001-INTELBRAS-CLOUD-ADDENDUM.md",
+      "bytes": 8604,
+      "sha256": "9FE88F384FC323B6B288C77D26D208132D65DA151A32471EA59AB7FBFDDF8918"
+    },
+    {
+      "path": "AUDIT-001-RESULTADO.md",
+      "bytes": 6995,
+      "sha256": "2168048BDCE716B2E6B245431AEE74B116C4055C09E77CD7F2F0E485465A8772"
+    },
+    {
+      "path": "docs/adrs/ADR-001-linguagem-standard.md",
+      "bytes": 769,
+      "sha256": "A30F6CB1152AD4556A10B968E62681ECA878AEED903B9D142F69D9CEF436013F"
+    },
+    {
+      "path": "docs/adrs/ADR-002-build-dependency-manager.md",
+      "bytes": 741,
+      "sha256": "523DD1D725674FB62D0396FE70201D7751B517799030EF578F73941E84293E8A"
+    },
+    {
+      "path": "docs/adrs/ADR-003-server-framework.md",
+      "bytes": 754,
+      "sha256": "3E0C82B57E1A2CA8D13AFFB365B95E3FCCB398811A4D4AD4A2DDF73A6B75C366"
+    },
+    {
+      "path": "docs/adrs/ADR-004-client-framework.md",
+      "bytes": 742,
+      "sha256": "15FDFEF0AF38545ACAB228FB172146CB721564C072AB017740835C9052072427"
+    },
+    {
+      "path": "docs/adrs/ADR-005-media-pipeline.md",
+      "bytes": 755,
+      "sha256": "DECA337EBE2CF113756907F9D82A839BED6F7729873D3E141EDFBC97D7F03C72"
+    },
+    {
+      "path": "docs/adrs/ADR-006-hardware-decode.md",
+      "bytes": 754,
+      "sha256": "9A11C5D6A68F37E6E9C1247A4A83142D25680DA9AED94F04DD4286B1F2684C1C"
+    },
+    {
+      "path": "docs/adrs/ADR-007-ai-runtime.md",
+      "bytes": 728,
+      "sha256": "166E67AD752C112C1A48E0B79E5914FF3363EFA2EF2C570EA645D282B6C39C4A"
+    },
+    {
+      "path": "docs/adrs/ADR-008-lpr-runtime.md",
+      "bytes": 775,
+      "sha256": "AB05D580DA0A62DB2520253CC20CEA4D4D8FAFD373AF0C1A71EB293A904EA0B2"
+    },
+    {
+      "path": "docs/adrs/ADR-009-persistence.md",
+      "bytes": 744,
+      "sha256": "E962523E2C933048F63B830718F697EF8EB164980E656F6B8B98DC147D9197B2"
+    },
+    {
+      "path": "docs/adrs/ADR-010-interoperability-intelbras.md",
+      "bytes": 978,
+      "sha256": "9EC15C4FFEAFA11B7AE724C1E7F53CA51BBD4566B35CCC70DED22DBABF9AC186"
+    },
+    {
+      "path": "docs/AI-R25-PARA-CPP.md",
+      "bytes": 5183,
+      "sha256": "B04FE68EBE041E67AA6587AAAB903EABDAE8EF79DDD2DF8D0C6B686F5A02C297"
+    },
+    {
+      "path": "docs/API-CONTRACTS-R25.md",
+      "bytes": 7647,
+      "sha256": "35EB12901173581E77685A911C27A6501D22085DB511FD86D8CC1CD26AB12AA0"
+    },
+    {
+      "path": "docs/ARQUITETURA-CPP-PROPOSTA.md",
+      "bytes": 10127,
+      "sha256": "8B799C6D88F4C0E8AE8F89999CEFE71216FBBC70EA943B243AD8F90A7F04489B"
+    },
+    {
+      "path": "docs/AUDITORIA-R25-PARA-CPP.md",
+      "bytes": 8351,
+      "sha256": "74B27D6742FF00D0ADAFF92E38EB3CA928EE2072CA2FD0443A94FFFDA0C046DA"
+    },
+    {
+      "path": "docs/BASELINE-PERFORMANCE-R25.md",
+      "bytes": 3067,
+      "sha256": "35C45243087ADAD98AD7DEEBBCE0A5D9A5580534067B9766652ED08122B02974"
+    },
+    {
+      "path": "docs/DECISAO-ARQUITETURAL-EXECUTIVA.md",
+      "bytes": 2019,
+      "sha256": "C3D3DDB701C25F225BAE35AF98D212919519AF1A039E4334FA838C73208257DB"
+    },
+    {
+      "path": "docs/DEPENDENCIAS-E-LICENCAS.md",
+      "bytes": 6069,
+      "sha256": "AF84E9A81DB521F2250A0BEB48C6C54E560BB6EC0F8BD6BC5E9BB773F589C357"
+    },
+    {
+      "path": "docs/LPR-R25-PARA-CPP.md",
+      "bytes": 7626,
+      "sha256": "5DC0DDA0AF1443BD0F1D1D4422BE5015BBF7B9D1E726C47E9BF3996913E72788"
+    },
+    {
+      "path": "docs/MAPA-DEPENDENCIAS.md",
+      "bytes": 3620,
+      "sha256": "3A649E2982392057A6D590C130BD19D0650B53CA591AAAF35A1FFDCAAE3B821F"
+    },
+    {
+      "path": "docs/MAPA-TESTES-R25-PARA-CPP.md",
+      "bytes": 49811,
+      "sha256": "C099E557557DA3D306044509DFA81B62768ACD4EA2F5DCFECC42FEA0D65EC480"
+    },
+    {
+      "path": "docs/MATRIZ-R25-PARA-CPP.md",
+      "bytes": 101940,
+      "sha256": "D0B3BC20A720EE68299CE4419BC17C8A9D5EB72314FBB5DDED4C672A8E22E91A"
+    },
+    {
+      "path": "docs/MEDIA-PIPELINE-R25-PARA-CPP.md",
+      "bytes": 9355,
+      "sha256": "BD19215D48712016746FE86D86B66E57F6EF879017DDCC894B6F771CE0F08D89"
+    },
+    {
+      "path": "docs/MURALHA-EVIDENCE-ACTIONS.md",
+      "bytes": 2279,
+      "sha256": "CA7D728414AB8F33319AB1A1E3F711D2EDD4EADD767130AF9312861D51A01E4E"
+    },
+    {
+      "path": "docs/OBSERVABILIDADE-CPP.md",
+      "bytes": 3276,
+      "sha256": "618B39FCEE55C3A3DD26EE6542518C69DEDEC5A6C096D24AE3E13C8EC6F4D4CB"
+    },
+    {
+      "path": "docs/RISCOS-E-BLOQUEIOS.md",
+      "bytes": 3537,
+      "sha256": "6A0000BD3E1B4517AC8EFE2C46CBC8F5621F7849C299D2FDA76CF36DE9E99E74"
+    },
+    {
+      "path": "docs/ROADMAP-CPP.md",
+      "bytes": 3511,
+      "sha256": "A0394CC59929EF0BFFC592E0F340CF5F74D0CA410575B846CC6073439B875B26"
+    },
+    {
+      "path": "docs/SDK-INTELBRAS-NATIVO-NECESSARIO.md",
+      "bytes": 7946,
+      "sha256": "B250C5461ABD6DC62FB2885B54D648B1F7DB6E27D2C52C3C6FC818B1160409D2"
+    },
+    {
+      "path": "docs/STORAGE-DATAROOT-R25-PARA-CPP.md",
+      "bytes": 10183,
+      "sha256": "7E8D247CF623EF9FDA7C04B55B261D1C4453570479335259564F0A7C0E5CE57B"
+    },
+    {
+      "path": "docs/UI-PARIDADE-R25-PARA-CPP.md",
+      "bytes": 4970,
+      "sha256": "8621259722926E963762E717DD10FB2BFBF351471B6A5E7198809EACB1863BC7"
+    },
+    {
+      "path": "README.md",
+      "bytes": 1187,
+      "sha256": "F4078020A9843F01891EFC810B1CE0F846650D028537DAF9621A1A038C0F7CB8"
+    },
+    {
+      "path": "tools/analisar-evidencias.py",
+      "bytes": 4224,
+      "sha256": "EF4CEC15EA5222AE9C2FD0DFC83DD7062A33BD87DABCF8F3C3F5B04DF1FDE3CB"
+    },
+    {
+      "path": "tools/concluir-documentos.py",
+      "bytes": 24754,
+      "sha256": "DFF4F737C6FE0738F4928AE505D66C0EAD36D3AE638149ADC450DD542BEF1D7B"
+    },
+    {
+      "path": "tools/empacotar-auditoria.py",
+      "bytes": 2868,
+      "sha256": "B5CC4099CB3120C3A872633317D3DA5059354B313AD50E7FFEEA1E5A449CB4F4"
+    },
+    {
+      "path": "tools/finalizar-auditoria.py",
+      "bytes": 11891,
+      "sha256": "62CF2B747A200D04E1297AEE7B06E3086BCD7F709321D4B74FC2785F44BDA071"
+    },
+    {
+      "path": "tools/gerar-matrizes.py",
+      "bytes": 19597,
+      "sha256": "427A8FB3B55B46A3B3CF6940972F1E8A23710C1BF6769D272B217905A3F38D73"
+    },
+    {
+      "path": "tools/inventariar-r25.py",
+      "bytes": 7051,
+      "sha256": "AA1573034C4827C5247486DE81D37F38B3E5B586C5353C50F5BF48CBD95B6FF3"
+    },
+    {
+      "path": "tools/redigir-arquitetura.py",
+      "bytes": 21606,
+      "sha256": "024648B6E13ABED4D73DEC5D0D15505BD3DFCB78B5F729A694F13F9BE50C9AC8"
+    },
+    {
+      "path": "tools/redigir-pipelines.py",
+      "bytes": 28683,
+      "sha256": "327E90F270D3EC10C56EC0C03BA129D00B5CF76FDE5B375980462C99E7AC5A16"
+    },
+    {
+      "path": "tools/redigir-storage.py",
+      "bytes": 16862,
+      "sha256": "444FA63CD36C30150E5191D1C9100BBE6942A48B87D1A8DF24C7E0909889341C"
+    }
+  ]
+}
