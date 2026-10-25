@@ -52,7 +52,7 @@ namespace SentriumNative {
 '@
 }
 
-$logPath = Join-Path $env:LOCALAPPDATA 'Sentrium\VMS\dev\Foundation-002\client-runtime\logs\sentrium-0.jsonl'
+$logPath = Join-Path $env:LOCALAPPDATA 'Sentrium\VMS\dev\Foundation-003\client-runtime\logs\sentrium-0.jsonl'
 $WM_CLOSE = 0x0010
 
 for ($cycle = 1; $cycle -le $Cycles; ++$cycle) {
