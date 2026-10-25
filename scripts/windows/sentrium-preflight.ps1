@@ -130,6 +130,7 @@ foreach ($symbol in @(
     'CLIENT_StopRealPlayEx',
     'EM_LOGIN_SPEC_CAP_TCP',
     'DH_RType_Realplay',
+    'DH_RType_Realplay_1',
     'nChanNum'
 )) {
     Assert-Sentrium ($headerText.Contains($symbol)) "Intelbras NetSDK header contract missing: $symbol"
