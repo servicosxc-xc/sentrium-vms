@@ -7,13 +7,16 @@
 #include <dhnetsdk.h>
 #include <dhplay.h>
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -50,9 +53,20 @@ int integer_environment(const char* name, int default_value, int minimum, int ma
 }
 
 std::filesystem::path sdk_root() {
-    return std::filesystem::path(
-        std::wstring(environment("SENTRIUM_INTELBRAS_SDK_ROOT").begin(),
-                     environment("SENTRIUM_INTELBRAS_SDK_ROOT").end()));
+    const DWORD required =
+        GetEnvironmentVariableW(L"SENTRIUM_INTELBRAS_SDK_ROOT", nullptr, 0);
+    if (required == 0) {
+        throw std::runtime_error("SENTRIUM_INTELBRAS_SDK_ROOT is not available");
+    }
+
+    std::wstring buffer(static_cast<std::size_t>(required), L'\0');
+    const DWORD written = GetEnvironmentVariableW(
+        L"SENTRIUM_INTELBRAS_SDK_ROOT", buffer.data(), required);
+    if (written == 0 || written >= required) {
+        throw std::runtime_error("SENTRIUM_INTELBRAS_SDK_ROOT could not be read");
+    }
+    buffer.resize(written);
+    return std::filesystem::path(buffer);
 }
 
 template <class T>
@@ -230,7 +244,7 @@ public:
     }
 
     bool input(const std::byte* bytes, std::size_t size) {
-        if (!playing_ || !bytes || size == 0 || size > static_cast<std::size_t>(UINT_MAX)) {
+        if (!playing_ || !bytes || size == 0 || size > static_cast<std::size_t>((std::numeric_limits<DWORD>::max)())) {
             return false;
         }
         return input_(
