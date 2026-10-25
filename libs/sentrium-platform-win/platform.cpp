@@ -52,7 +52,7 @@ fs::path authorized_root() {
     const auto hr = SHGetKnownFolderPath(FOLDERID_LocalAppData, KF_FLAG_DONT_VERIFY, nullptr, &raw);
     std::unique_ptr<wchar_t, decltype(&CoTaskMemFree)> holder(raw, &CoTaskMemFree);
     if (FAILED(hr) || !raw) throw Failure(Error::filesystem, "LocalAppData resolution failed");
-    fs::path result = fs::path(raw) / L"Sentrium" / L"VMS" / L"dev" / L"Foundation-001";
+    fs::path result = fs::path(raw) / L"Sentrium" / L"VMS" / L"dev" / L"Foundation-002";
     absolute_local(result);
     return result;
 }
@@ -196,7 +196,7 @@ int run(int argc, wchar_t** argv) {
                 return 0;
             } else throw Failure(Error::configuration, "Supported commands: --health or --version");
         }
-        if (!health) throw Failure(Error::configuration, "Use --health for the Foundation-001 local diagnostic");
+        if (!health) throw Failure(Error::configuration, "Use --health for the Foundation-002 local diagnostic");
         config.validate();
         console_event("configuration-validated", "Configuration validated");
         auto root = Directory::root();
