@@ -1,7 +1,5 @@
 #include <sentrium/intelbras.hpp>
 
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
 #include <Windows.h>
 #include <dhnetsdk.h>
 
