@@ -5,13 +5,13 @@
 
 ## Objetivo do gate
 
-Autorizar um laboratório controlado de mídia para escolher a pipeline da futura Foundation-005 Live View.
+Autorizar um laboratório controlado de mídia para escolher a pipeline da futura future Live View Foundation.
 
 ## Se autorizado
 
 A execução poderá:
 
-- adicionar `CLIENT_RealPlayEx`, callback RAW/DHAV e `CLIENT_StopRealPlay`;
+- adicionar `CLIENT_RealPlayEx`, callback RAW/DHAV e `CLIENT_StopRealPlayEx`;
 - integrar o subset necessário do PlaySDK;
 - criar `sentrium-media-lab`;
 - capturar amostras sanitizadas de stream;
