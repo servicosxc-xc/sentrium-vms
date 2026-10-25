@@ -43,7 +43,9 @@ Assert-Sentrium (-not [string]::IsNullOrWhiteSpace($env:SENTRIUM_FFMPEG_ROOT)) '
 $root = [IO.Path]::GetFullPath($env:SENTRIUM_FFMPEG_ROOT)
 Assert-Sentrium (Test-Path -LiteralPath $root -PathType Container) 'SENTRIUM_FFMPEG_ROOT directory does not exist'
 
-$input = [IO.Path]::GetFullPath($InputPath)
+$resolvedInput = Resolve-Path -LiteralPath $InputPath -ErrorAction SilentlyContinue
+Assert-Sentrium ($null -ne $resolvedInput) "input sample not found: $InputPath"
+$input = $resolvedInput.ProviderPath
 Assert-Sentrium (Test-Path -LiteralPath $input -PathType Leaf) "input sample not found: $input"
 
 $ffprobe = Resolve-SentriumExecutable $root 'ffprobe.exe'
@@ -55,7 +57,12 @@ Assert-Sentrium ((Get-SentriumPeMachine $ffmpeg) -eq 0x8664) 'ffmpeg.exe is not 
 if ([string]::IsNullOrWhiteSpace($EvidenceDirectory)) {
     $EvidenceDirectory = Join-Path (Split-Path $input -Parent) 'ffmpeg-probe'
 }
-$evidence = [IO.Path]::GetFullPath($EvidenceDirectory)
+if ([IO.Path]::IsPathRooted($EvidenceDirectory)) {
+    $evidence = [IO.Path]::GetFullPath($EvidenceDirectory)
+} else {
+    $evidence = Join-Path $PWD.ProviderPath $EvidenceDirectory
+    $evidence = [IO.Path]::GetFullPath($evidence)
+}
 [IO.Directory]::CreateDirectory($evidence) | Out-Null
 
 $ffprobeVersion = (& $ffprobe -version | Select-Object -First 1).Trim()
