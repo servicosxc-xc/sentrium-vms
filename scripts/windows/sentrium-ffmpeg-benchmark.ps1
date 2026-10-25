@@ -28,10 +28,10 @@ function Quote-SentriumArgument([string]$Value) {
     return '"' + ($Value -replace '"', '\"') + '"'
 }
 
-function Invoke-SentriumDecode([string]$Backend, [string]$FFmpeg, [string]$Input, [int]$LoopCount) {
+function Invoke-SentriumDecode([string]$Backend, [string]$FFmpeg, [string]$InputFile, [int]$LoopCount) {
     $args = @('-hide_banner','-loglevel','error','-nostdin','-nostats','-stream_loop',$LoopCount.ToString())
     if ($Backend -eq 'D3D11VA') { $args += @('-hwaccel','d3d11va') }
-    $args += @('-i',$Input,'-map','0:v:0','-an','-sn','-dn','-f','null','NUL','-progress','pipe:1')
+    $args += @('-i',$InputFile,'-map','0:v:0','-an','-sn','-dn','-f','null','NUL','-progress','pipe:1')
 
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = $FFmpeg
