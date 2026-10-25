@@ -52,21 +52,34 @@ int integer_environment(const char* name, int default_value, int minimum, int ma
     return value;
 }
 
-std::filesystem::path sdk_root() {
-    const DWORD required =
-        GetEnvironmentVariableW(L"SENTRIUM_INTELBRAS_SDK_ROOT", nullptr, 0);
+std::filesystem::path environment_path(
+    const wchar_t* name,
+    const char* missing_message) {
+    const DWORD required = GetEnvironmentVariableW(name, nullptr, 0);
     if (required == 0) {
-        throw std::runtime_error("SENTRIUM_INTELBRAS_SDK_ROOT is not available");
+        throw std::runtime_error(missing_message);
     }
 
     std::wstring buffer(static_cast<std::size_t>(required), L'\0');
-    const DWORD written = GetEnvironmentVariableW(
-        L"SENTRIUM_INTELBRAS_SDK_ROOT", buffer.data(), required);
+    const DWORD written =
+        GetEnvironmentVariableW(name, buffer.data(), required);
     if (written == 0 || written >= required) {
-        throw std::runtime_error("SENTRIUM_INTELBRAS_SDK_ROOT could not be read");
+        throw std::runtime_error("SDK root environment variable could not be read");
     }
     buffer.resize(written);
     return std::filesystem::path(buffer);
+}
+
+std::filesystem::path netsdk_root() {
+    return environment_path(
+        L"SENTRIUM_INTELBRAS_SDK_ROOT",
+        "SENTRIUM_INTELBRAS_SDK_ROOT is not available");
+}
+
+std::filesystem::path playsdk_root() {
+    return environment_path(
+        L"SENTRIUM_PLAYSDK_ROOT",
+        "SENTRIUM_PLAYSDK_ROOT is not available");
 }
 
 template <class T>
@@ -183,7 +196,7 @@ void CALLBACK decode_callback(
 class PlaySdk final {
 public:
     explicit PlaySdk(const std::filesystem::path& root)
-        : module_(root / L"bin" / L"dhplay.dll") {
+        : module_(root / L"DLL" / L"dhplay.dll") {
         get_free_port_ = load_export<decltype(&PLAY_GetFreePort)>(
             module_.get(), "PLAY_GetFreePort");
         release_port_ = load_export<decltype(&PLAY_ReleasePort)>(
@@ -438,7 +451,7 @@ int main() {
         Metrics metrics;
         CallbackContext callback_context{&queue, &metrics};
 
-        PlaySdk play(sdk_root());
+        PlaySdk play(playsdk_root());
         play.open(metrics);
 
         std::ofstream capture;
@@ -452,7 +465,7 @@ int main() {
         }
 
         RealPlay real_play(
-            sdk_root(),
+            netsdk_root(),
             login.session,
             channel,
             callback_context);
