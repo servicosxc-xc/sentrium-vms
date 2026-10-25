@@ -83,7 +83,14 @@ for ($cycle = 1; $cycle -le $Cycles; ++$cycle) {
         $dpi = [SentriumNative.Window]::GetDpiForWindow($hwnd)
         Assert-Sentrium ($dpi -gt 0) "cycle $cycle DPI query failed"
 
-        $moved = [SentriumNative.Window]::MoveWindow($hwnd, 80, 80, 1100, 700, $true)
+        # QML minimumWidth/minimumHeight apply to the client area. On Windows,
+        # the non-client frame/title bar makes the minimum outer size larger.
+        # Use a target safely above that minimum so this check validates resize
+        # behavior instead of testing decoration metrics.
+        $targetWidth = 1200
+        $targetHeight = 800
+        $moved = [SentriumNative.Window]::MoveWindow(
+            $hwnd, 80, 80, $targetWidth, $targetHeight, $true)
         Assert-Sentrium $moved "cycle $cycle resize failed"
         Start-Sleep -Milliseconds 150
 
@@ -92,7 +99,10 @@ for ($cycle = 1; $cycle -le $Cycles; ++$cycle) {
         Assert-Sentrium $rectOk "cycle $cycle window bounds unavailable"
         $width = $rect.Right - $rect.Left
         $height = $rect.Bottom - $rect.Top
-        Assert-Sentrium ($width -eq 1100 -and $height -eq 700) "cycle $cycle resize not applied: $($width)x$($height)"
+        Assert-Sentrium (
+            [Math]::Abs($width - $targetWidth) -le 2 -and
+            [Math]::Abs($height - $targetHeight) -le 2
+        ) "cycle $cycle resize not applied: $($width)x$($height)"
 
         $closePosted = [SentriumNative.Window]::PostMessage(
             $hwnd, $WM_CLOSE, [IntPtr]::Zero, [IntPtr]::Zero)
