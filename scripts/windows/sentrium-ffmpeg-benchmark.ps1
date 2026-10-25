@@ -86,10 +86,10 @@ Assert-Sentrium ($version.StartsWith('ffmpeg version 9.0.2')) 'ffmpeg version mu
 
 $resolvedInput = Resolve-Path -LiteralPath $InputPath -ErrorAction SilentlyContinue
 Assert-Sentrium ($null -ne $resolvedInput) "input sample not found: $InputPath"
-$input = $resolvedInput.ProviderPath
+$inputFilePath = $resolvedInput.ProviderPath
 
 if ([string]::IsNullOrWhiteSpace($EvidenceDirectory)) {
-    $EvidenceDirectory = Join-Path (Split-Path $input -Parent) 'ffmpeg-benchmark'
+    $EvidenceDirectory = Join-Path (Split-Path $inputFilePath -Parent) 'ffmpeg-benchmark'
 }
 if ([IO.Path]::IsPathRooted($EvidenceDirectory)) {
     $evidence = [IO.Path]::GetFullPath($EvidenceDirectory)
@@ -102,10 +102,10 @@ $backends = @('Software','D3D11VA')
 $results = @()
 
 foreach ($backend in $backends) {
-    $warmup = Invoke-SentriumDecode $backend $ffmpeg $input $Loops
+    $warmup = Invoke-SentriumDecode $backend $ffmpeg $inputFilePath $Loops
     Assert-Sentrium ($warmup.ExitCode -eq 0) "$backend warm-up failed: $($warmup.Stderr)"
     for ($i = 1; $i -le $Repetitions; $i++) {
-        $run = Invoke-SentriumDecode $backend $ffmpeg $input $Loops
+        $run = Invoke-SentriumDecode $backend $ffmpeg $inputFilePath $Loops
         Assert-Sentrium ($run.ExitCode -eq 0) "$backend repetition $i failed: $($run.Stderr)"
         $run['Repetition'] = $i
         $results += [pscustomobject]$run
@@ -129,8 +129,8 @@ foreach ($backend in $backends) {
 
 $output = [ordered]@{
     Benchmark = 'SENTRIUM-F004-FFMPEG-COMPARISON'
-    InputFileName = [IO.Path]::GetFileName($input)
-    InputBytes = (Get-Item -LiteralPath $input).Length
+    InputFileName = [IO.Path]::GetFileName($inputFilePath)
+    InputBytes = (Get-Item -LiteralPath $inputFilePath).Length
     FFmpeg = $version
     FFmpegSha256 = (Get-FileHash -LiteralPath $ffmpeg -Algorithm SHA256).Hash
     LoopCount = $Loops
