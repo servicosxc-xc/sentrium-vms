@@ -1,5 +1,9 @@
 qt_add_executable(sentrium-client
     main.cpp
+    DeviceController.cpp
+    DeviceController.hpp
+    DeviceWorker.cpp
+    DeviceWorker.hpp
 )
 
 qt_add_qml_module(sentrium-client
@@ -11,6 +15,7 @@ qt_add_qml_module(sentrium-client
 
 target_link_libraries(sentrium-client PRIVATE
     sentrium-platform-win
+    sentrium-intelbras
     Qt6::Core
     Qt6::Gui
     Qt6::Qml

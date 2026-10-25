@@ -10,6 +10,14 @@ function Invoke-SentriumRead([string]$Program, [string[]]$Arguments) {
     if ($LASTEXITCODE -ne 0) { throw "PREFLIGHT FAIL: $Program exit $LASTEXITCODE" }
     return ($lines -join "`n").Trim()
 }
+function Assert-SentriumPeAmd64([string]$Path, [string]$Label) {
+    $bytes = [IO.File]::ReadAllBytes($Path)
+    Assert-Sentrium ($bytes.Length -ge 64) "$Label PE header too small"
+    $pe = [BitConverter]::ToInt32($bytes,60)
+    Assert-Sentrium ($pe -ge 0 -and ($pe + 6) -le $bytes.Length) "$Label PE offset invalid"
+    Assert-Sentrium ([BitConverter]::ToUInt32($bytes,$pe) -eq 0x00004550) "$Label PE signature invalid"
+    Assert-Sentrium ([BitConverter]::ToUInt16($bytes,$pe+4) -eq 0x8664) "$Label is not AMD64"
+}
 Assert-Sentrium ($sentriumRoot -eq 'C:\Projetos\SENTRIUM VMS\sentrium-vms') 'Unauthorized workspace'
 foreach ($path in @($sentriumRoot,(Split-Path $sentriumRoot -Parent),'C:\Projetos')) {
     Assert-Sentrium (-not ((Get-Item -LiteralPath $path).Attributes -band [IO.FileAttributes]::ReparsePoint)) 'Workspace reparse point'
@@ -90,6 +98,42 @@ $qtSpec = Invoke-SentriumRead (Join-Path $qtRoot 'bin\qmake.exe') @('-query','QM
 Assert-Sentrium ($qtVersion -eq '6.12.0') 'Qt version mismatch'
 Assert-Sentrium ($qtPrefix.Replace('/','\') -eq $qtRoot) 'Qt prefix mismatch'
 Assert-Sentrium ($qtSpec -eq 'win32-msvc') 'Qt compiler spec mismatch'
+Assert-Sentrium (-not [string]::IsNullOrWhiteSpace($env:SENTRIUM_INTELBRAS_SDK_ROOT)) 'SENTRIUM_INTELBRAS_SDK_ROOT missing'
+$sdkRoot = [IO.Path]::GetFullPath($env:SENTRIUM_INTELBRAS_SDK_ROOT)
+Assert-Sentrium (Test-Path -LiteralPath $sdkRoot -PathType Container) 'Intelbras NetSDK root unavailable'
+$repoPrefix = $sentriumRoot.TrimEnd('\') + '\'
+Assert-Sentrium (
+    -not $sdkRoot.Equals($sentriumRoot,[StringComparison]::OrdinalIgnoreCase) -and
+    -not $sdkRoot.StartsWith($repoPrefix,[StringComparison]::OrdinalIgnoreCase)
+) 'Intelbras SDK must remain external to the repository'
+$sdkRequired = @(
+    'include\dhnetsdk.h',
+    'bin\dhnetsdk.lib',
+    'bin\dhconfigsdk.lib',
+    'bin\dhnetsdk.dll',
+    'bin\dhconfigsdk.dll'
+)
+foreach ($relative in $sdkRequired) {
+    Assert-Sentrium (Test-Path -LiteralPath (Join-Path $sdkRoot $relative) -PathType Leaf) "Intelbras SDK component missing: $relative"
+}
+$dhnetsdkHeader = Join-Path $sdkRoot 'include\dhnetsdk.h'
+$headerText = Get-Content -LiteralPath $dhnetsdkHeader -Raw
+foreach ($symbol in @(
+    'CLIENT_InitEx',
+    'CLIENT_SetAutoReconnect',
+    'CLIENT_LoginEx2',
+    'CLIENT_GetLastError',
+    'CLIENT_Logout',
+    'CLIENT_Cleanup',
+    'EM_LOGIN_SPEC_CAP_TCP',
+    'nChanNum'
+)) {
+    Assert-Sentrium ($headerText.Contains($symbol)) "Intelbras NetSDK header contract missing: $symbol"
+}
+Assert-SentriumPeAmd64 (Join-Path $sdkRoot 'bin\dhnetsdk.dll') 'dhnetsdk.dll'
+Assert-SentriumPeAmd64 (Join-Path $sdkRoot 'bin\dhconfigsdk.dll') 'dhconfigsdk.dll'
+$env:SENTRIUM_INTELBRAS_SDK_ROOT = $sdkRoot
+
 $manifest = Get-Content -LiteralPath (Join-Path $sentriumRoot 'vcpkg.json') -Raw | ConvertFrom-Json
 $head = Invoke-SentriumRead 'git' @('-C',$env:SENTRIUM_VCPKG_ROOT,'rev-parse','HEAD')
 $tag = Invoke-SentriumRead 'git' @('-C',$env:SENTRIUM_VCPKG_ROOT,'rev-parse','2026.10.16^{commit}')
@@ -105,8 +149,20 @@ if (-not $VerifyOnly -and $EvidenceDirectory) {
     $rawVs | Set-Content -LiteralPath (Join-Path $EvidenceDirectory 'vswhere.json') -Encoding UTF8
     $sdkPackages | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $EvidenceDirectory 'sdk-packages.json') -Encoding UTF8
     $environment | Where-Object { $_ -match '^(VSCMD|VCTools|VCINSTALLDIR|VSINSTALLDIR|WindowsSDK|WindowsSdk|INCLUDE=|LIB=|LIBPATH=|PATH=)' } | Set-Content -LiteralPath (Join-Path $EvidenceDirectory 'msvc-environment.txt') -Encoding UTF8
-    $paths = @($env:SENTRIUM_CL,$env:SENTRIUM_LINK,$rc,$env:SENTRIUM_CMAKE,$env:SENTRIUM_NINJA,(Join-Path $env:SENTRIUM_VCPKG_ROOT 'vcpkg.exe'))
+    $paths = @(
+        $env:SENTRIUM_CL,
+        $env:SENTRIUM_LINK,
+        $rc,
+        $env:SENTRIUM_CMAKE,
+        $env:SENTRIUM_NINJA,
+        (Join-Path $env:SENTRIUM_VCPKG_ROOT 'vcpkg.exe'),
+        $dhnetsdkHeader,
+        (Join-Path $sdkRoot 'bin\dhnetsdk.lib'),
+        (Join-Path $sdkRoot 'bin\dhconfigsdk.lib'),
+        (Join-Path $sdkRoot 'bin\dhnetsdk.dll'),
+        (Join-Path $sdkRoot 'bin\dhconfigsdk.dll')
+    )
     $paths | ForEach-Object { Get-FileHash -LiteralPath $_ -Algorithm SHA256 } | Select-Object Path,Hash,Algorithm | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $EvidenceDirectory 'toolchain-hashes.json') -Encoding UTF8
-    [ordered]@{Result='PREFLIGHT PASS';Workspace=$sentriumRoot;VS=$vs.installationVersion;VSProduct=$vs.catalog.productDisplayVersion;Installation=$vs.installationPath;VCTools=$env:VCToolsVersion;Compiler=$env:SENTRIUM_CL;Linker=$env:SENTRIUM_LINK;Host=$env:VSCMD_ARG_HOST_ARCH;Target=$env:VSCMD_ARG_TGT_ARCH;SDK='10.0.26100.9457';SDKDirectories=$env:WindowsSDKVersion;CMake=$cmakeVersion;Ninja=$ninjaVersion;QtVersion=$qtVersion;QtRoot=$qtRoot;QtSpec=$qtSpec;VcpkgCommit=$head;VcpkgTag=$tag;VcpkgOrigin=$origin;VcpkgTool=$vcpkgTool} | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $EvidenceDirectory 'preflight.json') -Encoding UTF8
+    [ordered]@{Result='PREFLIGHT PASS';Workspace=$sentriumRoot;VS=$vs.installationVersion;VSProduct=$vs.catalog.productDisplayVersion;Installation=$vs.installationPath;VCTools=$env:VCToolsVersion;Compiler=$env:SENTRIUM_CL;Linker=$env:SENTRIUM_LINK;Host=$env:VSCMD_ARG_HOST_ARCH;Target=$env:VSCMD_ARG_TGT_ARCH;SDK='10.0.26100.9457';SDKDirectories=$env:WindowsSDKVersion;CMake=$cmakeVersion;Ninja=$ninjaVersion;QtVersion=$qtVersion;QtRoot=$qtRoot;QtSpec=$qtSpec;IntelbrasSDKRoot=$sdkRoot;VcpkgCommit=$head;VcpkgTag=$tag;VcpkgOrigin=$origin;VcpkgTool=$vcpkgTool} | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $EvidenceDirectory 'preflight.json') -Encoding UTF8
 }
-Write-Host 'PREFLIGHT PASS: Foundation-002 workspace; exact toolchain lock; Qt 6.12.0 MSVC; single vcpkg baseline.'
+Write-Host 'PREFLIGHT PASS: Foundation-003 workspace; exact toolchain lock; Qt 6.12.0 MSVC; external NetSDK x64; single vcpkg baseline.'

@@ -38,12 +38,39 @@ if(DEFINED ENV{SENTRIUM_QT_ROOT} AND NOT "$ENV{SENTRIUM_QT_ROOT}" STREQUAL "")
 endif()
 find_package(Qt6 6.12.0 EXACT REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2)
 qt_standard_project_setup(REQUIRES 6.12)
+
+set(SENTRIUM_INTELBRAS_SDK_ROOT "$ENV{SENTRIUM_INTELBRAS_SDK_ROOT}" CACHE PATH "External Intelbras/Dahua NetSDK root")
+if(NOT SENTRIUM_INTELBRAS_SDK_ROOT)
+  message(FATAL_ERROR "SENTRIUM_INTELBRAS_SDK_ROOT is required for Foundation-003")
+endif()
+file(TO_CMAKE_PATH "${SENTRIUM_INTELBRAS_SDK_ROOT}" SENTRIUM_INTELBRAS_SDK_ROOT)
+foreach(relative
+    "include/dhnetsdk.h"
+    "bin/dhnetsdk.lib"
+    "bin/dhconfigsdk.lib"
+    "bin/dhnetsdk.dll"
+    "bin/dhconfigsdk.dll")
+  if(NOT EXISTS "${SENTRIUM_INTELBRAS_SDK_ROOT}/${relative}")
+    message(FATAL_ERROR "Foundation-003 Intelbras SDK component missing: ${relative}")
+  endif()
+endforeach()
+
 add_library(sentrium-core libs/sentrium-core/core.cpp)
 target_include_directories(sentrium-core PUBLIC libs/sentrium-core/include "${CMAKE_CURRENT_BINARY_DIR}/generated")
 add_library(sentrium-platform-win libs/sentrium-platform-win/platform.cpp)
 target_include_directories(sentrium-platform-win PUBLIC libs/sentrium-platform-win/include)
 target_compile_definitions(sentrium-platform-win PUBLIC UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX)
 target_link_libraries(sentrium-platform-win PUBLIC sentrium-core PRIVATE shell32 ole32 advapi32)
+
+add_library(sentrium-device libs/sentrium-device/device.cpp)
+target_include_directories(sentrium-device PUBLIC libs/sentrium-device/include)
+
+add_library(sentrium-intelbras libs/sentrium-intelbras/intelbras.cpp)
+target_include_directories(sentrium-intelbras PUBLIC libs/sentrium-intelbras/include)
+target_include_directories(sentrium-intelbras SYSTEM PRIVATE "${SENTRIUM_INTELBRAS_SDK_ROOT}/include")
+target_compile_definitions(sentrium-intelbras PRIVATE UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX)
+target_link_libraries(sentrium-intelbras PUBLIC sentrium-device PRIVATE kernel32)
+
 add_executable(sentrium-server apps/sentrium-server/main.cpp)
 target_link_libraries(sentrium-server PRIVATE sentrium-platform-win)
 add_subdirectory(apps/sentrium-client)
@@ -52,7 +79,11 @@ add_executable(sentrium-unit-tests tests/unit/main.cpp)
 target_link_libraries(sentrium-unit-tests PRIVATE sentrium-core)
 add_executable(sentrium-integration-tests tests/integration/main.cpp)
 target_link_libraries(sentrium-integration-tests PRIVATE sentrium-platform-win)
-foreach(target sentrium-core sentrium-platform-win sentrium-server sentrium-client sentrium-unit-tests sentrium-integration-tests)
+
+add_executable(sentrium-device-tests tests/device/main.cpp)
+target_link_libraries(sentrium-device-tests PRIVATE sentrium-device)
+
+foreach(target sentrium-core sentrium-platform-win sentrium-device sentrium-intelbras sentrium-server sentrium-client sentrium-unit-tests sentrium-integration-tests sentrium-device-tests)
   target_compile_options(${target} PRIVATE /W4 /WX /permissive- /utf-8)
   if(SENTRIUM_ASAN)
     target_compile_options(${target} PRIVATE /fsanitize=address /Zi)
@@ -64,6 +95,9 @@ foreach(id RANGE 1 8)
 endforeach()
 foreach(id RANGE 1 11)
   add_test(NAME I-${id} COMMAND sentrium-integration-tests ${id} $<TARGET_FILE:sentrium-server>)
+endforeach()
+foreach(id RANGE 1 7)
+  add_test(NAME D-${id} COMMAND sentrium-device-tests ${id})
 endforeach()
 add_test(
   NAME F002-CLIENT-SMOKE

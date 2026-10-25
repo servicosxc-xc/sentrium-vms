@@ -127,7 +127,7 @@ int wmain(int argc, wchar_t** argv) {
         }
         case 3:
             platform_win::validate_root_input(platform_win::authorized_root());
-            for (const auto& path : {fs::path(L"relative"),fs::path(L"\\\\synthetic-host\\share"),fs::path(L"\\\\?\\C:\\synthetic"),directory.path()/L"..",platform_win::authorized_root().parent_path()/L"Foundation-001",fs::path(L"C:\\sentrium-synthetic-forbidden")})
+            for (const auto& path : {fs::path(L"relative"),fs::path(L"\\\\synthetic-host\\share"),fs::path(L"\\\\?\\C:\\synthetic"),directory.path()/L"..",platform_win::authorized_root().parent_path()/L"Foundation-001",platform_win::authorized_root().parent_path()/L"Foundation-002",fs::path(L"C:\\sentrium-synthetic-forbidden")})
                 rejected([&] { platform_win::validate_root_input(path); });
             for (auto leaf : {L"..",L"../escape",L"a:b",L"x\\y",L"con",L"lpt1.txt",L"trailing.",L" space",L"a/b",L"\\\\?\\C:"})
                 rejected([&] { auto unused = directory.file(leaf); });

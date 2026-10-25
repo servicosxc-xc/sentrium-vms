@@ -1,5 +1,8 @@
 #include <sentrium/platform.hpp>
 
+#include "DeviceController.hpp"
+
+#include <QByteArray>
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -43,11 +46,24 @@ int main(int argc, char* argv[]) {
 
         event("bootstrap-started", "Application bootstrap started");
 
+        DeviceController device_controller;
+        QObject::connect(
+            &device_controller,
+            &DeviceController::auditEvent,
+            [&](const QString& id, const QString& message) {
+                const QByteArray id_bytes = id.toUtf8();
+                const QByteArray message_bytes = message.toUtf8();
+                event(
+                    std::string_view(id_bytes.constData(), static_cast<std::size_t>(id_bytes.size())),
+                    std::string_view(message_bytes.constData(), static_cast<std::size_t>(message_bytes.size())));
+            });
+
         QQmlApplicationEngine engine;
         engine.rootContext()->setContextProperty(QStringLiteral("sentriumProduct"), qstring(core::product));
         engine.rootContext()->setContextProperty(QStringLiteral("sentriumVersion"), qstring(core::version));
         engine.rootContext()->setContextProperty(QStringLiteral("sentriumBuildId"), qstring(core::build_id));
         engine.rootContext()->setContextProperty(QStringLiteral("sentriumBuildConfiguration"), qstring(core::build_configuration));
+        engine.rootContext()->setContextProperty(QStringLiteral("deviceController"), &device_controller);
         event("ui-initializing", "Qt Quick interface initialization started");
         engine.loadFromModule("Sentrium.Client", "Main");
 
@@ -66,6 +82,8 @@ int main(int argc, char* argv[]) {
 
         lifecycle.stopping();
         event("shutdown-started", "Application shutdown started");
+        device_controller.shutdown();
+        event("device-runtime-stopped", "Device worker and NetSDK runtime stopped");
         lifecycle.stopped();
         event("shutdown-completed", "Application shutdown completed");
         log.finish();
