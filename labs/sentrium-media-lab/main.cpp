@@ -22,6 +22,8 @@
 #include <string>
 #include <string_view>
 #include <thread>
+#include <tuple>
+#include <type_traits>
 
 namespace {
 
@@ -138,60 +140,100 @@ struct CallbackContext {
     std::atomic<std::uint64_t> sequence{0};
 };
 
-void CALLBACK real_data_callback(
-    LLONG,
-    DWORD data_type,
-    BYTE* buffer,
-    DWORD size,
-    LONG,
-    LDWORD user) noexcept {
-    auto* context = reinterpret_cast<CallbackContext*>(
-        static_cast<std::uintptr_t>(user));
-    if (!context || !context->queue || !context->metrics || !buffer || size == 0) {
-        return;
-    }
-
-    // A malformed callback must not force an unbounded allocation in this lab.
-    constexpr DWORD max_packet_bytes = 16U * 1024U * 1024U;
-    if (size > max_packet_bytes) {
-        ++context->metrics->ignored_packets;
-        return;
-    }
-
-    try {
-        Packet packet;
-        packet.data_type = data_type;
-        packet.sequence = context->sequence.fetch_add(1, std::memory_order_relaxed);
-        packet.arrival = std::chrono::steady_clock::now();
-        packet.bytes.resize(size);
-        std::memcpy(packet.bytes.data(), buffer, size);
-
-        ++context->metrics->callback_packets;
-        context->metrics->callback_bytes.fetch_add(size, std::memory_order_relaxed);
-        context->queue->push(std::move(packet));
-    } catch (...) {
-        ++context->metrics->ignored_packets;
+template <class T>
+void* callback_user_pointer(T value) noexcept {
+    using Value = std::remove_cv_t<std::remove_reference_t<T>>;
+    if constexpr (std::is_pointer_v<Value>) {
+        return const_cast<void*>(reinterpret_cast<const void*>(value));
+    } else {
+        return reinterpret_cast<void*>(static_cast<std::uintptr_t>(value));
     }
 }
 
-void CALLBACK decode_callback(
-    LONG,
-    char*,
-    LONG,
-    FRAME_INFO* frame,
-    void* user,
-    LONG) noexcept {
-    auto* metrics = static_cast<Metrics*>(user);
-    if (!metrics || !frame) {
-        return;
-    }
+template <class Callback>
+struct RealDataCallbackBridge;
 
-    ++metrics->decoded_callbacks;
-    metrics->last_width.store(frame->nWidth, std::memory_order_relaxed);
-    metrics->last_height.store(frame->nHeight, std::memory_order_relaxed);
-    metrics->last_frame_rate.store(frame->nFrameRate, std::memory_order_relaxed);
-    metrics->last_frame_type.store(frame->nType, std::memory_order_relaxed);
-}
+template <class R, class... Args>
+struct RealDataCallbackBridge<R (CALLBACK *)(Args...)> {
+    static R CALLBACK invoke(Args... args) noexcept {
+        static_assert(sizeof...(Args) == 6, "Unexpected NetSDK real-data callback ABI");
+        auto values = std::forward_as_tuple(args...);
+
+        auto* context = static_cast<CallbackContext*>(
+            callback_user_pointer(std::get<5>(values)));
+        auto* buffer = std::get<2>(values);
+        const auto size = static_cast<std::size_t>(std::get<3>(values));
+        const auto data_type = static_cast<std::uint32_t>(std::get<1>(values));
+
+        if (!context || !context->queue || !context->metrics || !buffer || size == 0) {
+            if constexpr (!std::is_void_v<R>) {
+                return R{};
+            } else {
+                return;
+            }
+        }
+
+        constexpr std::size_t max_packet_bytes = 16U * 1024U * 1024U;
+        if (size > max_packet_bytes) {
+            ++context->metrics->ignored_packets;
+            if constexpr (!std::is_void_v<R>) {
+                return R{};
+            } else {
+                return;
+            }
+        }
+
+        try {
+            Packet packet;
+            packet.data_type = data_type;
+            packet.sequence =
+                context->sequence.fetch_add(1, std::memory_order_relaxed);
+            packet.arrival = std::chrono::steady_clock::now();
+            packet.bytes.resize(size);
+            std::memcpy(packet.bytes.data(), buffer, size);
+
+            ++context->metrics->callback_packets;
+            context->metrics->callback_bytes.fetch_add(
+                static_cast<std::uint64_t>(size), std::memory_order_relaxed);
+            context->queue->push(std::move(packet));
+        } catch (...) {
+            ++context->metrics->ignored_packets;
+        }
+
+        if constexpr (!std::is_void_v<R>) {
+            return R{};
+        }
+    }
+};
+
+template <class Callback>
+struct DecodeCallbackBridge;
+
+template <class R, class... Args>
+struct DecodeCallbackBridge<R (CALLBACK *)(Args...)> {
+    static R CALLBACK invoke(Args... args) noexcept {
+        static_assert(sizeof...(Args) == 6, "Unexpected PlaySDK decode callback ABI");
+        auto values = std::forward_as_tuple(args...);
+
+        auto* frame = std::get<3>(values);
+        auto* metrics = static_cast<Metrics*>(
+            callback_user_pointer(std::get<4>(values)));
+
+        if (metrics && frame) {
+            ++metrics->decoded_callbacks;
+            metrics->last_width.store(frame->nWidth, std::memory_order_relaxed);
+            metrics->last_height.store(frame->nHeight, std::memory_order_relaxed);
+            metrics->last_frame_rate.store(
+                frame->nFrameRate, std::memory_order_relaxed);
+            metrics->last_frame_type.store(
+                frame->nType, std::memory_order_relaxed);
+        }
+
+        if constexpr (!std::is_void_v<R>) {
+            return R{};
+        }
+    }
+};
 
 class PlaySdk final {
 public:
@@ -247,7 +289,10 @@ public:
         if (!set_dec_stream_(port_, 1)) {
             fail("PLAY_SetDecCBStream");
         }
-        if (!set_dec_callback_(port_, &decode_callback, &metrics)) {
+        if (!set_dec_callback_(
+                port_,
+                &DecodeCallbackBridge<fDecCBFun>::invoke,
+                &metrics)) {
             fail("PLAY_SetDecCallBackEx");
         }
         if (!play_(port_, nullptr)) {
@@ -362,7 +407,7 @@ public:
             reinterpret_cast<std::uintptr_t>(&context));
         if (!set_callback_(
                 handle_,
-                &real_data_callback,
+                &RealDataCallbackBridge<fRealDataCallBackEx2>::invoke,
                 user,
                 original_stream_only)) {
             const auto error = last_error_();
