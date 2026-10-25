@@ -111,7 +111,10 @@ $sdkRequired = @(
     'bin\dhnetsdk.lib',
     'bin\dhconfigsdk.lib',
     'bin\dhnetsdk.dll',
-    'bin\dhconfigsdk.dll'
+    'bin\dhconfigsdk.dll',
+    'include\dhplay.h',
+    'bin\dhplay.lib',
+    'bin\dhplay.dll'
 )
 foreach ($relative in $sdkRequired) {
     Assert-Sentrium (Test-Path -LiteralPath (Join-Path $sdkRoot $relative) -PathType Leaf) "Intelbras SDK component missing: $relative"
@@ -125,13 +128,38 @@ foreach ($symbol in @(
     'CLIENT_GetLastError',
     'CLIENT_Logout',
     'CLIENT_Cleanup',
+    'CLIENT_RealPlayEx',
+    'CLIENT_SetRealDataCallBackEx2',
+    'CLIENT_StopRealPlayEx',
     'EM_LOGIN_SPEC_CAP_TCP',
+    'DH_RType_Realplay',
     'nChanNum'
 )) {
     Assert-Sentrium ($headerText.Contains($symbol)) "Intelbras NetSDK header contract missing: $symbol"
 }
 Assert-SentriumPeAmd64 (Join-Path $sdkRoot 'bin\dhnetsdk.dll') 'dhnetsdk.dll'
 Assert-SentriumPeAmd64 (Join-Path $sdkRoot 'bin\dhconfigsdk.dll') 'dhconfigsdk.dll'
+
+$dhplayHeader = Join-Path $sdkRoot 'include\dhplay.h'
+$playHeaderText = Get-Content -LiteralPath $dhplayHeader -Raw
+foreach ($symbol in @(
+    'PLAY_GetFreePort',
+    'PLAY_ReleasePort',
+    'PLAY_SetStreamOpenMode',
+    'PLAY_OpenStream',
+    'PLAY_SetDecCBStream',
+    'PLAY_SetDecCallBackEx',
+    'PLAY_Play',
+    'PLAY_InputData',
+    'PLAY_Stop',
+    'PLAY_CloseStream',
+    'PLAY_GetLastError',
+    'STREAME_REALTIME',
+    'FRAME_INFO'
+)) {
+    Assert-Sentrium ($playHeaderText.Contains($symbol)) "Intelbras PlaySDK header contract missing: $symbol"
+}
+Assert-SentriumPeAmd64 (Join-Path $sdkRoot 'bin\dhplay.dll') 'dhplay.dll'
 $env:SENTRIUM_INTELBRAS_SDK_ROOT = $sdkRoot
 
 $manifest = Get-Content -LiteralPath (Join-Path $sentriumRoot 'vcpkg.json') -Raw | ConvertFrom-Json
@@ -157,12 +185,15 @@ if (-not $VerifyOnly -and $EvidenceDirectory) {
         $env:SENTRIUM_NINJA,
         (Join-Path $env:SENTRIUM_VCPKG_ROOT 'vcpkg.exe'),
         $dhnetsdkHeader,
+        $dhplayHeader,
         (Join-Path $sdkRoot 'bin\dhnetsdk.lib'),
         (Join-Path $sdkRoot 'bin\dhconfigsdk.lib'),
+        (Join-Path $sdkRoot 'bin\dhplay.lib'),
         (Join-Path $sdkRoot 'bin\dhnetsdk.dll'),
-        (Join-Path $sdkRoot 'bin\dhconfigsdk.dll')
+        (Join-Path $sdkRoot 'bin\dhconfigsdk.dll'),
+        (Join-Path $sdkRoot 'bin\dhplay.dll')
     )
     $paths | ForEach-Object { Get-FileHash -LiteralPath $_ -Algorithm SHA256 } | Select-Object Path,Hash,Algorithm | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $EvidenceDirectory 'toolchain-hashes.json') -Encoding UTF8
-    [ordered]@{Result='PREFLIGHT PASS';Workspace=$sentriumRoot;VS=$vs.installationVersion;VSProduct=$vs.catalog.productDisplayVersion;Installation=$vs.installationPath;VCTools=$env:VCToolsVersion;Compiler=$env:SENTRIUM_CL;Linker=$env:SENTRIUM_LINK;Host=$env:VSCMD_ARG_HOST_ARCH;Target=$env:VSCMD_ARG_TGT_ARCH;SDK='10.0.26100.9457';SDKDirectories=$env:WindowsSDKVersion;CMake=$cmakeVersion;Ninja=$ninjaVersion;QtVersion=$qtVersion;QtRoot=$qtRoot;QtSpec=$qtSpec;IntelbrasSDKRoot=$sdkRoot;VcpkgCommit=$head;VcpkgTag=$tag;VcpkgOrigin=$origin;VcpkgTool=$vcpkgTool} | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $EvidenceDirectory 'preflight.json') -Encoding UTF8
+    [ordered]@{Result='PREFLIGHT PASS';Workspace=$sentriumRoot;VS=$vs.installationVersion;VSProduct=$vs.catalog.productDisplayVersion;Installation=$vs.installationPath;VCTools=$env:VCToolsVersion;Compiler=$env:SENTRIUM_CL;Linker=$env:SENTRIUM_LINK;Host=$env:VSCMD_ARG_HOST_ARCH;Target=$env:VSCMD_ARG_TGT_ARCH;SDK='10.0.26100.9457';SDKDirectories=$env:WindowsSDKVersion;CMake=$cmakeVersion;Ninja=$ninjaVersion;QtVersion=$qtVersion;QtRoot=$qtRoot;QtSpec=$qtSpec;IntelbrasSDKRoot=$sdkRoot;PlaySDK='validated-x64';VcpkgCommit=$head;VcpkgTag=$tag;VcpkgOrigin=$origin;VcpkgTool=$vcpkgTool} | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $EvidenceDirectory 'preflight.json') -Encoding UTF8
 }
-Write-Host 'PREFLIGHT PASS: Foundation-003 workspace; exact toolchain lock; Qt 6.12.0 MSVC; external NetSDK x64; single vcpkg baseline.'
+Write-Host 'PREFLIGHT PASS: Foundation-004 workspace; exact toolchain lock; Qt 6.12.0 MSVC; external NetSDK/PlaySDK x64; single vcpkg baseline.'
