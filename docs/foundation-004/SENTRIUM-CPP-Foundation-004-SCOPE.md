@@ -417,3 +417,19 @@ O executor técnico pode declarar somente:
 - `FOUNDATION-004 — BLOCKED`
 
 Nenhum backend é declarado vencedor sem os resultados do laboratório.
+
+
+## 19. Execution Re-sequencing — Hardware Topology Constraint (25/10/2026)
+
+The current LAN NVR has three configured camera channels, with only channels 1 and 3 currently producing useful live video; channel 2 is presently unavailable.
+
+Therefore:
+
+- 4/16-stream hardware scaling is not considered representative on this device;
+- multi-handle tests remain valid only as concurrency/lifecycle evidence where applicable;
+- scale benchmarks that require 4/16 real cameras may be recorded as `NOT RUN` with this hardware-topology reason;
+- F004 will continue only far enough to close the media-pipeline decision with real single-stream evidence, RAW/DHAV identification, FFmpeg software compatibility, and D3D11VA applicability where technically possible;
+- Cloud/P2P and automatic registration remain outside F004 and are deferred to the next Foundation;
+- large-scale live-view benchmarking is intentionally postponed until SENTRIUM can reach complete 16/32-channel recorders through the supported connectivity paths.
+
+This change does not promote any media backend and does not close F004.
