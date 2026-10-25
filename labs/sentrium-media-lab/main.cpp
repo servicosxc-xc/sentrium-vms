@@ -570,13 +570,16 @@ StreamResult run_stream(
                     continue;
                 }
 
-                if (capture && captured < capture_limit) {
+                if (capture.is_open() && captured < capture_limit) {
                     const auto remaining = capture_limit - captured;
                     const auto count = static_cast<std::streamsize>(
                         std::min<std::uint64_t>(remaining, packet->bytes.size()));
                     capture.write(
                         reinterpret_cast<const char*>(packet->bytes.data()),
                         count);
+                    if (!capture) {
+                        throw std::runtime_error("media capture write failed");
+                    }
                     captured += static_cast<std::uint64_t>(count);
                 }
 
@@ -603,8 +606,11 @@ StreamResult run_stream(
         consumer.join();
         play.close();
 
-        if (capture) {
+        if (capture.is_open()) {
             capture.flush();
+            if (!capture) {
+                throw std::runtime_error("media capture flush failed");
+            }
             capture.close();
         }
 
