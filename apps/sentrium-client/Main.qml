@@ -19,6 +19,7 @@ ApplicationWindow {
     property color textPrimary: "#eef2f7"
     property color textSecondary: "#99a6b8"
     property color accent: "#4f8cff"
+    property string runtimeState: "Starting"
 
     header: ToolBar {
         height: 58
@@ -69,7 +70,7 @@ ApplicationWindow {
             Item { Layout.fillWidth: true }
 
             Label {
-                text: sentriumRuntimeState
+                text: window.runtimeState
                 color: "#7dd3a7"
                 font.pixelSize: 12
             }
@@ -305,7 +306,7 @@ ApplicationWindow {
             anchors.rightMargin: 12
 
             Label {
-                text: "Status: " + sentriumRuntimeState
+                text: "Status: " + window.runtimeState
                 color: window.textSecondary
                 font.pixelSize: 11
             }
