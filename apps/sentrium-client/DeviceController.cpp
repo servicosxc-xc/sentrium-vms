@@ -248,16 +248,19 @@ void DeviceController::removeDevice(const QString& id) {
 
 void DeviceController::erase(const QString& id) {
     const std::string key = utf8(id);
-    const auto original_size = records_.size();
-    records_.erase(
-        std::remove_if(
-            records_.begin(),
-            records_.end(),
-            [&](const Record& record) { return record.device.id == key; }),
-        records_.end());
-    if (records_.size() != original_size) {
-        emit devicesChanged();
+    const auto found = std::find_if(
+        records_.begin(),
+        records_.end(),
+        [&](const Record& record) { return record.device.id == key; });
+    if (found == records_.end()) {
+        return;
     }
+
+    std::fill(found->password.begin(), found->password.end(), '\0');
+    found->password.clear();
+    found->username.clear();
+    records_.erase(found);
+    emit devicesChanged();
 }
 
 void DeviceController::onConnectFinished(
