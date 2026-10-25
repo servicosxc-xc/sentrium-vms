@@ -48,8 +48,6 @@ int main(int argc, char* argv[]) {
         engine.rootContext()->setContextProperty(QStringLiteral("sentriumVersion"), qstring(core::version));
         engine.rootContext()->setContextProperty(QStringLiteral("sentriumBuildId"), qstring(core::build_id));
         engine.rootContext()->setContextProperty(QStringLiteral("sentriumBuildConfiguration"), qstring(core::build_configuration));
-        engine.rootContext()->setContextProperty(QStringLiteral("sentriumRuntimeState"), QStringLiteral("Starting"));
-
         event("ui-initializing", "Qt Quick interface initialization started");
         engine.loadFromModule("Sentrium.Client", "Main");
 
@@ -61,7 +59,7 @@ int main(int argc, char* argv[]) {
         }
 
         lifecycle.ready();
-        engine.rootContext()->setContextProperty(QStringLiteral("sentriumRuntimeState"), qstring(core::name(lifecycle.health().state)));
+        engine.rootObjects().front()->setProperty("runtimeState", qstring(core::name(lifecycle.health().state)));
         event("window-presented", "Main window created and runtime is ready");
 
         const int exit_code = app.exec();
