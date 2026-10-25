@@ -45,16 +45,34 @@ function Invoke-SentriumDecode([string]$Backend, [string]$FFmpeg, [string]$Input
     $process.StartInfo = $psi
     $wall = [Diagnostics.Stopwatch]::StartNew()
     Assert-Sentrium ($process.Start()) 'failed to start ffmpeg'
-    $stdout = $process.StandardOutput.ReadToEnd()
-    $stderr = $process.StandardError.ReadToEnd()
+    # Capture peak memory before process exit; counters are unreliable afterward.
+    # Read both redirected pipes asynchronously to prevent output-buffer deadlocks.
+    $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+    $stderrTask = $process.StandardError.ReadToEndAsync()
+    $peakWorkingSet = [int64]0
+    $memorySamples = 0
+    do {
+        try {
+            $process.Refresh()
+            if (-not $process.HasExited) {
+                $samplePeak = [int64]$process.PeakWorkingSet64
+                $sampleWorking = [int64]$process.WorkingSet64
+                $peakWorkingSet = [math]::Max($peakWorkingSet, [math]::Max($samplePeak, $sampleWorking))
+                $memorySamples++
+            }
+        } catch [System.InvalidOperationException] {
+            # Process exited while counters were being read.
+        }
+    } while (-not $process.WaitForExit(25))
     $process.WaitForExit()
+    $stdout = $stdoutTask.GetAwaiter().GetResult()
+    $stderr = $stderrTask.GetAwaiter().GetResult()
     $wall.Stop()
 
     $exitCode = $process.ExitCode
     $cpuMs = $process.TotalProcessorTime.TotalMilliseconds
     $userCpuMs = $process.UserProcessorTime.TotalMilliseconds
     $kernelCpuMs = $process.PrivilegedProcessorTime.TotalMilliseconds
-    $peakWorkingSet = $process.PeakWorkingSet64
 
     $frames = @([regex]::Matches($stdout, '(?m)^frame=(\d+)\s*$') | ForEach-Object { [int64]$_.Groups[1].Value })
     $lastFrame = if ($frames.Count -gt 0) { $frames[-1] } else { 0 }
@@ -70,7 +88,8 @@ function Invoke-SentriumDecode([string]$Backend, [string]$FFmpeg, [string]$Input
         UserCpuMilliseconds = [math]::Round($userCpuMs, 3)
         KernelCpuMilliseconds = [math]::Round($kernelCpuMs, 3)
         NormalizedCpuPercent = [math]::Round($normalizedCpu, 3)
-        PeakWorkingSetMB = [math]::Round($peakWorkingSet / 1MB, 3)
+        PeakWorkingSetMB = $(if ($memorySamples -gt 0 -and $peakWorkingSet -gt 0) { [math]::Round($peakWorkingSet / 1MB, 3) } else { $null })
+        MemorySamples = $memorySamples
         Frames = $lastFrame
         FramesPerSecond = if ($wall.Elapsed.TotalSeconds -gt 0) { [math]::Round($lastFrame / $wall.Elapsed.TotalSeconds, 3) } else { 0.0 }
         Stderr = $stderr.Trim()
@@ -115,6 +134,7 @@ foreach ($backend in $backends) {
 $summary = @()
 foreach ($backend in $backends) {
     $group = @($results | Where-Object { $_.Backend -eq $backend })
+    $validMemoryRuns = @($group | Where-Object { $null -ne $_.PeakWorkingSetMB })
     $summary += [pscustomobject][ordered]@{
         Backend = $backend
         Repetitions = $group.Count
@@ -122,7 +142,7 @@ foreach ($backend in $backends) {
         MeanWallMilliseconds = [math]::Round(($group | Measure-Object -Property WallMilliseconds -Average).Average, 3)
         MeanCpuMilliseconds = [math]::Round(($group | Measure-Object -Property CpuMilliseconds -Average).Average, 3)
         MeanNormalizedCpuPercent = [math]::Round(($group | Measure-Object -Property NormalizedCpuPercent -Average).Average, 3)
-        MeanPeakWorkingSetMB = [math]::Round(($group | Measure-Object -Property PeakWorkingSetMB -Average).Average, 3)
+        MeanPeakWorkingSetMB = $(if ($validMemoryRuns.Count -gt 0) { [math]::Round(($validMemoryRuns | Measure-Object -Property PeakWorkingSetMB -Average).Average, 3) } else { $null })
         MeanFramesPerSecond = [math]::Round(($group | Measure-Object -Property FramesPerSecond -Average).Average, 3)
     }
 }
