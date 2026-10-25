@@ -18,12 +18,15 @@
 #include <iostream>
 #include <limits>
 #include <memory>
+#include <set>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <thread>
 #include <tuple>
 #include <type_traits>
+#include <vector>
 
 namespace {
 
@@ -69,6 +72,38 @@ int integer_environment(const char* name, int default_value, int minimum, int ma
         throw std::runtime_error(std::string("invalid integer environment variable: ") + name);
     }
     return value;
+}
+
+std::vector<int> media_channels() {
+    const auto list = environment("SENTRIUM_MEDIA_CHANNELS", false);
+    if (list.empty()) {
+        return {integer_environment("SENTRIUM_MEDIA_CHANNEL", 0, 0, 4095)};
+    }
+
+    std::vector<int> channels;
+    std::set<int> unique;
+    std::stringstream stream(list);
+    std::string token;
+    while (std::getline(stream, token, ',')) {
+        if (token.empty()) {
+            throw std::runtime_error("SENTRIUM_MEDIA_CHANNELS contains an empty entry");
+        }
+
+        std::size_t consumed = 0;
+        const int channel = std::stoi(token, &consumed);
+        if (consumed != token.size() || channel < 0 || channel > 4095) {
+            throw std::runtime_error("SENTRIUM_MEDIA_CHANNELS contains an invalid channel");
+        }
+        if (!unique.insert(channel).second) {
+            throw std::runtime_error("SENTRIUM_MEDIA_CHANNELS contains a duplicate channel");
+        }
+        channels.push_back(channel);
+    }
+
+    if (channels.empty() || channels.size() > 16) {
+        throw std::runtime_error("SENTRIUM_MEDIA_CHANNELS must contain between 1 and 16 channels");
+    }
+    return channels;
 }
 
 std::filesystem::path environment_path(
@@ -460,6 +495,156 @@ private:
     LLONG handle_ = 0;
 };
 
+struct StreamResult {
+    int channel = 0;
+    bool success = false;
+    std::string error;
+    double duration_seconds = 0.0;
+    std::uint64_t packets = 0;
+    std::uint64_t bytes = 0;
+    double megabits_per_second = 0.0;
+    std::uint64_t queue_dropped = 0;
+    std::size_t queue_hwm = 0;
+    std::size_t queue_depth_at_stop = 0;
+    std::uint64_t ignored_packets = 0;
+    std::uint64_t input_retries = 0;
+    std::uint64_t input_failures = 0;
+    std::uint64_t decoded_callbacks = 0;
+    double decoded_fps = 0.0;
+    long width = 0;
+    long height = 0;
+    long frame_rate = 0;
+    long frame_type = 0;
+    std::uint64_t capture_bytes = 0;
+};
+
+StreamResult run_stream(
+    const std::filesystem::path& net_root,
+    const std::filesystem::path& play_root,
+    sentrium::device::Session session,
+    int channel,
+    DH_RealPlayType stream_type,
+    int duration_seconds,
+    const std::string& capture_path_text) {
+    StreamResult result;
+    result.channel = channel;
+
+    try {
+        PacketQueue queue(128);
+        Metrics metrics;
+        CallbackContext callback_context{&queue, &metrics};
+
+        PlaySdk play(play_root);
+        play.open(metrics);
+
+        std::ofstream capture;
+        constexpr std::uint64_t capture_limit = 8ULL * 1024ULL * 1024ULL;
+        std::uint64_t captured = 0;
+        if (!capture_path_text.empty()) {
+            capture.open(capture_path_text, std::ios::binary | std::ios::trunc);
+            if (!capture) {
+                throw std::runtime_error("could not create media capture file");
+            }
+        }
+
+        RealPlay real_play(
+            net_root,
+            session,
+            channel,
+            stream_type,
+            callback_context);
+
+        std::atomic<bool> stop_consumer{false};
+        std::jthread consumer([&](std::stop_token token) {
+            while (!token.stop_requested() && !stop_consumer.load()) {
+                auto packet = queue.try_pop();
+                if (!packet) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                    continue;
+                }
+
+                if (packet->data_type != 0) {
+                    continue;
+                }
+
+                if (capture && captured < capture_limit) {
+                    const auto remaining = capture_limit - captured;
+                    const auto count = static_cast<std::streamsize>(
+                        std::min<std::uint64_t>(remaining, packet->bytes.size()));
+                    capture.write(
+                        reinterpret_cast<const char*>(packet->bytes.data()),
+                        count);
+                    captured += static_cast<std::uint64_t>(count);
+                }
+
+                bool accepted = play.input(packet->bytes.data(), packet->bytes.size());
+                for (int retry = 0;
+                     !accepted && retry < 50 && !token.stop_requested();
+                     ++retry) {
+                    ++metrics.play_input_retries;
+                    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+                    accepted = play.input(packet->bytes.data(), packet->bytes.size());
+                }
+                if (!accepted) {
+                    ++metrics.play_input_failures;
+                }
+            }
+        });
+
+        const auto started = std::chrono::steady_clock::now();
+        std::this_thread::sleep_for(std::chrono::seconds(duration_seconds));
+        const auto finished = std::chrono::steady_clock::now();
+
+        real_play.stop();
+        stop_consumer = true;
+        consumer.request_stop();
+        consumer.join();
+        play.close();
+
+        if (capture) {
+            capture.flush();
+            capture.close();
+        }
+
+        const auto queue_metrics = queue.metrics();
+        result.duration_seconds =
+            std::chrono::duration<double>(finished - started).count();
+        result.packets = metrics.callback_packets.load();
+        result.bytes = metrics.callback_bytes.load();
+        result.queue_dropped = queue_metrics.dropped;
+        result.queue_hwm = queue_metrics.high_water_mark;
+        result.queue_depth_at_stop = queue_metrics.depth;
+        result.ignored_packets = metrics.ignored_packets.load();
+        result.input_retries = metrics.play_input_retries.load();
+        result.input_failures = metrics.play_input_failures.load();
+        result.decoded_callbacks = metrics.decoded_callbacks.load();
+        result.width = metrics.last_width.load();
+        result.height = metrics.last_height.load();
+        result.frame_rate = metrics.last_frame_rate.load();
+        result.frame_type = metrics.last_frame_type.load();
+        result.capture_bytes = captured;
+
+        if (result.duration_seconds > 0.0) {
+            result.megabits_per_second =
+                (static_cast<double>(result.bytes) * 8.0 / 1'000'000.0)
+                / result.duration_seconds;
+            result.decoded_fps =
+                static_cast<double>(result.decoded_callbacks)
+                / result.duration_seconds;
+        }
+
+        result.success =
+            result.packets > 0
+            && result.decoded_callbacks > 0
+            && result.input_failures == 0;
+    } catch (const std::exception& error) {
+        result.error = error.what();
+        result.success = false;
+    }
+
+    return result;
+}
+
 std::string json_bool(bool value) {
     return value ? "true" : "false";
 }
@@ -474,7 +659,7 @@ int main() {
         const auto user = environment("SENTRIUM_MEDIA_USER");
         const auto password = environment("SENTRIUM_MEDIA_PASSWORD");
         const int port = integer_environment("SENTRIUM_MEDIA_PORT", 37777, 1, 65535);
-        const int channel = integer_environment("SENTRIUM_MEDIA_CHANNEL", 0, 0, 4095);
+        const auto channels = media_channels();
         const int duration_seconds =
             integer_environment("SENTRIUM_MEDIA_DURATION", 10, 2, 3600);
         const auto capture_path_text = environment("SENTRIUM_MEDIA_CAPTURE", false);
@@ -514,98 +699,73 @@ int main() {
             ~DisconnectGuard() { static_cast<void>(adapter.disconnect(session)); }
         } disconnect_guard{adapter, login.session};
 
-        if (channel >= login.channel_count) {
-            throw std::runtime_error("requested channel exceeds device channel count");
-        }
-
-        PacketQueue queue(128);
-        Metrics metrics;
-        CallbackContext callback_context{&queue, &metrics};
-
-        PlaySdk play(playsdk_root());
-        play.open(metrics);
-
-        std::ofstream capture;
-        constexpr std::uint64_t capture_limit = 8ULL * 1024ULL * 1024ULL;
-        std::uint64_t captured = 0;
-        if (!capture_path_text.empty()) {
-            capture.open(capture_path_text, std::ios::binary | std::ios::trunc);
-            if (!capture) {
-                throw std::runtime_error("could not create media capture file");
+        for (const int channel : channels) {
+            if (channel >= login.channel_count) {
+                throw std::runtime_error(
+                    "requested channel exceeds device channel count");
             }
         }
 
-        RealPlay real_play(
-            netsdk_root(),
-            login.session,
-            channel,
-            stream_type,
-            callback_context);
-
-        std::atomic<bool> stop_consumer{false};
-        std::jthread consumer([&](std::stop_token token) {
-            while (!token.stop_requested() && !stop_consumer.load()) {
-                auto packet = queue.try_pop();
-                if (!packet) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-                    continue;
-                }
-
-                // The NetSDK original-stream flag is expected to produce dwDataType=0
-                // for the stream bytes consumed by PlaySDK. Other types are retained
-                // in ingest metrics but are not fed to the decoder.
-                if (packet->data_type != 0) {
-                    continue;
-                }
-
-                if (capture && captured < capture_limit) {
-                    const auto remaining = capture_limit - captured;
-                    const auto count = static_cast<std::streamsize>(
-                        std::min<std::uint64_t>(remaining, packet->bytes.size()));
-                    capture.write(
-                        reinterpret_cast<const char*>(packet->bytes.data()),
-                        count);
-                    captured += static_cast<std::uint64_t>(count);
-                }
-
-                bool accepted = play.input(packet->bytes.data(), packet->bytes.size());
-                for (int retry = 0; !accepted && retry < 50 && !token.stop_requested(); ++retry) {
-                    ++metrics.play_input_retries;
-                    std::this_thread::sleep_for(std::chrono::milliseconds(2));
-                    accepted = play.input(packet->bytes.data(), packet->bytes.size());
-                }
-                if (!accepted) {
-                    ++metrics.play_input_failures;
-                }
-            }
-        });
-
-        const auto started = std::chrono::steady_clock::now();
-        std::this_thread::sleep_for(std::chrono::seconds(duration_seconds));
-        const auto finished = std::chrono::steady_clock::now();
-
-        real_play.stop();
-        stop_consumer = true;
-        consumer.request_stop();
-        consumer.join();
-        play.close();
-        if (capture) {
-            capture.flush();
-            capture.close();
+        if (channels.size() > 1 && !capture_path_text.empty()) {
+            throw std::runtime_error(
+                "SENTRIUM_MEDIA_CAPTURE is supported only for a single channel");
         }
 
-        const auto queue_metrics = queue.metrics();
-        const auto elapsed =
-            std::chrono::duration<double>(finished - started).count();
-        const auto packet_count = metrics.callback_packets.load();
-        const auto byte_count = metrics.callback_bytes.load();
-        const auto decoded = metrics.decoded_callbacks.load();
-        const double megabits_per_second =
-            elapsed > 0.0 ? (static_cast<double>(byte_count) * 8.0 / 1'000'000.0) / elapsed : 0.0;
-        const double decoded_fps =
-            elapsed > 0.0 ? static_cast<double>(decoded) / elapsed : 0.0;
+        const auto net_root = netsdk_root();
+        const auto play_root = playsdk_root();
+        std::vector<StreamResult> results(channels.size());
+        std::vector<std::jthread> workers;
+        workers.reserve(channels.size());
 
-        const bool pass = packet_count > 0 && decoded > 0;
+        const auto wall_started = std::chrono::steady_clock::now();
+        for (std::size_t index = 0; index < channels.size(); ++index) {
+            workers.emplace_back([&, index] {
+                results[index] = run_stream(
+                    net_root,
+                    play_root,
+                    login.session,
+                    channels[index],
+                    stream_type,
+                    duration_seconds,
+                    capture_path_text);
+            });
+        }
+        for (auto& worker : workers) {
+            worker.join();
+        }
+        const auto wall_finished = std::chrono::steady_clock::now();
+        const double wall_seconds =
+            std::chrono::duration<double>(wall_finished - wall_started).count();
+
+        bool pass = true;
+        std::uint64_t total_packets = 0;
+        std::uint64_t total_bytes = 0;
+        std::uint64_t total_dropped = 0;
+        std::uint64_t total_input_retries = 0;
+        std::uint64_t total_input_failures = 0;
+        std::uint64_t total_decoded = 0;
+        std::size_t max_hwm = 0;
+
+        for (const auto& result : results) {
+            pass = pass && result.success;
+            total_packets += result.packets;
+            total_bytes += result.bytes;
+            total_dropped += result.queue_dropped;
+            total_input_retries += result.input_retries;
+            total_input_failures += result.input_failures;
+            total_decoded += result.decoded_callbacks;
+            max_hwm = std::max(max_hwm, result.queue_hwm);
+        }
+
+        const double aggregate_mbps =
+            wall_seconds > 0.0
+                ? (static_cast<double>(total_bytes) * 8.0 / 1'000'000.0)
+                    / wall_seconds
+                : 0.0;
+        const double aggregate_decoded_fps =
+            wall_seconds > 0.0
+                ? static_cast<double>(total_decoded) / wall_seconds
+                : 0.0;
 
         std::cout
             << "{"
@@ -616,27 +776,53 @@ int main() {
             << "\"Backend\":\"PlaySDK\","
             << "\"Transport\":\"NetSDK-LAN\","
             << "\"Stream\":\"" << stream_name << "\","
-            << "\"ChannelIndex\":" << channel << ","
-            << "\"DurationSeconds\":" << elapsed << ","
-            << "\"Packets\":" << packet_count << ","
-            << "\"Bytes\":" << byte_count << ","
-            << "\"MegabitsPerSecond\":" << megabits_per_second << ","
-            << "\"QueueDropped\":" << queue_metrics.dropped << ","
-            << "\"QueueHighWaterMark\":" << queue_metrics.high_water_mark << ","
-            << "\"QueueDepthAtStop\":" << queue_metrics.depth << ","
-            << "\"IgnoredPackets\":" << metrics.ignored_packets.load() << ","
-            << "\"InputRetries\":" << metrics.play_input_retries.load() << ","
-            << "\"InputFailures\":" << metrics.play_input_failures.load() << ","
-            << "\"DecodedCallbacks\":" << decoded << ","
-            << "\"DecodedFps\":" << decoded_fps << ","
-            << "\"LastWidth\":" << metrics.last_width.load() << ","
-            << "\"LastHeight\":" << metrics.last_height.load() << ","
-            << "\"LastFrameRate\":" << metrics.last_frame_rate.load() << ","
-            << "\"LastFrameType\":" << metrics.last_frame_type.load() << ","
-            << "\"CaptureWritten\":" << json_bool(captured > 0) << ","
-            << "\"CaptureBytes\":" << captured
-            << "}\n";
+            << "\"ChannelCount\":" << channels.size() << ","
+            << "\"WallSeconds\":" << wall_seconds << ","
+            << "\"Packets\":" << total_packets << ","
+            << "\"Bytes\":" << total_bytes << ","
+            << "\"MegabitsPerSecond\":" << aggregate_mbps << ","
+            << "\"QueueDropped\":" << total_dropped << ","
+            << "\"MaxQueueHighWaterMark\":" << max_hwm << ","
+            << "\"InputRetries\":" << total_input_retries << ","
+            << "\"InputFailures\":" << total_input_failures << ","
+            << "\"DecodedCallbacks\":" << total_decoded << ","
+            << "\"DecodedFps\":" << aggregate_decoded_fps << ","
+            << "\"Channels\":[";
 
+        for (std::size_t index = 0; index < results.size(); ++index) {
+            const auto& result = results[index];
+            if (index != 0) {
+                std::cout << ",";
+            }
+            std::cout
+                << "{"
+                << "\"ChannelIndex\":" << result.channel << ","
+                << "\"Result\":\"" << (result.success ? "PASS" : "FAIL") << "\","
+                << "\"DurationSeconds\":" << result.duration_seconds << ","
+                << "\"Packets\":" << result.packets << ","
+                << "\"Bytes\":" << result.bytes << ","
+                << "\"MegabitsPerSecond\":" << result.megabits_per_second << ","
+                << "\"QueueDropped\":" << result.queue_dropped << ","
+                << "\"QueueHighWaterMark\":" << result.queue_hwm << ","
+                << "\"QueueDepthAtStop\":" << result.queue_depth_at_stop << ","
+                << "\"IgnoredPackets\":" << result.ignored_packets << ","
+                << "\"InputRetries\":" << result.input_retries << ","
+                << "\"InputFailures\":" << result.input_failures << ","
+                << "\"DecodedCallbacks\":" << result.decoded_callbacks << ","
+                << "\"DecodedFps\":" << result.decoded_fps << ","
+                << "\"LastWidth\":" << result.width << ","
+                << "\"LastHeight\":" << result.height << ","
+                << "\"LastFrameRate\":" << result.frame_rate << ","
+                << "\"LastFrameType\":" << result.frame_type << ","
+                << "\"CaptureWritten\":" << json_bool(result.capture_bytes > 0) << ","
+                << "\"CaptureBytes\":" << result.capture_bytes;
+            if (!result.error.empty()) {
+                std::cout << ",\"Error\":\"stream-failed\"";
+            }
+            std::cout << "}";
+        }
+
+        std::cout << "]}\n";
         return pass ? 0 : 6;
     } catch (const std::exception& error) {
         std::cerr
