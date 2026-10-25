@@ -100,3 +100,15 @@ Os bitrates por canal diferiram bastante. Isso pode ocorrer por conteúdo/codifi
 - telemetria de captura: INVALID neste run por binário anterior.
 
 Próxima ação: rebuild correto no HEAD atual e repetição curta do cenário para obter evidência canônica com telemetria corrigida.
+
+## Adendo — topologia real do NVR
+
+Após o teste, o operador informou que este gravador possui **apenas 3 câmeras conectadas**.
+
+Consequência para a interpretação:
+
+- o cenário de 4 canais continua válido para provar **4 handles RealPlay + 4 portas PlaySDK concorrentes no mesmo processo**;
+- ele **não é válido como benchmark de carga de 4 câmeras reais simultâneas**;
+- pelo menos um dos canais testados corresponde a canal vazio/sem câmera, podendo o NVR fornecer stream de ausência de sinal/placeholder;
+- métricas agregadas de bitrate/FPS deste cenário não devem ser usadas para extrapolar desempenho de 4 câmeras reais;
+- benchmarks canônicos de carga devem usar apenas canais com câmera real ou outro NVR com quantidade suficiente de câmeras ativas.
