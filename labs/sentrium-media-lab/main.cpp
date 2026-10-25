@@ -30,15 +30,32 @@ namespace {
 using sentrium::media::Packet;
 using sentrium::media::PacketQueue;
 
+struct EnvironmentDeleter {
+    void operator()(char* value) const noexcept {
+        std::free(value);
+    }
+};
+
 std::string environment(const char* name, bool required = true) {
-    const char* value = std::getenv(name);
-    if (!value || *value == '\0') {
+    char* raw = nullptr;
+    std::size_t length = 0;
+    const errno_t status = _dupenv_s(&raw, &length, name);
+    std::unique_ptr<char, EnvironmentDeleter> value(raw);
+
+    if (status != 0) {
+        throw std::runtime_error(
+            std::string("could not read environment variable: ") + name);
+    }
+
+    if (!value || length <= 1 || value.get()[0] == '\0') {
         if (required) {
-            throw std::runtime_error(std::string("missing environment variable: ") + name);
+            throw std::runtime_error(
+                std::string("missing environment variable: ") + name);
         }
         return {};
     }
-    return value;
+
+    return std::string(value.get());
 }
 
 int integer_environment(const char* name, int default_value, int minimum, int maximum) {
@@ -478,7 +495,7 @@ int main() {
 
         intelbras::Adapter adapter;
         const auto login = adapter.connect(request);
-        if (!login.ok) {
+        if (!login.success) {
             throw std::runtime_error(login.diagnostic);
         }
 
