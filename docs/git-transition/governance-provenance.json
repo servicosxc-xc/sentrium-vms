@@ -1,0 +1,56 @@
+{
+  "nature": "Later human decisions; materialized only in the second documentary commit",
+  "source": "User supplied FINAL R1 appendices A-D",
+  "orderSha256": "13cd7f48d6b5470ae481ed702fded13d0f6d2ee1654c2c1b1991344dead4c6d3",
+  "technicalParentCommit": "85c197ec8f0b06b3329b7a57b0d22c16e6b619e6",
+  "historicalBuildId": "source-b8b6d42374064dc8",
+  "materializedUtc": "2026-10-25T01:52:45.547Z",
+  "canonicalExtraction": "Exact UTF-8 appendix body after each outer appendix heading and before the next appendix/section heading, preserving internal text and CRLF bytes; no paraphrase",
+  "authority": "Explicit project owner decision in user-supplied order, not the Git importer",
+  "files": [
+    {
+      "appendix": "A",
+      "path": "docs/governance/SENTRIUM-CPP-Foundation-001-HUMAN-REVIEW.md",
+      "sha256": "16c448c0525dd8f7556ede6e12da2291543cc723094069483637c3f237e9fad7",
+      "bytes": 3655,
+      "materializedUtc": "2026-10-25T01:52:45.547Z",
+      "canonicalStartCharacter": 40792,
+      "canonicalEndCharacter": 44341
+    },
+    {
+      "appendix": "B",
+      "path": "docs/adr/ADR-001-linguagem-standard.md",
+      "sha256": "68ca847e54b19ba0fd384ccb3ddb13fa1a5954f75e7ede3cf76361ee23a8a3a1",
+      "bytes": 3747,
+      "materializedUtc": "2026-10-25T01:52:45.547Z",
+      "canonicalStartCharacter": 44374,
+      "canonicalEndCharacter": 47992
+    },
+    {
+      "appendix": "C",
+      "path": "docs/adr/ADR-002-build-dependency-manager.md",
+      "sha256": "cc8e3b5a8fa9bc6b0a1f7076d916637fe1e2cfba12708cb49e14a59740866b37",
+      "bytes": 4051,
+      "materializedUtc": "2026-10-25T01:52:45.547Z",
+      "canonicalStartCharacter": 48025,
+      "canonicalEndCharacter": 51959
+    },
+    {
+      "appendix": "D",
+      "path": "docs/governance/SENTRIUM-CPP-Foundation-001-CLOSURE.md",
+      "sha256": "c6855de2116d5a93ca2e4ed312bbc49eb35fb4dc32501d50b933f38eafd840d7",
+      "bytes": 7042,
+      "materializedUtc": "2026-10-25T01:52:45.547Z",
+      "canonicalStartCharacter": 51992,
+      "canonicalEndCharacter": 58813
+    }
+  ],
+  "states": {
+    "foundation001": "CLOSED / PASS / HUMAN REVIEW APPROVED",
+    "f001": "CLOSED SUCCESSFULLY",
+    "adr001": "Accepted",
+    "adr002": "Accepted",
+    "adr003to010": "Proposed",
+    "foundation002": "NOT AUTHORIZED"
+  }
+}
