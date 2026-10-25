@@ -2,7 +2,7 @@ param([ValidateSet('Debug','Release','ASan')][string[]]$Configuration = @('Debug
 $ErrorActionPreference = 'Stop'
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
 if ($RunName -notmatch '^sentrium-[a-z0-9-]+$') { throw 'Invalid evidence run name' }
-$evidence = Join-Path $root "docs\foundation-001\evidence\$RunName"
+$evidence = Join-Path $root "docs\foundation-002\evidence\$RunName"
 if (Test-Path -LiteralPath $evidence) { throw 'Evidence already exists; select a new RunName to preserve history' }
 . (Join-Path $PSScriptRoot 'sentrium-preflight.ps1') -EvidenceDirectory $evidence
 $sourceFiles = @(Get-Item -LiteralPath (Join-Path $root 'CMakeLists.txt'),(Join-Path $root 'CMakePresets.json'),(Join-Path $root 'vcpkg.json'); Get-ChildItem -LiteralPath (Join-Path $root 'apps'),(Join-Path $root 'libs'),(Join-Path $root 'tests'),(Join-Path $root 'cmake'),(Join-Path $root 'scripts') -Recurse -File)
