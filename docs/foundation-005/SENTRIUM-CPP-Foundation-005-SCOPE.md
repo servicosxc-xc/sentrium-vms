@@ -62,3 +62,13 @@ Live View de produção, render Qt Quick/mosaico, playback, gravação, IA/LPR, 
 - Associados os eventos à thread Qt existente, sem executar login dentro do callback nativo; dispositivos inesperados não são admitidos automaticamente; listener desligado por padrão até comando na interface.
 - **Implementado no código, ainda não compilado ou testado no Windows.** Portanto não declarar PASS nem fazer merge.
 - Cloud/P2P continua pendente da inspeção/integração binária com o SIM Next instalado; menu Cloud não simula conexão.
+
+## Ajustes de interface — observação do operador (25/10/2026)
+
+Após abrir o cliente Debug no Windows, o operador apresentou capturas reais do modal LAN / Cloud / Registro Automático e solicitou três correções:
+
+1. Botão `+ Adicionar` aparece como retângulo branco/sem rótulo no primeiro momento; aplicar `background` e `contentItem` explícitos no `Main.qml` para renderização estável (commit `6e61f1fce3f33c3c38adf09341220d94e5d3e0ab`).
+2. Clicar fora de `Adicionar dispositivo` **não pode fechar o diálogo**. `closePolicy: Popup.CloseOnEscape` evita fechamento por clique externo e mantém Escape / Cancelar; validar no cliente Windows após rebuild.
+3. Os parâmetros do **servidor** de Registro Automático (bind/IP, porta, ligar/desligar, estado) ficam **temporariamente** no diálogo para permitir testes. **Mover para futuro módulo `Configurações > Registro Automático`**, preservando o cadastro do **dispositivo** (série, usuário, senha) no fluxo `Adicionar dispositivo`. Migrar com separação do estado do listener e dos gravadores, sem acoplar ativação do servidor ao cadastro, e sem habilitar listener automaticamente após a futura migração.
+
+O ajuste foi feito somente em QML e **precisa de rebuild/inspeção visual no Windows** para confirmação. Não afeta o estado `IN IMPLEMENTATION` nem concede Human Review.
