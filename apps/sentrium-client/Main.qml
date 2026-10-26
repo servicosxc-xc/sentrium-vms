@@ -96,7 +96,7 @@ ApplicationWindow {
                 color: window.textSecondary
                 font.pixelSize: 11
                 text: connectionMethod.currentIndex === 1
-                      ? "Cloud/P2P exige os binários oficiais do SIM Next e validação do túnel. Ainda indisponível."
+                      ? "Cloud/P2P nativo do SENTRIUM em desenvolvimento. Não depende da instalação do SIM Next. Ainda não há conexão Cloud funcional."
                       : "Registro Automático real via NetSDK. Configure o dispositivo para enviar o ID configurado nele para o IP e a porta do SENTRIUM."
             }
 
@@ -456,7 +456,7 @@ ApplicationWindow {
                             width: parent.width
                             horizontalAlignment: Text.AlignHCenter
                             wrapMode: Text.WordWrap
-                            text: "Adicione um equipamento Intelbras por IP/LAN para validar a primeira integração NetSDK."
+                            text: "Adicione um gravador por LAN ou Registro Automático. Cloud/P2P independente está em desenvolvimento."
                             color: window.textSecondary
                             font.pixelSize: 12
                         }
