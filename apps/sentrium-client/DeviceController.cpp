@@ -195,7 +195,7 @@ void DeviceController::addAndConnect(
 bool DeviceController::addAutoRegistration(
     const QString& displayName, const QString& serial,
     const QString& username, const QString& password) {
-    if (shutdown_) return;
+    if (shutdown_) return false;
     const QString cleanSerial = serial.trimmed();
     if (displayName.trimmed().isEmpty() || displayName.size() > 128
         || cleanSerial.isEmpty() || cleanSerial.size() >= 48
