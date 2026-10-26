@@ -26,8 +26,20 @@ ApplicationWindow {
     property var openModules: ["Home"]
     property string activeModule: "Home"
     property string selectedDeviceId: ""
+    property int visualizationSequence: 0
+
+    function newVisualization() {
+        visualizationSequence++
+        const name = "Visualização " + visualizationSequence
+        openModules = openModules.concat([name])
+        activeModule = name
+    }
 
     function openModule(name) {
+        if (name === "Visualização") {
+            newVisualization()
+            return
+        }
         if (openModules.indexOf(name) === -1)
             openModules = openModules.concat([name])
         activeModule = name
@@ -1001,7 +1013,7 @@ ApplicationWindow {
             }
 
             SplitView {
-                visible: window.activeModule === "Visualização"
+                visible: window.activeModule.indexOf("Visualização") === 0
                 anchors.fill: parent
                 orientation: Qt.Horizontal
 
@@ -1323,7 +1335,7 @@ ApplicationWindow {
 
                             Label {
                                 anchors.horizontalCenter: parent.horizontalCenter
-                                text: "Vídeo ainda não faz parte da Device Foundation."
+                                text: "Live View e mosaico ainda aguardam a integração de vídeo ao Qt."
                                 color: window.textSecondary
                                 font.pixelSize: 13
                             }
