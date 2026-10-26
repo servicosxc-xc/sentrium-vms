@@ -128,7 +128,7 @@ struct Adapter::Impl {
                 return 0;
             }
             RegistrationNotice notice;
-            notice.registration_id.assign(serial, length);
+            notice.registration_id.assign(registration_id, length);
             notice.peer_port = port;
             notice.disconnected = command == DH_DVR_DISCONNECT;
             if (peer) {
