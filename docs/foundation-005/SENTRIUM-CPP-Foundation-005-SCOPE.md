@@ -126,3 +126,15 @@ Evidência relevante:
 - Retorna `CloudRoute::Unknown` até que o provider observe uma rota real; um túnel aberto não comprova modo Direct.
 - Teste unitário **D-8** cobre separação entre servicePort remoto e localPort, além da sequência de abertura/encerramento com doubles isolados. Doubles **não** são provider Cloud de produção.
 - Estes incrementos precisam ser compilados localmente no Windows antes de receberem PASS. O `CloudTransport` concreto não existe; **Cloud real segue BLOCKED** pelo bootstrap/serviço/contrato independente, conforme o documento de descobertas consolidadas.
+
+## Entrega de UI operacional — Configurações > Registro Automático (26/10/2026)
+
+Após PASS de `D-8` (0,06 s) e build Debug `[12/12]` reportados pelo operador, o trabalho evoluiu para **funcionalidade visível de dispositivos**, sem repetir benchmark:
+
+- Criado acesso `Configurações` no cabeçalho do cliente Qt; a seção `Registro Automático` concentra IP bind, porta, ativação e parada do listener.
+- `Adicionar dispositivo > Registro Automático` contém apenas nome, ID de registro, usuário e senha. Cadastrar não abre automaticamente porta de rede.
+- Propriedades de estado expõem `registrationListening`, diagnóstico, último evento sanitizado e contador de eventos; o worker diferencia registro de dispositivo conhecido, ID desconhecido e desconexão. Não registrar ID recebido, IP ou credenciais nos eventos visuais.
+- Controles de binding ficam desabilitados durante escuta ativa; a configuração é mantida **somente em memória**.
+- Corrigido desligamento do listener para respeitar o retorno de `NetSDK logout`; não declarar desconexão bem-sucedida quando o SDK retorna falha.
+- Alinhado limite de ID a `szDeviceID[32]` observado no NetSDK: até 31 caracteres utilizáveis mais terminador, sem truncamento silencioso.
+- **Código versionado mas ainda não compilado/observado no Windows após essas alterações.** Validar com build Debug focal, abrir Configurações e, quando o gravador estiver disponível, comprovar recebimento de ID, login e canais reais. Esse gate não aprova Cloud nem declara F005 concluída.
