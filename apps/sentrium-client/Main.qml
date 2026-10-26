@@ -85,10 +85,9 @@ ApplicationWindow {
         x: Math.round((parent.width - width) / 2)
         y: Math.round((parent.height - height) / 2)
         title: "Adicionar dispositivo"
-        // Unsupported methods cannot submit fictional connection requests.
-        standardButtons: connectionMethod.currentIndex === 1
-                         ? Dialog.Cancel
-                         : (Dialog.Ok | Dialog.Cancel)
+        // Cloud bridge mode is explicit: it only logs in through a local
+        // port supplied by an independently running operator-owned tunnel.
+        standardButtons: Dialog.Ok | Dialog.Cancel
 
         onOpened: {
             connectionMethod.currentIndex = 0
@@ -103,6 +102,12 @@ ApplicationWindow {
                     devicePort.value,
                     deviceUser.text,
                     devicePassword.text)
+            } else if (connectionMethod.currentIndex === 1) {
+                deviceController.addCloudBridgeAndConnect(
+                    deviceName.text,
+                    cloudLocalPort.value,
+                    cloudUser.text,
+                    cloudPassword.text)
             } else if (connectionMethod.currentIndex === 2) {
                 deviceController.addAutoRegistration(
                     deviceName.text,
@@ -113,11 +118,13 @@ ApplicationWindow {
                 // Registering a device does not implicitly open a network port.
             }
             devicePassword.text = ""
+            cloudPassword.text = ""
             registrationPassword.text = ""
         }
 
         onRejected: {
             devicePassword.text = ""
+            cloudPassword.text = ""
             registrationPassword.text = ""
         }
 
@@ -145,7 +152,7 @@ ApplicationWindow {
                 color: window.textSecondary
                 font.pixelSize: 11
                 text: connectionMethod.currentIndex === 1
-                      ? "Cloud/P2P nativo do SENTRIUM em desenvolvimento. Não depende da instalação do SIM Next. Ainda não há conexão Cloud funcional."
+                      ? "Modo experimental: conecte por NetSDK através da porta TCP local de um túnel P2P independente já estabelecido. O SENTRIUM ainda não inicia esse túnel automaticamente nem comprova a rota Direct/Relay."
                       : "O ID precisa ser igual ao configurado no gravador. O servidor é ativado separadamente em Configurações > Registro Automático."
             }
 
@@ -216,6 +223,50 @@ ApplicationWindow {
                 color: window.textSecondary
                 font.pixelSize: 11
             }
+
+            Label {
+                visible: connectionMethod.currentIndex === 1
+                text: "Porta TCP do túnel local (127.0.0.1)"
+                color: window.textSecondary
+                font.pixelSize: 11
+            }
+
+            SpinBox {
+                id: cloudLocalPort
+                visible: connectionMethod.currentIndex === 1
+                Layout.fillWidth: true
+                from: 1024
+                to: 65535
+                value: 47377
+                editable: true
+            }
+
+            TextField {
+                id: cloudUser
+                visible: connectionMethod.currentIndex === 1
+                Layout.fillWidth: true
+                placeholderText: "Usuário NetSDK do gravador remoto"
+                selectByMouse: true
+            }
+
+            TextField {
+                id: cloudPassword
+                visible: connectionMethod.currentIndex === 1
+                Layout.fillWidth: true
+                placeholderText: "Senha NetSDK do gravador remoto"
+                echoMode: TextInput.Password
+                selectByMouse: true
+            }
+
+            Label {
+                visible: connectionMethod.currentIndex === 1
+                Layout.fillWidth: true
+                wrapMode: Text.WordWrap
+                text: "Inicie o túnel Cloud independente primeiro (piloto F005), usando a mesma porta TCP local. Não use a porta remota do NVR neste campo."
+                color: window.textSecondary
+                font.pixelSize: 10
+            }
+
 
             TextField {
                 id: registrationDeviceId
