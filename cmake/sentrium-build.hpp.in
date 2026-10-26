@@ -3,7 +3,7 @@
 namespace sentrium::core {
 inline constexpr std::string_view product = "SENTRIUM VMS";
 inline constexpr std::string_view foundation = "Foundation-005";
-inline constexpr std::string_view version = "0.0.0-foundation004";
+inline constexpr std::string_view version = "0.0.0-foundation005";
 inline constexpr std::string_view build_id = "@SENTRIUM_BUILD_ID@";
 inline constexpr std::string_view build_configuration = "@CMAKE_BUILD_TYPE@";
 inline constexpr std::string_view build_compiler = "MSVC @CMAKE_CXX_COMPILER_VERSION@ / v143 / x64";
