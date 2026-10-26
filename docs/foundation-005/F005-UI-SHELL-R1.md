@@ -32,3 +32,7 @@
 The code on branch `foundation/005-device-connectivity` must be **compiled, QML-loaded and visually inspected on Windows**. Static source matching/bracket review is not a replacement for runtime validation. Inspect Home, top tab creation/close, Dispositivos table, inner tabs, and previous LAN/AutoReg flows. Correct build/runtime errors before treating UI as PASS.
 
 **Scope:** F005 in progress; F004 not retroactively approved; no merge to `main`; Human Review pending.
+
+## Ajuste estético adiado por decisão do operador — 26/10/2026
+
+O usuário compartilhou referência visual de uma Home em blocos **ícone quadrado pequeno com cantos arredondados, rótulo centralizado embaixo**, organizado em seções (operações principais e opções avançadas). **Aplicar mais tarde**, preservando Home + abas tipo navegador já implementadas. **Prioridade atual: Cloud/P2P autônomo e Registro Automático real.** Não iniciar nova refatoração estética antes de destravar conectividade funcional.
