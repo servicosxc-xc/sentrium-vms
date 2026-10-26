@@ -164,3 +164,13 @@ Após PASS de `D-8` (0,06 s) e build Debug `[12/12]` reportados pelo operador, o
 - `DeviceController::addCloudBridgeAndConnect` now exposes **experimental Cloud via operator-managed 127.0.0.1 TCP bridge**. The existing NetSDK worker will authenticate to a known loopback port and enumerate real channels if the tunnel is valid. UI explicitly states local external bridge and never claims native provider, Direct or Relay.
 - `CloudRoute::Unknown` remains the truthful status; no socket-to-process attestation, managed tunnel lifecycle, auto restart or clean Windows packaging yet. For production, require safe bridge management or native integration, upstream code security review and vendor/cloud policy validation.
 - Code changes and scripts are **not yet compiled or exercised in Windows**; `AutoRegistration` success cannot be extrapolated to Cloud.
+
+## Security hold on third-party Cloud pilot — 2026-10-26
+
+User's Microsoft Defender quarantined published `dh-fwd_win_x64.exe` v0.2 as **Trojan:Win32/Bearfoos.A!ml**. PowerShell process launch was prevented. SHA-256 matched GitHub release but does not prove safety. The investigation remains inconclusive as to malware vs false positive. **Do not disable Defender, add exclusions, restore quarantine, or rebuild from source to evade detection.**
+
+The optional `sentrium-cloud-pilot.ps1` is disabled at entry; `Main.qml` Cloud enrollment no longer permits submission of NetSDK credentials to an unvetted local bridge. `F005-CLOUD-PILOT-R1.md` was replaced by a security-hold notice. See `F005-CLOUD-SECURITY-INCIDENT-001.md` for evidence, findings and clearance gates. LAN and already-demonstrated eight-channel AutoRegistration remain available.
+
+Source review revealed upstream `core/updater.go` contains downloaded-release self-update logic and `core/helpers.go` includes embedded bootstrap client authentication constants; these are legitimate audit concerns, not direct proof of malware. Do not copy bootstrap secrets to SENTRIUM.
+
+**Cloud standalone remains BLOCKED**, not PASS; engineering may continue on protocol-independent code and source inspection, but no live execution on the operator's workstation until safe/authorized provider is established.
