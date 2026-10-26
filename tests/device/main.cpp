@@ -1,6 +1,8 @@
 #include <sentrium/device.hpp>
 #include <sentrium/cloud.hpp>
 #include <sentrium/cloud_wire.hpp>
+#include <sentrium/cloud_udp.hpp>
+#include <sentrium/cloud_signaling.hpp>
 
 #include <iostream>
 #include <memory>
@@ -264,6 +266,35 @@ int main(int argc, char** argv) {
                     CloudWireError::BadHeader, "bare CR rejected");
             require(parseCloudWireResponse(std::string(65508, 'x')).error ==
                     CloudWireError::TooLarge, "oversize datagram rejected");
+            break;
+        }
+
+        case 10: {
+            // Fully offline. No Cloud host or identity is needed to validate
+            // config bounds, call-level fail-closed behavior and public API.
+            CloudUdpSettings local{"127.0.0.1", 8800, 200, 1};
+            local.validate();
+            rejects([] { CloudUdpSettings{"", 8800, 200, 1}.validate(); });
+            rejects([] { CloudUdpSettings{"example.com", 8800, 200, 1}.validate(); });
+            rejects([] { CloudUdpSettings{"256.256.0.1", 8800, 200, 1}.validate(); });
+            rejects([] { CloudUdpSettings{"0.0.0.0", 8800, 200, 1}.validate(); });
+            rejects([] { CloudUdpSettings{"255.255.255.255", 8800, 200, 1}.validate(); });
+            rejects([] { CloudUdpSettings{"127.0.0.1", 0, 200, 1}.validate(); });
+            rejects([] { CloudUdpSettings{"127.0.0.1", 8800, 99, 1}.validate(); });
+            rejects([] { CloudUdpSettings{"127.0.0.1", 8800, 10001, 1}.validate(); });
+            rejects([] { CloudUdpSettings{"127.0.0.1", 8800, 200, 4}.validate(); });
+
+            const auto invalid = exchangeCloudDatagram(local, {});
+            require(invalid.error == CloudUdpError::InvalidConfiguration &&
+                    invalid.attempts_used == 0, "empty wire request rejected before network");
+            const auto overlarge = exchangeCloudDatagram(local, std::string(8193, 'x'));
+            require(overlarge.error == CloudUdpError::InvalidConfiguration,
+                    "oversize payload rejected before network");
+
+            const auto signaling = exchangeCloudSignaling(local, {});
+            require(signaling.status == CloudSignalingStatus::InvalidConfiguration &&
+                    !signaling.accepted() && signaling.response.body.empty(),
+                    "signaling refuses unauthenticated empty request");
             break;
         }
 
