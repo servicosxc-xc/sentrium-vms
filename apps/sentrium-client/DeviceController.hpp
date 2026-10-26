@@ -15,6 +15,8 @@ class DeviceController final : public QObject {
     Q_OBJECT
     Q_PROPERTY(QVariantList devices READ devices NOTIFY devicesChanged)
     Q_PROPERTY(QString lastError READ lastError NOTIFY lastErrorChanged)
+    Q_PROPERTY(bool registrationListening READ registrationListening NOTIFY registrationStatusChanged)
+    Q_PROPERTY(QString registrationStatus READ registrationStatus NOTIFY registrationStatusChanged)
 
 public:
     explicit DeviceController(QObject* parent = nullptr);
@@ -22,6 +24,8 @@ public:
 
     QVariantList devices() const;
     QString lastError() const { return last_error_; }
+    bool registrationListening() const { return registration_listening_; }
+    QString registrationStatus() const { return registration_status_; }
 
     Q_INVOKABLE void addAndConnect(
         const QString& displayName,
@@ -29,6 +33,11 @@ public:
         int port,
         const QString& username,
         const QString& password);
+    Q_INVOKABLE void addAutoRegistration(
+        const QString& displayName, const QString& serial,
+        const QString& username, const QString& password);
+    Q_INVOKABLE void startRegistrationServer(const QString& bindAddress, int port);
+    Q_INVOKABLE void stopRegistrationServer();
     Q_INVOKABLE void connectDevice(const QString& id);
     Q_INVOKABLE void disconnectDevice(const QString& id);
     Q_INVOKABLE void removeDevice(const QString& id);
@@ -38,6 +47,7 @@ public:
 signals:
     void devicesChanged();
     void lastErrorChanged();
+    void registrationStatusChanged();
     void auditEvent(const QString& eventId, const QString& message);
 
     void requestConnect(
@@ -47,8 +57,16 @@ signals:
         const QString& username,
         const QString& password);
     void requestDisconnect(const QString& id);
+    void requestStartRegistrationServer(const QString& bindAddress, quint16 port);
+    void requestStopRegistrationServer();
+    void requestRegisterAutoDevice(
+        const QString& id, const QString& serial,
+        const QString& username, const QString& password);
+    void requestUnregisterAutoDevice(const QString& id);
 
 private slots:
+    void onRegistrationServerChanged(bool listening, const QString& diagnostic);
+    void onRegistrationLost(const QString& id);
     void onConnectFinished(
         const QString& id,
         bool success,
@@ -65,6 +83,8 @@ private:
         std::string username;
         std::string password;
         bool pending_remove = false;
+        bool auto_registration = false;
+        std::string expected_serial;
     };
 
     Record* find(const QString& id);
@@ -76,5 +96,7 @@ private:
     DeviceWorker* worker_ = nullptr;
     std::vector<Record> records_;
     QString last_error_;
+    QString registration_status_ = QStringLiteral("Servidor de registro desativado");
+    bool registration_listening_ = false;
     bool shutdown_ = false;
 };
