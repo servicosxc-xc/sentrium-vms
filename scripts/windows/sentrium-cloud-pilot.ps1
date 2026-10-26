@@ -15,6 +15,14 @@ param(
 )
 $ErrorActionPreference = "Stop"
 
+# SAFETY HOLD (2026-10-26): Microsoft Defender quarantined the upstream
+# dh-fwd Windows v0.2 binary (Trojan:Win32/Bearfoos.A!ml). No exception,
+# restoration, Defender exclusion, alternate filename or source rebuild is an
+# acceptable workaround without separate independent security clearance.
+# The Cloud pilot must fail closed BEFORE probing ports or requesting IDs,
+# credentials or launching ANY executable, regardless of supplied -BridgeExe.
+throw "F005 Cloud pilot SUSPENDED: Defender detected Trojan:Win32/Bearfoos.A!ml in the third-party bridge. Do not run/rebuild/bypass. See docs/foundation-005/F005-CLOUD-SECURITY-INCIDENT-001.md."
+
 if (-not (Test-Path -LiteralPath $BridgeExe -PathType Leaf)) {
     throw "Bridge executable not found. Build the local independent Cloud pilot as documented in docs/foundation-005/F005-CLOUD-PILOT-R1.md"
 }
