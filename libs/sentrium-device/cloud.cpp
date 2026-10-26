@@ -1,5 +1,6 @@
 #include <sentrium/cloud.hpp>
 
+#include <algorithm>
 #include <stdexcept>
 #include <utility>
 
@@ -34,6 +35,95 @@ LoginRequest CloudTunnelEndpoint::netSdkLogin(
         "127.0.0.1", local_port, std::move(username), std::move(password)};
     login.validate();
     return login;
+}
+
+
+CloudDeviceSession::CloudDeviceSession(CloudTransport& transport, Adapter& net_sdk) noexcept
+    : transport_(transport), net_sdk_(net_sdk) {}
+
+CloudDeviceSession::~CloudDeviceSession() noexcept {
+    static_cast<void>(disconnect());
+}
+
+CloudSessionResult CloudDeviceSession::connect(
+    const CloudConnectRequest& cloud,
+    std::string username,
+    std::string password) {
+    if (session_ || tunnel_) {
+        return {false, 0, CloudRoute::Unknown, "Cloud session already exists"};
+    }
+
+    std::unique_ptr<CloudTunnel> pending;
+    try {
+        cloud.validate();
+        pending = transport_.open(cloud);
+        if (!pending) {
+            return {false, 0, CloudRoute::Unknown, "Native Cloud transport is unavailable"};
+        }
+
+        // The provider must have established the tunnel before returning.
+        // A remote service port (e.g. one recorder used 37000) is never used
+        // as the NetSDK endpoint; only the live local port is accepted.
+        const CloudTunnelEndpoint endpoint = pending->endpoint();
+        const auto login = endpoint.netSdkLogin(
+            std::move(username), std::move(password));
+        const ConnectResult connected = net_sdk_.connect(login);
+        if (!connected.success || !connected.session ||
+            connected.channel_count < 0 || connected.channel_count > 4096) {
+            if (connected.session) {
+                // A broken adapter response must not leave a login handle.
+                static_cast<void>(net_sdk_.disconnect(connected.session));
+            }
+            pending->close();
+            return {false, 0, CloudRoute::Unknown,
+                    "NetSDK login over the Cloud tunnel failed"};
+        }
+
+        // Device owns its login and the tunnel. Closing an individual camera
+        // stream MUST NOT destroy this CloudDeviceSession.
+        session_ = connected.session;
+        route_ = endpoint.observed_route;
+        tunnel_ = std::move(pending);
+        return {true, connected.channel_count, route_,
+                "NetSDK connected through native Cloud transport"};
+    } catch (const std::exception&) {
+        if (pending) {
+            pending->close();
+        }
+        // Avoid logging Cloud IDs, credentials or native provider internals.
+        return {false, 0, CloudRoute::Unknown, "Cloud connection initialization failed"};
+    }
+}
+
+void CloudDeviceSession::closeTunnel() noexcept {
+    if (tunnel_) {
+        tunnel_->close();
+        tunnel_.reset();
+    }
+    route_ = CloudRoute::Unknown;
+}
+
+DisconnectResult CloudDeviceSession::disconnect() noexcept {
+    DisconnectResult outcome{true, {}};
+    if (session_) {
+        try {
+            // Required order: NetSDK logout, then native tunnel teardown.
+            outcome = net_sdk_.disconnect(session_);
+        } catch (const std::exception&) {
+            outcome = {false, "NetSDK logout failed"};
+        }
+        session_ = {};
+    }
+    closeTunnel();
+    return outcome;
+}
+
+bool CloudDeviceSession::connected() const noexcept {
+    return static_cast<bool>(session_) && static_cast<bool>(tunnel_);
+}
+
+CloudRoute CloudDeviceSession::route() const noexcept {
+    return connected() ? route_ : CloudRoute::Unknown;
 }
 
 } // namespace sentrium::device
