@@ -117,7 +117,7 @@ CloudUdpResult exchangeCloudDatagram(
 
     const DWORD ms = static_cast<DWORD>(settings.timeout_ms);
     if (setsockopt(socketHandle.get(), SOL_SOCKET, SO_RCVTIMEO,
-                   reinterpret_cast<const char*>(&ms), sizeof(ms)) == SOCKET_ERROR) {
+                   reinterpret_cast<const char*>(&ms), static_cast<int>(sizeof(ms))) == SOCKET_ERROR) {
         return failure(CloudUdpError::SocketFailure);
     }
 
