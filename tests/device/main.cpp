@@ -2,8 +2,10 @@
 #include <sentrium/cloud.hpp>
 
 #include <iostream>
+#include <memory>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 using namespace sentrium::device;
 
@@ -40,6 +42,53 @@ public:
 
     std::string last_endpoint;
     bool disconnected = false;
+};
+
+// Deterministic lifecycle test double only. This is NOT a Cloud provider.
+class TraceTunnel final : public CloudTunnel {
+public:
+    explicit TraceTunnel(std::vector<std::string>& trace) : trace_(trace) {}
+    CloudTunnelEndpoint endpoint() const override { return {59143, CloudRoute::Relay}; }
+    void close() noexcept override {
+        if (!closed_) {
+            closed_ = true;
+            trace_.push_back("tunnel-close");
+        }
+    }
+private:
+    std::vector<std::string>& trace_;
+    bool closed_ = false;
+};
+
+class TraceTransport final : public CloudTransport {
+public:
+    explicit TraceTransport(std::vector<std::string>& trace) : trace_(trace) {}
+    std::unique_ptr<CloudTunnel> open(const CloudConnectRequest& request) override {
+        request.validate();
+        trace_.push_back("tunnel-open");
+        return std::make_unique<TraceTunnel>(trace_);
+    }
+private:
+    std::vector<std::string>& trace_;
+};
+
+class TraceNetSdk final : public Adapter {
+public:
+    explicit TraceNetSdk(std::vector<std::string>& trace) : trace_(trace) {}
+    ConnectResult connect(const LoginRequest& login) override {
+        login.validate();
+        require(login.host == "127.0.0.1" && login.port == 59143,
+                "NetSDK must receive dynamic local tunnel endpoint");
+        trace_.push_back("netsdk-login");
+        return {true, Session{79}, 16, "test login"};
+    }
+    DisconnectResult disconnect(Session session) override {
+        require(session.value == 79, "Unexpected NetSDK session");
+        trace_.push_back("netsdk-logout");
+        return {true, {}};
+    }
+private:
+    std::vector<std::string>& trace_;
 };
 } // namespace
 
@@ -152,6 +201,25 @@ int main(int argc, char** argv) {
             require(CloudTunnelEndpoint{59144}.observed_route == CloudRoute::Unknown,
                     "Do not infer direct P2P from presence of tunnel");
             rejects([] { CloudTunnelEndpoint{}.validate(); });
+
+            std::vector<std::string> trace;
+            TraceTransport transport(trace);
+            TraceNetSdk sdk(trace);
+            {
+                CloudDeviceSession session(transport, sdk);
+                const auto result = session.connect(request, "operator", "private-test-password");
+                require(result.success && result.channel_count == 16, "NetSDK tunnel login");
+                require(result.route == CloudRoute::Relay && session.connected(),
+                        "The route must come from the tunnel, not the login");
+                require(trace == std::vector<std::string>{"tunnel-open", "netsdk-login"},
+                        "Opening the Cloud tunnel must precede NetSDK login");
+                const auto closed = session.disconnect();
+                require(closed.success && !session.connected(), "Cloud disconnect");
+                require(session.route() == CloudRoute::Unknown, "No stale route after disconnect");
+            }
+            require(trace == std::vector<std::string>{
+                        "tunnel-open", "netsdk-login", "netsdk-logout", "tunnel-close"},
+                    "NetSDK logout must precede tunnel teardown, exactly once");
             break;
         }
 
