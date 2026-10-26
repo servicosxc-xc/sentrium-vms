@@ -95,9 +95,11 @@ void DeviceWorker::stopRegistrationServer() {
         const auto& key = entry.first;
         const auto session = sessions_.find(key);
         if (session != sessions_.end()) {
-            adapter_.disconnect(session->second);
-            sessions_.erase(session);
-            emit disconnectFinished(qstring(key), true, {});
+            const auto result = adapter_.disconnect(session->second);
+            if (result.success) {
+                sessions_.erase(session);
+            }
+            emit disconnectFinished(qstring(key), result.success, qstring(result.diagnostic));
         }
     }
     emit registrationServerChanged(false, QStringLiteral("Registro Automático desativado"));
