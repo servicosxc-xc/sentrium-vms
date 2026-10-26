@@ -169,7 +169,7 @@ ApplicationWindow {
                 visible: connectionMethod.currentIndex === 2
                 Layout.fillWidth: true
                 placeholderText: "ID de Registro Automático configurado no gravador"
-                maximumLength: 47
+                maximumLength: 31
                 selectByMouse: true
             }
 
