@@ -130,6 +130,10 @@ void DeviceWorker::onRegistrationReceived(
     if (!listening_) return;
     for (const auto& [id, target] : registered_) {
         if (registrationId != target.registrationId) continue;
+        // Do not expose this ID, peer IP, username or password to UI/logs.
+        emit registrationObservation(disconnected
+            ? QStringLiteral("Desconexão informada por dispositivo cadastrado")
+            : QStringLiteral("Registro recebido de dispositivo cadastrado"));
         auto existing = sessions_.find(id);
         if (disconnected) {
             if (existing != sessions_.end()) {
@@ -142,6 +146,7 @@ void DeviceWorker::onRegistrationReceived(
         if (existing != sessions_.end()) return;
         const QString logicalId = qstring(id);
         if (peer.isEmpty() || port == 0) {
+            emit registrationObservation(QStringLiteral("Registro reconhecido sem endpoint válido"));
             emit connectFinished(logicalId, false, 0,
                                  QStringLiteral("Registro recebido sem endereço válido"));
             return;
@@ -157,7 +162,10 @@ void DeviceWorker::onRegistrationReceived(
                              result.channel_count, qstring(result.diagnostic));
         return;
     }
-    // Unknown registration ID: ignore it; never auto-enroll unexpected equipment.
+    // Never auto-enroll unexpected equipment, but show a privacy-safe hint
+    // so the operator can detect an ID mismatch when using a real recorder.
+    emit registrationObservation(QStringLiteral(
+        "Registro recebido com ID não cadastrado (verifique o ID no gravador)"));
 }
 
 void DeviceWorker::shutdown() {
