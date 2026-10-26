@@ -12,6 +12,13 @@ namespace sentrium::device {
 // official-client password or device-info decryption secret is embedded here.
 struct CloudDeviceAuth {
     // SENSITIVE: do not print, serialize, persist or include in diagnostics.
+    CloudDeviceAuth() = default;
+    CloudDeviceAuth(const CloudDeviceAuth&) = delete;
+    CloudDeviceAuth& operator=(const CloudDeviceAuth&) = delete;
+    CloudDeviceAuth(CloudDeviceAuth&&) noexcept = default;
+    CloudDeviceAuth& operator=(CloudDeviceAuth&&) noexcept = default;
+    ~CloudDeviceAuth() noexcept;
+
     std::string device_key_hex;
     std::string signature_base64;
     std::array<std::uint8_t,32> address_key{};
