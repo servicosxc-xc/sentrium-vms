@@ -34,7 +34,7 @@ public:
         const QString& username,
         const QString& password);
     Q_INVOKABLE bool addAutoRegistration(
-        const QString& displayName, const QString& serial,
+        const QString& displayName, const QString& registrationId,
         const QString& username, const QString& password);
     Q_INVOKABLE void startRegistrationServer(const QString& bindAddress, int port);
     Q_INVOKABLE void stopRegistrationServer();
@@ -60,7 +60,7 @@ signals:
     void requestStartRegistrationServer(const QString& bindAddress, quint16 port);
     void requestStopRegistrationServer();
     void requestRegisterAutoDevice(
-        const QString& id, const QString& serial,
+        const QString& id, const QString& registrationId,
         const QString& username, const QString& password);
     void requestUnregisterAutoDevice(const QString& id);
 
@@ -84,7 +84,7 @@ private:
         std::string password;
         bool pending_remove = false;
         bool auto_registration = false;
-        std::string expected_serial;
+        std::string registration_id;
     };
 
     Record* find(const QString& id);
