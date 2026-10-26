@@ -7,6 +7,8 @@
 **PR de desenvolvimento:** https://github.com/servicosxc-xc/sentrium-vms/pull/4 (draft, sem merge)
 **Regra:** após abrir um novo chat, conferir `git rev-parse HEAD` no GitHub antes de prosseguir. O HEAD atual da branch é a fonte de verdade; este texto informa as decisões, não substitui o Git.
 
+> **ÚLTIMO CHECKPOINT CONFIRMADO — 26/10/2026, 17:08 (Brasil):** Commit `4185a7000940c2c31f8dbdd050198f5070429bf1` **PREFLIGHT PASS, CMake configure PASS, Debug build/link PASS [46/46], D-9 PASS, D-10 PASS**. Evidência: log real `Texto colado(20261026-170803).txt` encaminhado pelo operador. As seções 6 e 11 descrevem **erros históricos já superados**, não o estado corrente. Cloud real continua **não implementado/não comprovado**. Veja seção 12.
+
 ## 1. Decisão de colaboração — O MAIS IMPORTANTE
 
 O usuário pediu expressamente para **PARAR de fragmentar trabalho em microentregas e executar cada bloco de implementação de uma vez**. Fazer o maior avanço de código seguro/justificável por etapa, escrever todo o lote no GitHub, conferir consistência estática e **entregar UM procedimento de build/teste no final**, não dezenas de comandos intercalados. Não prometer em chat um Cloud completo se faltar contrato real. Não propor testes repetitivos sem benefício concreto.
@@ -69,7 +71,7 @@ O novo código não contém credenciais ou servidores de bootstrap embutidos e *
 
 **Situação REAL:** parser e transporte UDP criados; **Cloud remoto ainda NOT IMPLEMENTED/BLOCKED** por bootstrap/contrato. Não gastar tokens com testes artificiais ou declarar PASS sem dispositivo.
 
-## 6. ÚLTIMO LOG DE COMPILAÇÃO DO USUÁRIO (26/10/2026)
+## 6. Histórico de falha LNK1168 — SUPERADA no checkpoint da seção 12
 
 O operador anexou `Texto colado(20261026-164203).txt`: `git pull` até `34b337b...` PASS; PRE-FLIGHT PASS; CMake configure/generate PASS; fontes de `cloud_wire.cpp` e teste D-9 passaram pelo scan; no último passo, **LNK1168** ao linkar `sentrium-client.exe` porque o exe estava aberto/bloqueado para escrita. Não é erro conhecido do código C++ do parser. O teste D-9 **NÃO foi executado** no log. Não dizer `D-9 PASS`.
 
@@ -111,9 +113,9 @@ O script já executa preflight, CMake configure/build e **apenas D-9 e D-10**. P
 
 ## 10. Mensagem ideal para iniciar a próxima conversa
 
-> Continue o desenvolvimento **SENTRIUM VMS** a partir do repositório GitHub `servicosxc-xc/sentrium-vms`, branch `foundation/005-device-connectivity`. **Leia integralmente `CONTINUE-HERE.md` e `docs/HANDOFF-SENTRIUM-CURRENT.md` no GitHub e confira o HEAD real**. Não recomece fundamentos nem repita benchmarks. O Registro Automático já conectou um NVR real com 8 canais; Cloud P2P nativo está em desenvolvimento, sem SIM Next e sem executar `dh-fwd` (bloqueio Defender). O último build de 26/10 falhou por **LNK1168 (cliente aberto)**, não por diagnóstico confirmado de C++. Já existe um script único de build/validação `scripts/windows/sentrium-validate-f005-cloud.ps1`. **Trabalhe em blocos grandes**, aplique código diretamente na branch, preserve `main`, atualize handoff e forneça comandos só ao fim.
+> Continue o desenvolvimento **SENTRIUM VMS** a partir do repositório GitHub `servicosxc-xc/sentrium-vms`, branch `foundation/005-device-connectivity`. **Leia integralmente `CONTINUE-HERE.md` e `docs/HANDOFF-SENTRIUM-CURRENT.md` no GitHub e confira o HEAD real**. Não recomece fundamentos nem repita benchmarks. O Registro Automático já conectou um NVR real com 8 canais; Cloud P2P nativo está em desenvolvimento, sem SIM Next e sem executar `dh-fwd` (bloqueio Defender). O último build confirmado de 26/10 é **PASS [46/46]**, com **D-9 PASS e D-10 PASS**; histórico de LNK1168 e erro de PRE-FLIGHT foi superado. Já existe um script único de build/validação `scripts/windows/sentrium-validate-f005-cloud.ps1`. **Trabalhe em blocos grandes**, aplique código diretamente na branch, preserve `main`, atualize handoff e forneça comandos só ao fim.
 
-## 11. Último resultado e correção do PRE-FLIGHT (26/10/2026)
+## 11. Histórico de falha no PRE-FLIGHT — SUPERADA no checkpoint da seção 12
 
 O operador atualizou a branch até `c7d7d08106d4b8a021d21785b77d757904a27fca` e executou `sentrium-validate-f005-cloud.ps1`. O `git pull` retornou `Already up to date`, mas o script **falhou antes do CMake/build** com:
 
@@ -141,3 +143,28 @@ git pull --ff-only origin foundation/005-device-connectivity
 ```
 
 **Modo de colaboração:** corrigir o problema real da etapa corrente sem iniciar novo ciclo de refatoração, builds repetidos ou testes sem valor; manter este documento atualizado a cada etapa relevante.
+
+## 12. CHECKPOINT APROVADO PELO LOG REAL — DEBUG / D-9 / D-10 (26/10/2026 às 17:08)
+
+O operador anexou a íntegra do PowerShell em `Texto colado(20261026-170803).txt`, referente ao **commit** `4185a7000940c2c31f8dbdd050198f5070429bf1` na branch `foundation/005-device-connectivity`.
+
+**Evidência literal no final do log:**
+
+```text
+PREFLIGHT PASS: SENTRIUM Foundation-005 workspace
+-- Configuring done
+-- Generating done
+[46/46] Linking CXX executable sentrium-client.exe
+1/2 Test #28: D-9 .............................. Passed 0.03 sec
+2/2 Test #29: D-10 ............................. Passed 0.01 sec
+100% tests passed out of 2
+F005 DEBUG BUILD + D-9/D-10: PASS
+Commit: 4185a7000940c2c31f8dbdd050198f5070429bf1
+Cloud bootstrap, Direct/Relay and real P2P login: NOT VERIFIED.
+```
+
+**Veredito:** build Debug + parser `D-9` e módulo UDP `D-10` **PASS** para esse commit. Os avisos `WrapVulkanHeaders` não foram impeditivos. A saída muito longa `Observação: incluindo arquivo` é varredura de dependências MSVC, não indicação de erro. A duplicidade da mensagem PRE-FLIGHT PASS também não prejudicou o resultado.
+
+**IMPORTANTE:** testes D-9/D-10 usam dados offline; **não** estabeleceram P2P/Relay, sessão Cloud nem canal remoto. Não reinterpretar PASS como Cloud funcional e não exigir repetição de testes já aprovados sem alterações relacionadas.
+
+**PRÓXIMA FRENTE DO PRODUTO:** conectividade remota real (bootstrap e autenticação Cloud com material legítimo), ou alternativa operacional independente usando o Registro Automático já comprovado, para acesso autorizado a NVRs remotos de 16/32 canais. Conservar o bloqueio de segurança do `dh-fwd`; nenhum SIM Next runtime. Avançar em blocos, com uma única validação por entrega, e manter `CONTINUE-HERE.md` atualizado se o estado mudar.
