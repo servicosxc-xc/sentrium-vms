@@ -1,5 +1,6 @@
 #include <sentrium/device.hpp>
 #include <sentrium/cloud.hpp>
+#include <sentrium/cloud_wire.hpp>
 
 #include <iostream>
 #include <memory>
@@ -220,6 +221,49 @@ int main(int argc, char** argv) {
             require(trace == std::vector<std::string>{
                         "tunnel-open", "netsdk-login", "netsdk-logout", "tunnel-close"},
                     "NetSDK logout must precede tunnel teardown, exactly once");
+            break;
+        }
+
+        case 9: {
+            // Real DHP2P response framing, not a simulated live Cloud tunnel.
+            const std::string xml = "<body><US>example.invalid:8800</US></body>";
+            const std::string raw =
+                "DHP2P/1.0 200 OK\r\nCSeq: 12\r\nContent-Type: text/xml\r\n"
+                "Content-Length: " + std::to_string(xml.size()) + "\r\n\r\n" + xml;
+            auto parsed = parseCloudWireResponse(raw);
+            require(parsed.ok() && parsed.response.status_code == 200, "valid DH 200");
+            require(parsed.response.headers.at("cseq") == "12", "case-folded CSeq");
+            require(parsed.response.body == xml, "exact XML payload bytes");
+            require(parsed.response.reason == "OK", "response reason");
+
+            parsed = parseCloudWireResponse(
+                "DHP2P/1.0 403 Forbidden\nCSeq: 13\n\n<error/>");
+            require(parsed.ok() && parsed.response.status_code == 403,
+                    "403 is a valid protocol response, not login success");
+            require(parsed.response.body == "<error/>", "LF-only message");
+
+            require(parseCloudWireResponse("").error == CloudWireError::Empty,
+                    "empty response rejected");
+            require(parseCloudWireResponse("DHP2P/1.0 200 OK\r\nCSeq: 1\r\n").error ==
+                    CloudWireError::BadHeader, "missing header terminator");
+            require(parseCloudWireResponse("HTTP/1.1 200 OK\r\n\r\n").error ==
+                    CloudWireError::BadStatus, "wrong protocol rejected");
+            require(parseCloudWireResponse("DHP2P/1.0 abc Bad\r\n\r\n").error ==
+                    CloudWireError::BadStatus, "invalid code rejected");
+            require(parseCloudWireResponse(
+                "DHP2P/1.0 200 OK\r\nCSeq: 1\r\ncseq: 2\r\n\r\n").error ==
+                    CloudWireError::BadHeader, "duplicated header rejected");
+            require(parseCloudWireResponse(
+                "DHP2P/1.0 200 OK\r\nContent-Length: 7\r\n\r\ntiny").error ==
+                    CloudWireError::BadBodyLength, "truncated content rejected");
+            require(parseCloudWireResponse(
+                "DHP2P/1.0 200 OK\r\nBad Header: x\r\n\r\n").error ==
+                    CloudWireError::BadHeader, "invalid header name rejected");
+            require(parseCloudWireResponse(
+                "DHP2P/1.0 200 OK\r\nBad: x\rno\n\r\n").error ==
+                    CloudWireError::BadHeader, "bare CR rejected");
+            require(parseCloudWireResponse(std::string(65508, 'x')).error ==
+                    CloudWireError::TooLarge, "oversize datagram rejected");
             break;
         }
 
