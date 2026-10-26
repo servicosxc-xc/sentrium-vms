@@ -4,7 +4,7 @@
 **Produto:** SENTRIUM VMS — Intelligent Video Management System  
 **Branch:** `foundation/005-device-connectivity`  
 **Autorização humana:** **F005-AUTH-001 — AUTHORIZED FOR EXECUTION**, confirmação do responsável “vamos seguir” à proposta de priorizar interface, Cloud/P2P e Registro Automático.  
-**Estado:** **AUTHORIZED / IN IMPLEMENTATION — DIRECT GITHUB DEVELOPMENT / WINDOWS BUILD PENDING**. O desenvolvimento passa a ser feito diretamente neste chat, sem Codex.
+**Estado:** **AUTHORIZED / IN IMPLEMENTATION — DIRECT GITHUB DEVELOPMENT; DEBUG BUILD REPORTADO PASS PELO OPERADOR**. O desenvolvimento passa a ser feito diretamente neste chat, sem Codex.
 
 ## Objetivo verificável
 
@@ -15,7 +15,7 @@ Abrir o `sentrium-client`, adicionar um gravador real por **LAN, Cloud/P2P ou Re
 - Reutilizar UI Qt 6.12, `DeviceController`, `DeviceWorker`, `sentrium-device` e `sentrium-intelbras` já existentes; LAN está operacional.
 - Branch iniciada de `715b81912c0ba33508bca3fba284fee023bc0fee` (**F004 ainda não fechada**), sem merge em `main`. Esta dependência deve ser resolvida em revisão humana posterior; criar a branch não aprova F004.
 - **F004 fica em pausa para benchmarks de escala**: somente duas câmeras úteis no NVR local. Testes reais de 4/16/32 câmeras são `NOT RUN` neste hardware. Não repetir testes de CPU/GPU/handles como pré-requisito à entrega de conectividade.
-- P2P: investigar o caminho legado `SIMNext.P2PSDK.dll → Libt2uWrapper.dll → libt2u.dll` e os contratos efetivamente disponíveis. Não portar indiscriminadamente o legado nem inventar exports.
+- Cloud/P2P: implementação **própria, autônoma e nativa do SENTRIUM**. Os arquivos `SIMNext.P2PSDK.dll`, `Libt2uWrapper.dll` e `libt2u.dll` observados no SIM Next são **referência histórica de comportamento e engenharia reversa**, não dependências obrigatórias nem fonte de binários do produto. Nenhum SDK/protocolo/ABI pode ser inventado.
 - Registro Automático: investigar APIs de serviço/listen/registration do NetSDK **conforme headers/documentação do kit presente**, com origem, callback, autenticação, teardown e controle de portas explicitados. Não inventar ABI.
 - Dependências proprietárias e dados operacionais ficam fora do Git; não realizar downloads nem instalações automáticos.
 
@@ -61,7 +61,7 @@ Live View de produção, render Qt Quick/mosaico, playback, gravação, IA/LPR, 
 - Login ao receber registro por `CLIENT_LoginEx2` com `EM_LOGIN_SPEC_CAP_SERVER_CONN` e ID de registro validado; contrato verificado no header Win64 NetSDK 3.050 e no exemplo oficial VehicleGPS do ZIP original preservado fora do Git.
 - Associados os eventos à thread Qt existente, sem executar login dentro do callback nativo; dispositivos inesperados não são admitidos automaticamente; listener desligado por padrão até comando na interface.
 - **Implementado no código, ainda não compilado ou testado no Windows.** Portanto não declarar PASS nem fazer merge.
-- Cloud/P2P continua pendente da inspeção/integração binária com o SIM Next instalado; menu Cloud não simula conexão.
+- Cloud/P2P continua não implementado; o legado é uma referência de engenharia reversa e **não será requisito de runtime ou de instalação**. A conexão só será habilitada após existir backend nativo próprio, com bootstrap/servidor/credencial oficialmente autorizados ou implementação independente comprovada. UI não simula conexão.
 
 ## Ajustes de interface — observação do operador (25/10/2026)
 
@@ -89,3 +89,15 @@ Portanto, na F005 o modelo próprio utiliza `registration_id` / `registrationId`
 - ZIPs fornecidos no chat **não são adicionados ao repositório**; SDK/Cloud proprietários permanecem fora do Git. `F005-LEGACY-REFERENCE-R1.md` registra apenas a orientação necessária.
 
 **Estado:** código de IDs corrigido e versionado, ainda sem rebuild Windows depois dessa correção; Cloud/P2P ainda `BLOCKED` sem inspeção/prova de DLLs e bootstrap autorizado.
+
+## Decisão vinculante de arquitetura — Cloud próprio (25/10/2026)
+
+O responsável determinou: **"não vamos depender dos arquivos do SIM Next para funcionar o Cloud"**. Essa exigência prevalece sobre qualquer menção anterior de utilizar DLLs extraídas da instalação.
+
+- O caminho `SIMNext.P2PSDK.dll → Libt2uWrapper.dll → libt2u.dll` e os exports `t2u_*` recuperados são **somente evidências históricas**. Sua existência não autoriza `LoadLibrary` de arquivos da instalação, redistribuição, extração de credenciais de bootstrap ou dependência do SIM Next.
+- Uma implementação autônoma poderá utilizar apenas componentes/protocolos com origem legítima, contrato comprovado e direito de uso; **não** será exigida a instalação do SIM Next, nem de seus arquivos originais, serviços ou configurações.
+- Se não houver material suficiente para realizar bootstrap Cloud com autenticação e negociação de túneis, reportar **BLOCKED: protocolo/bootstrap independente não comprovado**. Não usar credenciais embutidas, endpoints inferidos, DLLs terceiras de origem incerta nem afirmar integração pronta.
+- O estado do dispositivo, a rota Cloud medida (`Unknown`, `Direct`, `Relay`) e a sessão NetSDK continuam conceitos distintos. `Direct` (azul) e `Relay` (amarelo) só quando a telemetria real comprovar rota e conexão.
+- `LAN` e `AutoRegistration` permanecem na mesma identidade lógica. Um túnel Cloud entrega somente um endpoint de controle para NetSDK; seu lifetime é separado do RealPlay.
+- Evidência fornecida pelo operador: texto `SENTRIUM VMS — PROGRESSO CLOUD / P2P` datado de 25/10/2026, originalmente documento de progresso "sem autorização de implementação"; a autorização geral posterior da F005 foi concedida no chat, mas **não elimina os requisitos de bootstrap/ABI/licença**.
+- Checkpoint de construção recebido: após atualização `1db29e9..a48c833`, o operador informou `[25/25] Linking CXX executable sentrium-client.exe` em Debug, **PASS para esse commit anterior**. As novas alterações de modelo/transporte nesta branch ainda requerem build Windows; não herdar PASS automaticamente.
