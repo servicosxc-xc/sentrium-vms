@@ -39,6 +39,8 @@ signals:
     void registrationReceived(
         const QString& registrationId, const QString& peer, quint16 port, bool disconnected);
     void registrationLost(const QString& id);
+    // Sanitized operational observation. Never include registration ID, peer or credentials.
+    void registrationObservation(const QString& message);
     void disconnectFinished(
         const QString& id,
         bool success,
