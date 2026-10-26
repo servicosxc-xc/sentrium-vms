@@ -11,6 +11,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <cstddef>
 
 namespace sentrium::device {
 namespace {
@@ -187,7 +188,7 @@ std::vector<std::uint8_t> cryptCloudAddress(
                 key,feedback.data(),static_cast<ULONG>(feedback.size()),
                 nullptr,nullptr,0,
                 stream.data(),static_cast<ULONG>(stream.size()),
-                &written,0)) || written!=stream.size()) {
+                &written,0)) || written!=static_cast<ULONG>(stream.size())) {
                 throw std::runtime_error("Cloud AES keystream failed");
             }
             feedback=stream;
