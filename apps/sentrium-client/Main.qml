@@ -25,6 +25,9 @@ ApplicationWindow {
         id: addDeviceDialog
         parent: Overlay.overlay
         modal: true
+        // A misclick outside the dialog must never discard a device form.
+        // Escape and the explicit Cancel button remain available.
+        closePolicy: Popup.CloseOnEscape
         width: 440
         x: Math.round((parent.width - width) / 2)
         y: Math.round((parent.height - height) / 2)
@@ -194,7 +197,9 @@ ApplicationWindow {
             Label {
                 visible: connectionMethod.currentIndex === 2
                 Layout.fillWidth: true
-                text: "SERVIDOR DE REGISTRO"
+                // Temporary placement: move server/listener settings to
+                // Configurações > Registro Automático when that module exists.
+                text: "SERVIDOR DE REGISTRO (TEMPORÁRIO)"
                 color: window.textSecondary
                 font.pixelSize: 11
                 font.bold: true
@@ -247,7 +252,7 @@ ApplicationWindow {
                 wrapMode: Text.WordWrap
                 color: window.textSecondary
                 font.pixelSize: 10
-                text: "Ao adicionar, o servidor será ativado no IP e porta informados, se estiver inativo. Para gravadores remotos, substitua 127.0.0.1 pelo endereço alcançável do PC. Não altera firewall/NAT. Credenciais e série ficam apenas em memória."
+                text: "Nesta etapa, o servidor pode ser configurado aqui. Futuramente, IP, porta e ativação ficarão em Configurações > Registro Automático. Ao adicionar, o serviço será ativado se estiver inativo. Para acesso remoto, use um IP alcançável pelo gravador; não há alterações automáticas de firewall/NAT."
             }
         }
     }
@@ -351,7 +356,31 @@ ApplicationWindow {
                     Item { Layout.fillWidth: true }
 
                     Button {
+                        id: addDeviceButton
                         text: "+ Adicionar"
+                        Layout.preferredWidth: 106
+                        Layout.preferredHeight: 32
+                        padding: 0
+                        hoverEnabled: true
+                        background: Rectangle {
+                            radius: 5
+                            color: !addDeviceButton.enabled
+                                   ? window.panelAltColor
+                                   : addDeviceButton.down
+                                     ? "#315db0"
+                                     : addDeviceButton.hovered
+                                       ? "#386dc6" : window.accent
+                            border.color: addDeviceButton.enabled
+                                          ? "#6da4ff" : window.borderColor
+                        }
+                        contentItem: Label {
+                            text: addDeviceButton.text
+                            color: "white"
+                            font.pixelSize: 11
+                            font.bold: true
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
                         onClicked: addDeviceDialog.open()
                     }
                 }
