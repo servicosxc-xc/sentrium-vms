@@ -37,6 +37,15 @@ public:
         int port,
         const QString& username,
         const QString& password);
+    // Experimental bridge: a separate, operator-owned Cloud tunnel exposes a
+    // local TCP endpoint. NetSDK authenticates through that endpoint.
+    // This does NOT implement or manage the Cloud/P2P tunnel.
+    Q_INVOKABLE void addCloudBridgeAndConnect(
+        const QString& displayName,
+        int localPort,
+        const QString& username,
+        const QString& password);
+
     Q_INVOKABLE bool addAutoRegistration(
         const QString& displayName, const QString& registrationId,
         const QString& username, const QString& password);
