@@ -138,3 +138,17 @@ Após PASS de `D-8` (0,06 s) e build Debug `[12/12]` reportados pelo operador, o
 - Corrigido desligamento do listener para respeitar o retorno de `NetSDK logout`; não declarar desconexão bem-sucedida quando o SDK retorna falha.
 - Alinhado limite de ID a `szDeviceID[32]` observado no NetSDK: até 31 caracteres utilizáveis mais terminador, sem truncamento silencioso.
 - **Código versionado mas ainda não compilado/observado no Windows após essas alterações.** Validar com build Debug focal, abrir Configurações e, quando o gravador estiver disponível, comprovar recebimento de ID, login e canais reais. Esse gate não aprova Cloud nem declara F005 concluída.
+
+## Prioridade atual — conectividade real (26/10/2026)
+
+**Diretriz do operador:** estética da Home por botões menores, ícones quadrados arredondados e nomes abaixo fica **adiada** (referência visual fornecida). A prioridade é **Registro Automático e Cloud/P2P independente do SIM Next**.
+
+**Registro Automático — correções de ciclo de vida (código, ainda sem prova com NVR real):**
+- Desconectar sessões NetSDK **antes** de fechar o listener AutoRegistration. Se `CLIENT_Logout` falhar, o sistema não deve informar desconexão bem-sucedida nem abrir sessão duplicada no registro seguinte.
+- Guardar temporariamente handles cuja liberação falhou e tentar liberação novamente ao receber registro do mesmo ID; o estado online exibido ao operador só decorre de login NetSDK confirmado.
+- A janela de Configurações registra se ID foi reconhecido, se ocorreu login NetSDK e número **real** de canais, ou falha; não mostra ID, senha ou IP nos eventos visuais.
+- No teste prático, `bind=127.0.0.1` aceita somente conexões locais. Para gravadores externos, o operador deve configurar um IP de escuta acessível e rede adequada; o cliente não abre firewall/NAT.
+
+**Cloud — impedimento concreto identificado:** as descobertas consolidadas comprovam o fluxo túnel TCP local → NetSDK e Relay no legado, **mas não entregam protocolo de bootstrap, contrato independente e credencial de aplicação autorizada para a infraestrutura Intelbras**. Não usar servidores capturados ou credenciais privadas do SIM Next como solução. Próxima dependência externa é obter da Intelbras contrato/SDK de integração P2P autorizado para VMS C++ independente; há canal público de atendimento para 'Obter API/SDK' divulgado pelo fabricante. O NetSDK genérico ou outras plataformas Cloud de automação não são assumidos como substitutos do P2P de CFTV. Até lá, Cloud **BLOCKED**, não conectado.
+
+**Gate operacional proposto:** após um build focal, testar **uma conexão real por Registro Automático** (listener ativo, evento de registro reconhecido, autenticação, quantidade de canais, desconexão/reconexão); sem repetir os benchmarks F004. O código recente ainda requer esse build Windows.
