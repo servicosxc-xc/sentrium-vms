@@ -79,8 +79,8 @@ void DeviceWorker::startRegistrationServer(const QString& bindAddress, quint16 p
             // SDK thread: copy bounded event values into Qt's queued signal.
             // Never call NetSDK Login from inside a native SDK callback.
             emit registrationReceived(
-                QString::fromUtf8(event.serial),
-                QString::fromUtf8(event.peer_address),
+                qstring(event.serial),
+                qstring(event.peer_address),
                 event.peer_port,
                 event.disconnected);
         });
@@ -96,7 +96,7 @@ void DeviceWorker::stopRegistrationServer() {
         if (session != sessions_.end()) {
             adapter_.disconnect(session->second);
             sessions_.erase(session);
-            emit disconnectFinished(QString::fromUtf8(key), true, {});
+            emit disconnectFinished(qstring(key), true, {});
         }
     }
     emit registrationServerChanged(false, QStringLiteral("Registro Automático desativado"));
@@ -134,12 +134,12 @@ void DeviceWorker::onRegistrationReceived(
             if (existing != sessions_.end()) {
                 adapter_.disconnect(existing->second);
                 sessions_.erase(existing);
-                emit registrationLost(QString::fromUtf8(id));
+                emit registrationLost(qstring(id));
             }
             return;
         }
         if (existing != sessions_.end()) return;
-        const QString logicalId = QString::fromUtf8(id);
+        const QString logicalId = qstring(id);
         if (peer.isEmpty() || port == 0) {
             emit connectFinished(logicalId, false, 0,
                                  QStringLiteral("Registro recebido sem endereço válido"));
