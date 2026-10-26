@@ -45,4 +45,41 @@ public:
     virtual std::unique_ptr<CloudTunnel> open(const CloudConnectRequest& request) = 0;
 };
 
+struct CloudSessionResult {
+    bool success = false;
+    int channel_count = 0;
+    CloudRoute route = CloudRoute::Unknown;
+    std::string diagnostic;
+};
+
+// Reuses the existing NetSDK adapter. The tunnel outlives login and RealPlay,
+// and logout always precedes closing the tunnel. This is orchestration, not
+// a P2P provider: without a real CloudTransport, no Cloud connection exists.
+// Caller must ensure transport and NetSDK adapter outlive this object.
+class CloudDeviceSession final {
+public:
+    CloudDeviceSession(CloudTransport& transport, Adapter& net_sdk) noexcept;
+    ~CloudDeviceSession() noexcept;
+
+    CloudDeviceSession(const CloudDeviceSession&) = delete;
+    CloudDeviceSession& operator=(const CloudDeviceSession&) = delete;
+
+    CloudSessionResult connect(
+        const CloudConnectRequest& cloud,
+        std::string username,
+        std::string password);
+    DisconnectResult disconnect() noexcept;
+    bool connected() const noexcept;
+    CloudRoute route() const noexcept;
+
+private:
+    void closeTunnel() noexcept;
+
+    CloudTransport& transport_;
+    Adapter& net_sdk_;
+    std::unique_ptr<CloudTunnel> tunnel_;
+    Session session_{};
+    CloudRoute route_ = CloudRoute::Unknown;
+};
+
 } // namespace sentrium::device
