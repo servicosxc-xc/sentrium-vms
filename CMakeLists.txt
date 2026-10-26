@@ -84,6 +84,7 @@ add_library(sentrium-device
   libs/sentrium-device/cloud_signaling.cpp
   libs/sentrium-device/cloud_ptcp.cpp
   libs/sentrium-device/cloud_ptcp_session.cpp
+  libs/sentrium-device/cloud_loopback_bridge.cpp
   libs/sentrium-device/cloud_auth.cpp)
 target_link_libraries(sentrium-device PRIVATE ws2_32 bcrypt)
 target_include_directories(sentrium-device PUBLIC libs/sentrium-device/include)
@@ -107,7 +108,7 @@ add_executable(sentrium-integration-tests tests/integration/main.cpp)
 target_link_libraries(sentrium-integration-tests PRIVATE sentrium-platform-win)
 
 add_executable(sentrium-device-tests tests/device/main.cpp)
-target_link_libraries(sentrium-device-tests PRIVATE sentrium-device)
+target_link_libraries(sentrium-device-tests PRIVATE sentrium-device ws2_32)
 
 add_executable(sentrium-media-tests tests/media/main.cpp)
 target_link_libraries(sentrium-media-tests PRIVATE sentrium-media)
@@ -132,7 +133,7 @@ endforeach()
 foreach(id RANGE 1 11)
   add_test(NAME I-${id} COMMAND sentrium-integration-tests ${id} $<TARGET_FILE:sentrium-server>)
 endforeach()
-foreach(id RANGE 1 14)
+foreach(id RANGE 1 16)
   add_test(NAME D-${id} COMMAND sentrium-device-tests ${id})
 endforeach()
 foreach(id RANGE 1 6)

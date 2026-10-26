@@ -273,3 +273,14 @@ Diagnostico conferido no GitHub HEAD f37ae9e4: o argumento ctest -R foi truncado
 Reparacao: arquivo PowerShell reescrito por completo. O regex de filtro agora esta completo para D-11, D-12, D-13 e D-14; existe um unico ctest, unico try/finally e bloco de encerramento. Feita verificacao estatica de conteudo, aspas/chaves balanceadas e ausencia de bloco duplicado. Execucao PowerShell nativa, compilacao e testes no Windows ainda NAO EXECUTADOS.
 
 ATENCAO: o script local do operador esta invalido e nao consegue executar o pull embutido. E preciso executar o git pull --ff-only origin foundation/005-device-connectivity primeiro, depois executar scripts/windows/sentrium-validate-f005-cloud.ps1 com cliente SENTRIUM fechado. Nada foi alterado na main ou aprovado em Human Review; PR #4 permanece draft. D-9/D-10 seguem PASS anterior.
+
+
+## 17. Checkpoint R2/R3 PASS no Windows e novo R4 TCP loopback (26/10/2026)
+
+**Evidencia fornecida pelo operador:** PowerShell apos git pull ff-only ate o commit eb7317c9ce7b088d58cda2c3b883b3ced0dda8fa. PRE-FLIGHT PASS, CMake configure/generate PASS, Debug build [48/48] PASS, D-11 PASS (0.03s), D-12 PASS (0.03s), D-13 PASS (0.01s), D-14 PASS (0.01s), 4/4 PASS total 0.12s. Aviso WrapVulkanHeaders nao bloqueante. D-9/D-10 ja PASS no commit 4185a700. **R2/R3 COMPILADO E TESTADO (componentes offline); NAO significa Cloud remoto funcional.**
+
+**R4 entregue como codigo, NAO compilado no Windows:** nova API CloudByteStream e CloudLoopbackBridge em libs/sentrium-device, implementacao nativa WinSock de listener de TCP 127.0.0.1 com porta efemera designada pelo sistema. Aceita um unico cliente local e encaminha bytes na ordem por um CloudByteStream entregue por futuro provider legitimamente autenticado. Sem binding externo, troca de firewall, Credencial Cloud, SDK de SIM Next ou executavel dh-fwd. Encerramento cooperativo de socket/thread e fechamento separado do NetSDK; uso so depois de provider real. Testes novos D-15 (rejeicao stream nulo, porta efemera, close idempotente) e D-16 (echo apenas em memoria via sockets reais loopback). CMake inclui arquivo e tests; script unico Windows **executa somente D-15/D-16** para nao repetir D-9 a D-14 aprovados. Documento: docs/foundation-005/F005-CLOUD-LOOPBACK-BRIDGE-R4.md.
+
+**LIMITACAO:** esta ponte isolada nao implementa provider CloudTransport, autentica aplicativo, faz rendezvous/NAT, estabelece Direct/Relay, ou abre canais NetSDK de gravador real. Nenhum numero de canais remotos 16/32 comprovado. Manter Cloud UI bloqueado e rota Unknown. Nao chamar teste echo de tunel Cloud. PR #4 segue draft, main e Human Review intactos.
+
+**Proximo gate focal (apos fechar SENTRIUM):** na pasta local Windows executar um unico script .\scripts\windows\sentrium-validate-f005-cloud.ps1. Script faz pull --ff-only, preflight, build e roda somente D-15/D-16. Este novo lote R4 esta NOT RUN ate evidencia do operador. Sem necessidade de refazer tests 9 a 14.

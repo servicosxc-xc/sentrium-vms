@@ -42,3 +42,10 @@ Nova camada C++ `cloud_ptcp_session.*` para contadores PTCP, ACK, anti-duplicata
 ## R3 runner — ParserError reparado apos retorno Windows (26/10/2026)
 
 O script R3 publicado no commit anterior estava corrompido: CTest regex truncada e bloco finally duplicado. O Windows abortou no parse; nao fez build nem D-11 a D-14. O script foi reescrito na branch em um unico bloco e passou apenas por checagens estaticas. A copia local quebrada exige PRIMEIRO git pull --ff-only origin foundation/005-device-connectivity, DEPOIS executar o script corrigido. Ver secao 16 do handoff. Nao repetir D-9/D-10, F004, nem afirmar Cloud real.
+
+
+## R2/R3 validados; R4 pendente (26/10/2026)
+
+**PASS COMPROVADO:** commit eb7317c9ce7b088d58cda2c3b883b3ced0dda8fa, PRE-FLIGHT e Debug build [48/48], D-11/D-12/D-13/D-14 4/4 PASS (log real Windows do operador). D-9/D-10 ja tinham PASS. NAO repetir.
+
+**NOVO R4:** API CloudByteStream + TCP dinamico de loopback 127.0.0.1/porta OS unica, encaminhamento de bytes com upstream autenticado pelo provider (ainda inexistente), encerramento cooperativo, D-15/D-16 (so teste echo sinteticamente em memoria). R4 sem build/testes Windows. Script unico agora executa SOMENTE D-15/D-16. Handoff secao 17, documento F005-CLOUD-LOOPBACK-BRIDGE-R4.md. Cloud remoto 16/32, bootstrap autorizado, Direct/Relay e tunel real ainda NAO COMPROVADOS. Manter PR #4 draft, main intacta, sem SIM Next nem dh-fwd.

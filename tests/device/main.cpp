@@ -1,3 +1,8 @@
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #include <sentrium/device.hpp>
 #include <sentrium/cloud.hpp>
 #include <sentrium/cloud_wire.hpp>
@@ -5,8 +10,12 @@
 #include <sentrium/cloud_signaling.hpp>
 #include <sentrium/cloud_ptcp.hpp>
 #include <sentrium/cloud_ptcp_session.hpp>
+#include <sentrium/cloud_loopback_bridge.hpp>
 #include <sentrium/cloud_auth.hpp>
 
+#include <array>
+#include <cstring>
+#include <mutex>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
@@ -95,6 +104,37 @@ public:
     }
 private:
     std::vector<std::string>& trace_;
+};
+
+class TestOnlyEchoStream final : public CloudByteStream {
+public:
+    // Loopback fixture only. This is NOT an authorized Cloud connection.
+    int read(char* buffer, int capacity, int) noexcept override {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (closed_) return -1;
+        if (size_ == 0) return 0;
+        if (capacity < static_cast<int>(size_)) return -1;
+        std::memcpy(buffer, pending_.data(), size_);
+        const int amount = static_cast<int>(size_);
+        size_ = 0;
+        return amount;
+    }
+    bool write(std::string_view bytes) noexcept override {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (closed_ || size_ != 0 || bytes.size() > pending_.size()) return false;
+        std::memcpy(pending_.data(), bytes.data(), bytes.size());
+        size_ = bytes.size();
+        return true;
+    }
+    void close() noexcept override {
+        std::lock_guard<std::mutex> lock(mutex_);
+        closed_ = true;
+    }
+private:
+    std::mutex mutex_;
+    std::array<char, 512> pending_{};
+    std::size_t size_ = 0;
+    bool closed_ = false;
 };
 } // namespace
 
@@ -498,6 +538,58 @@ int main(int argc, char** argv) {
             require(full.stats().in_flight_packets == 32 &&
                     full.send(frame,1000).error == PtcpSessionError::WindowFull,
                     "window cannot grow without ACK");
+            break;
+        }
+
+        case 15: {
+            // One-shot dynamic loopback. No provider, remote recorder or P2P.
+            rejects([] {
+                static_cast<void>(CloudLoopbackBridge::start(nullptr));
+            });
+            auto bridge = CloudLoopbackBridge::start(
+                std::make_unique<TestOnlyEchoStream>());
+            require(bridge && bridge->localPort() != 0,
+                    "OS-assigned local bridge TCP port");
+            bridge->close();
+            require(bridge->localPort() == 0, "closed bridge exposes no port");
+            bridge->close();
+            break;
+        }
+        case 16: {
+            // Native Winsock to in-memory echo, not a Cloud/NetSDK login.
+            auto bridge = CloudLoopbackBridge::start(
+                std::make_unique<TestOnlyEchoStream>());
+            require(bridge && bridge->localPort() != 0,
+                    "native bridge is listening on loopback");
+            SOCKET client = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+            require(client != INVALID_SOCKET, "create local test socket");
+            const DWORD timeout = 3000;
+            require(::setsockopt(client, SOL_SOCKET, SO_RCVTIMEO,
+                     reinterpret_cast<const char*>(&timeout),
+                     static_cast<int>(sizeof(timeout))) == 0, "recv deadline");
+
+            sockaddr_in address{};
+            address.sin_family = AF_INET;
+            address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+            address.sin_port = htons(bridge->localPort());
+            require(::connect(client, reinterpret_cast<const sockaddr*>(&address),
+                    static_cast<int>(sizeof(address))) == 0, "connect loopback");
+            const std::string payload = "SENTRIUM-R4-test-only";
+            require(::send(client, payload.data(),
+                    static_cast<int>(payload.size()), 0) ==
+                    static_cast<int>(payload.size()), "send NetSDK-like bytes");
+            std::string echoed;
+            std::array<char, 512> buffer{};
+            while (echoed.size() < payload.size()) {
+                const int count = ::recv(client, buffer.data(),
+                    static_cast<int>(buffer.size()), 0);
+                require(count > 0, "receive response before deadline");
+                echoed.append(buffer.data(), static_cast<std::size_t>(count));
+            }
+            require(echoed == payload, "full duplex loopback echo");
+            ::closesocket(client);
+            bridge->close();
+            require(bridge->localPort() == 0, "teardown released port");
             break;
         }
 
