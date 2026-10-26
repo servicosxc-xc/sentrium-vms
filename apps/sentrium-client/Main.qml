@@ -29,9 +29,13 @@ ApplicationWindow {
         x: Math.round((parent.width - width) / 2)
         y: Math.round((parent.height - height) / 2)
         title: "Adicionar dispositivo"
-        standardButtons: Dialog.Ok | Dialog.Cancel
+        // Unsupported methods cannot submit fictional connection requests.
+        standardButtons: connectionMethod.currentIndex === 0
+                         ? (Dialog.Ok | Dialog.Cancel)
+                         : Dialog.Cancel
 
         onOpened: {
+            connectionMethod.currentIndex = 0
             deviceName.forceActiveFocus()
         }
 
@@ -54,6 +58,31 @@ ApplicationWindow {
             spacing: 10
 
             Label {
+                text: "Método de conexão"
+                color: window.textSecondary
+                font.pixelSize: 11
+            }
+
+            ComboBox {
+                id: connectionMethod
+                Layout.fillWidth: true
+                model: ["LAN / IP direto", "Cloud / P2P", "Registro Automático"]
+                currentIndex: 0
+            }
+
+            Label {
+                Layout.fillWidth: true
+                visible: connectionMethod.currentIndex !== 0
+                wrapMode: Text.WordWrap
+                color: window.textSecondary
+                font.pixelSize: 11
+                text: connectionMethod.currentIndex === 1
+                      ? "Cloud/P2P: integração com SDK real ainda pendente. Nenhuma conexão simulada será criada."
+                      : "Registro Automático: listener real e configuração segura ainda pendentes."
+            }
+
+            Label {
+                visible: connectionMethod.currentIndex === 0
                 text: "Intelbras / Dahua NetSDK — IP/LAN"
                 color: window.textSecondary
                 font.pixelSize: 11
@@ -69,12 +98,14 @@ ApplicationWindow {
 
             TextField {
                 id: deviceHost
+                visible: connectionMethod.currentIndex === 0
                 Layout.fillWidth: true
                 placeholderText: "IP ou host"
                 selectByMouse: true
             }
 
             RowLayout {
+                visible: connectionMethod.currentIndex === 0
                 Layout.fillWidth: true
 
                 Label {
@@ -94,6 +125,7 @@ ApplicationWindow {
 
             TextField {
                 id: deviceUser
+                visible: connectionMethod.currentIndex === 0
                 Layout.fillWidth: true
                 placeholderText: "Usuário"
                 selectByMouse: true
@@ -101,6 +133,7 @@ ApplicationWindow {
 
             TextField {
                 id: devicePassword
+                visible: connectionMethod.currentIndex === 0
                 Layout.fillWidth: true
                 placeholderText: "Senha"
                 echoMode: TextInput.Password
@@ -108,6 +141,7 @@ ApplicationWindow {
             }
 
             Label {
+                visible: connectionMethod.currentIndex === 0
                 Layout.fillWidth: true
                 wrapMode: Text.WordWrap
                 text: "As credenciais permanecem somente em memória nesta Foundation e não são persistidas."
