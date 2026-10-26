@@ -3,6 +3,8 @@
 #include <sentrium/cloud_wire.hpp>
 #include <sentrium/cloud_udp.hpp>
 #include <sentrium/cloud_signaling.hpp>
+#include <sentrium/cloud_ptcp.hpp>
+#include <sentrium/cloud_auth.hpp>
 
 #include <iostream>
 #include <memory>
@@ -297,6 +299,111 @@ int main(int argc, char** argv) {
             require(signaling.status == CloudSignalingStatus::InvalidConfiguration &&
                     !signaling.accepted() && signaling.response.body.empty(),
                     "signaling refuses unauthenticated empty request");
+            break;
+        }
+
+        case 11: {
+            // PTCP framing only, not an authenticated Cloud connection.
+            PtcpPacket request{};
+            request.kind = PtcpKind::Payload;
+            request.sent = 12;
+            request.received = 4;
+            request.pid = 0xffff;
+            request.local_message_id = 9;
+            request.remote_message_id = 8;
+            request.realm = 77;
+            request.body = "control-test-bytes";
+            std::string raw;
+            require(encodePtcpPacket(request,raw) == PtcpError::None, "encode payload");
+            const auto round = parsePtcpPacket(raw);
+            require(round.ok(), "decode encoded payload");
+            require(round.packet.body == request.body &&
+                    round.packet.pid == request.pid &&
+                    round.packet.local_message_id == 9 &&
+                    round.packet.realm == 77, "PTCP payload/header roundtrip");
+
+            const auto oldRaw = raw;
+            raw[0] = 'X';
+            require(parsePtcpPacket(raw).error == PtcpError::WrongMagic,
+                    "reject wrong protocol");
+            raw = oldRaw;
+            raw[24] = static_cast<char>(0x11);
+            require(parsePtcpPacket(raw).error == PtcpError::InvalidLength,
+                    "reject incoherent bind length");
+
+            request.kind = PtcpKind::Sync;
+            request.body.clear();
+            require(encodePtcpPacket(request,raw) == PtcpError::None &&
+                    parsePtcpPacket(raw).packet.kind == PtcpKind::Sync, "SYNC frame");
+            request.kind = PtcpKind::Heartbeat;
+            require(encodePtcpPacket(request,raw) == PtcpError::None &&
+                    parsePtcpPacket(raw).packet.kind == PtcpKind::Heartbeat, "heartbeat");
+            request.kind = PtcpKind::Status;
+            request.status = "CONN";
+            require(encodePtcpPacket(request,raw) == PtcpError::None &&
+                    parsePtcpPacket(raw).packet.status == "CONN", "CONN");
+            request.status = "FAKE";
+            require(encodePtcpPacket(request,raw) == PtcpError::InvalidStatus,
+                    "unknown PTCP status rejected");
+            request.kind = PtcpKind::Bind;
+            request.bind_port = 37777;
+            require(encodePtcpPacket(request,raw) == PtcpError::None &&
+                    parsePtcpPacket(raw).packet.bind_port == 37777, "BIND");
+            request.kind = PtcpKind::Payload;
+            request.body.assign(1281,'x');
+            require(encodePtcpPacket(request,raw) == PtcpError::TooLarge,
+                    "respect MTU limit");
+            request.kind = PtcpKind::Command;
+            request.body.assign(12, '\0');
+            request.body[0]=static_cast<char>(0x19);
+            require(encodePtcpPacket(request,raw) == PtcpError::None &&
+                    parsePtcpPacket(raw).packet.kind == PtcpKind::Command,
+                    "opaque auth command");
+            require(parsePtcpPacket("PTCP").error == PtcpError::TooShort,
+                    "short packet");
+            break;
+        }
+
+        case 12: {
+            // Device-owned credentials, not application bootstrap credentials.
+            const auto auth = prepareCloudDeviceAuth(
+                "admin","hunter2","abc123",12345,1761500000ULL,"127.0.0.1:49300");
+            require(auth.device_key_hex.size() == 32 &&
+                    auth.signature_base64.size() == 44,
+                    "device authentication encodings");
+            require(auth.device_key_hex.find("hunter2") == std::string::npos &&
+                    auth.signature_base64.find("hunter2") == std::string::npos,
+                    "no cleartext password in auth");
+            for (const char c : auth.device_key_hex)
+                require((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F'),
+                        "uppercase MD5 hex");
+            const auto repeat = prepareCloudDeviceAuth(
+                "admin","hunter2","abc123",12345,1761500000ULL,"127.0.0.1:49300");
+            require(auth.device_key_hex == repeat.device_key_hex &&
+                    auth.signature_base64 == repeat.signature_base64 &&
+                    auth.address_key == repeat.address_key,
+                    "reproducible device proof");
+
+            const auto wrongPass = prepareCloudDeviceAuth(
+                "admin","other-password","abc123",12345,1761500000ULL,"127.0.0.1:49300");
+            require(wrongPass.device_key_hex != auth.device_key_hex &&
+                    wrongPass.signature_base64 != auth.signature_base64,
+                    "password affects proof");
+            const auto wrongNonce = prepareCloudDeviceAuth(
+                "admin","hunter2","abc123",12346,1761500000ULL,"127.0.0.1:49300");
+            require(wrongNonce.device_key_hex == auth.device_key_hex &&
+                    wrongNonce.address_key != auth.address_key &&
+                    wrongNonce.signature_base64 != auth.signature_base64,
+                    "nonce affects derived key and signature");
+
+            rejects([] {
+                static_cast<void>(prepareCloudDeviceAuth(
+                    "admin","", "abc123",12345,1761500000ULL,"payload"));
+            });
+            rejects([] {
+                static_cast<void>(prepareCloudDeviceAuth(
+                    "admin","pass", "abc123",0,1761500000ULL,"payload"));
+            });
             break;
         }
 
