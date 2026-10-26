@@ -67,6 +67,8 @@ DeviceController::DeviceController(QObject* parent) : QObject(parent) {
             this, &DeviceController::onRegistrationServerChanged, Qt::QueuedConnection);
     connect(worker_, &DeviceWorker::registrationLost,
             this, &DeviceController::onRegistrationLost, Qt::QueuedConnection);
+    connect(worker_, &DeviceWorker::registrationObservation,
+            this, &DeviceController::onRegistrationObservation, Qt::QueuedConnection);
 
     worker_thread_.setObjectName(QStringLiteral("sentrium-device-worker"));
     worker_thread_.start();
@@ -232,7 +234,8 @@ bool DeviceController::addAutoRegistration(
     record.username = utf8(username);
     record.password = utf8(password);
     record.device.state = sentrium::device::ConnectionState::Connecting;
-    record.device.diagnostic = "Aguardando registro do dispositivo";
+    record.device.diagnostic = registration_listening_
+        ? "Aguardando registro do dispositivo" : "Aguardando ativação do servidor";
     records_.push_back(std::move(record));
     setError({});
     emit devicesChanged();
@@ -271,6 +274,13 @@ void DeviceController::onRegistrationServerChanged(
         }
         emit devicesChanged();
     }
+}
+
+void DeviceController::onRegistrationObservation(const QString& message) {
+    if (shutdown_) return;
+    registration_last_event_ = message;
+    if (registration_event_count_ < 1000000000) ++registration_event_count_;
+    emit registrationEventsChanged();
 }
 
 void DeviceController::onRegistrationLost(const QString& id) {
