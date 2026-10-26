@@ -117,3 +117,12 @@ Evidência relevante:
 
 **Código acrescentado (ainda sem build local validado):**
 `sentrium-device/cloud.hpp` e `cloud.cpp` estabelecem request Cloud com service port explícita, um endpoint local somente após túnel pronto, `CloudRoute::Unknown` por padrão e interface abstrata de provider/túnel. O método `netSdkLogin` cria login local `127.0.0.1:local_port`, **nunca** envia Cloud UUID/remotePort como host/porta NetSDK. Incluído teste focal D-8 para essas invariantes. **Nenhuma implementação P2P/Relay real foi declarada**, pois ainda faltam bootstrap e protocolo/autorização de distribuição independentes; não se admite tunnel mock como funcionalidade real.
+
+## Checkpoint C++ — ciclo de vida Cloud separado do NetSDK (25/10/2026)
+
+- Evidência anterior do operador: CMake configure/generate **PASS**, Debug build **PASS `[44/44] Linking CXX executable sentrium-client.exe`** no commit `c999e72b4da3e621249493dbd19f1ddfcf334de2`. O warning `WrapVulkanHeaders` não bloqueou. Trata-se de compilação, **não de conexão Cloud**.
+- Incremento após essa evidência: `CloudDeviceSession` faz a sequência `CloudTransport.open(request)` → endpoint local do túnel → `Adapter.connect(LoginRequest{127.0.0.1, localPort,...})` → preserva sessão NetSDK e túnel durante o uso do dispositivo.
+- Na desconexão/destruição, solicita `NetSDK logout` **antes** de `CloudTunnel.close`. Se a inicialização ou o login falhar, fecha o túnel pendente sem criar estado Connected.
+- Retorna `CloudRoute::Unknown` até que o provider observe uma rota real; um túnel aberto não comprova modo Direct.
+- Teste unitário **D-8** cobre separação entre servicePort remoto e localPort, além da sequência de abertura/encerramento com doubles isolados. Doubles **não** são provider Cloud de produção.
+- Estes incrementos precisam ser compilados localmente no Windows antes de receberem PASS. O `CloudTransport` concreto não existe; **Cloud real segue BLOCKED** pelo bootstrap/serviço/contrato independente, conforme o documento de descobertas consolidadas.
