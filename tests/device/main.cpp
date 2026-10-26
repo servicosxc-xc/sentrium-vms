@@ -279,6 +279,8 @@ int main(int argc, char** argv) {
             rejects([] { CloudUdpSettings{"256.256.0.1", 8800, 200, 1}.validate(); });
             rejects([] { CloudUdpSettings{"0.0.0.0", 8800, 200, 1}.validate(); });
             rejects([] { CloudUdpSettings{"255.255.255.255", 8800, 200, 1}.validate(); });
+            rejects([] { CloudUdpSettings{"224.0.0.1", 8800, 200, 1}.validate(); });
+            rejects([] { CloudUdpSettings{"240.0.0.1", 8800, 200, 1}.validate(); });
             rejects([] { CloudUdpSettings{"127.0.0.1", 0, 200, 1}.validate(); });
             rejects([] { CloudUdpSettings{"127.0.0.1", 8800, 99, 1}.validate(); });
             rejects([] { CloudUdpSettings{"127.0.0.1", 8800, 10001, 1}.validate(); });
