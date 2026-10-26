@@ -60,3 +60,20 @@ Do not claim test success before the operator returns an actual toolchain log.
 ## Governance
 
 F005 AUTHORIZED / IN IMPLEMENTATION. The branch is not merged. F004 and `main` remain untouched; ADR-005 Proposed; Human Review not approved.
+
+## Lote maior de engenharia — transporte UDP e sinalização nativos (26/10/2026)
+
+**Nova implementação integrada no mesmo branch, ainda SEM execução no Windows após este lote:**
+
+- `cloud_udp.hpp` / `cloud_udp.cpp`: transporte Windows Winsock UDP síncrono para **um endpoint explícito IPv4 unicast**, recebido de camada superior legítima, sem DNS automático. Inicializa/encerra Winsock com RAII, fecha socket, fixa peer com `connect`, limita payload de saída a 8192 bytes e resposta a 65507 bytes, timeout configurável de 100 a 10000 ms, 1–3 tentativas e erros categorizados. Não invoca rede a menos que o chamador forneça request não vazia e configuração válida.
+- `cloud_signaling.hpp` / `cloud_signaling.cpp`: compõe transporte UDP com `parseCloudWireResponse` do módulo anterior. Uma resposta `200` representa somente status do protocolo; `401/403/404` são rejeições, **não dispositivo conectado**. Dados da resposta são sensíveis e nunca devem ser registrados automaticamente.
+- `CMakeLists.txt`: adiciona módulos ao target `sentrium-device` com link Winsock `ws2_32`.
+- `tests/device/main.cpp`: **D-10** valida limites do transporte e falha fechada sem realizar tráfego de rede; **D-9** continua validando framing DHP2P.
+- `scripts/windows/sentrium-validate-f005-cloud.ps1`: reúne git fast-forward, PRE-FLIGHT, configure/build e somente D-9/D-10 em **uma execução**, impedindo o linker de abrir `sentrium-client.exe` enquanto o programa está ativo.
+- O usuário solicitou **entregas em lote e checkpoint somente ao final**, sem sucessão de pequenos comandos.
+
+**O que isto NÃO é:** não possui provedor Cloud autenticado, chaves/IDs de aplicação, servidor bootstrap predefinido, negociação Direct/Relay, retransmissão PTCP nem túnel TCP para o NetSDK. Não chamar de módulo Cloud completo ou conexão real. As exigências de origem/segurança/autorizações permanecem. A F005 é IN IMPLEMENTATION.
+
+**Último log trazido pelo usuário:** configure CMake PASS, build chegou ao LINK `sentrium-client.exe` e falhou **LNK1168 (arquivo aberto por processo)**. Não houve resultado D-9 nem D-10; ambos **NOT RUN** nesse log. O script novo impede esta classe de tentativa enquanto o cliente está aberto.
+
+**Continuidade obrigatória:** `CONTINUE-HERE.md` na raiz e `docs/HANDOFF-SENTRIUM-CURRENT.md` guardam o estado factual e o prompt de transferência para outro chat. Atualizar a cada entrega significativa.
