@@ -54,6 +54,14 @@ int main(int argc, char** argv) {
             require(name(ConnectionState::Connected) == "Connected", "Connected name");
             require(name(ConnectionState::Disconnecting) == "Disconnecting", "Disconnecting name");
             require(name(ConnectionState::Failed) == "Failed", "Failed name");
+            require(name(AccessMethod::Lan) == "LAN", "LAN method");
+            require(name(AccessMethod::Cloud) == "Cloud", "Cloud method");
+            require(name(AccessMethod::AutoRegistration) == "AutoRegistration", "AutoRegistration method");
+            require(name(CloudRoute::Unknown) == "Unknown", "Unknown cloud route");
+            require(name(CloudRoute::Direct) == "Direct", "Direct cloud route");
+            require(name(CloudRoute::Relay) == "Relay", "Relay cloud route");
+            require(Device{}.cloud_route == CloudRoute::Unknown,
+                    "Never guess P2P Direct from an uninitialized route");
             break;
 
         case 2: {
