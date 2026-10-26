@@ -192,7 +192,7 @@ void DeviceController::addAndConnect(
 }
 
 
-void DeviceController::addAutoRegistration(
+bool DeviceController::addAutoRegistration(
     const QString& displayName, const QString& serial,
     const QString& username, const QString& password) {
     if (shutdown_) return;
@@ -201,7 +201,7 @@ void DeviceController::addAutoRegistration(
         || cleanSerial.isEmpty() || cleanSerial.size() >= 48
         || username.isEmpty() || username.size() > 128 || password.size() > 256) {
         setError(QStringLiteral("Dados de Registro Automático inválidos"));
-        return;
+        return false;
     }
     for (const QChar c : cleanSerial) {
         if (!((c >= QLatin1Char('0') && c <= QLatin1Char('9'))
@@ -210,13 +210,13 @@ void DeviceController::addAutoRegistration(
               || c == QLatin1Char('-') || c == QLatin1Char('_')
               || c == QLatin1Char('.'))) {
             setError(QStringLiteral("Número de série contém caracteres inválidos"));
-            return;
+            return false;
         }
     }
     for (const auto& record : records_) {
         if (record.auto_registration && qstring(record.expected_serial) == cleanSerial) {
             setError(QStringLiteral("Número de série já cadastrado"));
-            return;
+            return false;
         }
     }
 
@@ -236,6 +236,7 @@ void DeviceController::addAutoRegistration(
     emit requestRegisterAutoDevice(id, cleanSerial, username, password);
     emit auditEvent(QStringLiteral("auto-register-expected-device-added"),
                     QStringLiteral("Dispositivo aguardando registro, sem sessão simulada"));
+    return true;
 }
 
 void DeviceController::startRegistrationServer(const QString& bindAddress, int port) {
