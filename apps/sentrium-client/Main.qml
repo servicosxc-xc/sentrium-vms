@@ -53,12 +53,12 @@ ApplicationWindow {
             } else if (connectionMethod.currentIndex === 2) {
                 const added = deviceController.addAutoRegistration(
                     deviceName.text,
-                    registrationSerial.text,
+                    registrationDeviceId.text,
                     registrationUser.text,
                     registrationPassword.text)
                 if (added && !deviceController.registrationListening) {
                     // The target is queued before the listener starts, so the
-                    // expected serial is registered before the first callback.
+                    // device registration ID is registered before the first callback.
                     deviceController.startRegistrationServer(
                         registrationBind.text, registrationListenPort.value)
                 }
@@ -97,7 +97,7 @@ ApplicationWindow {
                 font.pixelSize: 11
                 text: connectionMethod.currentIndex === 1
                       ? "Cloud/P2P exige os binários oficiais do SIM Next e validação do túnel. Ainda indisponível."
-                      : "Registro Automático real via NetSDK. Configure o dispositivo para enviar seu número de série para o IP e a porta do SENTRIUM."
+                      : "Registro Automático real via NetSDK. Configure o dispositivo para enviar o ID configurado nele para o IP e a porta do SENTRIUM."
             }
 
             Label {
@@ -169,10 +169,10 @@ ApplicationWindow {
             }
 
             TextField {
-                id: registrationSerial
+                id: registrationDeviceId
                 visible: connectionMethod.currentIndex === 2
                 Layout.fillWidth: true
-                placeholderText: "Número de série exato do gravador"
+                placeholderText: "ID de Registro Automático configurado no gravador"
                 maximumLength: 47
                 selectByMouse: true
             }
