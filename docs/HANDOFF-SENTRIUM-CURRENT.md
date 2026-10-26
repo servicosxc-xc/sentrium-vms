@@ -127,7 +127,7 @@ PropertyNotFoundStrict
 
 **Correções commitadas:**
 1. `sentrium-preflight.ps1`: consulta defensiva de `$_.PSObject.Properties['DisplayName']`/`['DisplayVersion']`, mantendo exigência original do nome e da versão do Windows SDK 10.1.26100.9457.
-2. `sentrium-validate-f005-cloud.ps1`: muda a invocação de `. script.ps1` para `& script.ps1`, isolando escopo de variáveis/StrictMode sem perder variáveis de ambiente de processo `SENTRIUM_CMAKE`, etc.
+2. `sentrium-validate-f005-cloud.ps1`: muda a invocação de `. script.ps1` para `& script.ps1` e **adia `Set-StrictMode -Version Latest` para depois do PRE-FLIGHT**. A execução em escopo filho isoladamente não desliga a herança de StrictMode; a alteração da ordem é o que elimina a ativação precoce. As variáveis de ambiente `SENTRIUM_CMAKE`, etc. permanecem disponíveis no processo.
 3. Identificação da saída de PRE-FLIGHT nesta branch corrigida para Foundation-005.
 
 **Evidência:** reparo foi revisado no GitHub, **NÃO executado no Windows**. D-9/D-10 e compilação nativa seguem NOT RUN nessa tentativa. Não chamar de PASS até novo retorno do operador.
