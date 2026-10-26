@@ -89,19 +89,25 @@ void DeviceWorker::startRegistrationServer(const QString& bindAddress, quint16 p
 }
 
 void DeviceWorker::stopRegistrationServer() {
-    adapter_.stopRegistration();
-    listening_ = false;
+    // Logout must happen while the reverse-registration service still owns
+    // its connections; closing the listener first may invalidate live sessions.
     for (const auto& entry : registered_) {
         const auto& key = entry.first;
         const auto session = sessions_.find(key);
-        if (session != sessions_.end()) {
-            const auto result = adapter_.disconnect(session->second);
-            if (result.success) {
-                sessions_.erase(session);
-            }
-            emit disconnectFinished(qstring(key), result.success, qstring(result.diagnostic));
+        if (session == sessions_.end()) continue;
+
+        const auto result = adapter_.disconnect(session->second);
+        if (result.success) {
+            sessions_.erase(session);
+        } else {
+            emit registrationObservation(
+                QStringLiteral("Servidor: não foi possível confirmar logout de um dispositivo"));
         }
+        emit disconnectFinished(qstring(key), result.success, qstring(result.diagnostic));
     }
+
+    adapter_.stopRegistration();
+    listening_ = false;
     emit registrationServerChanged(false, QStringLiteral("Registro Automático desativado"));
 }
 
@@ -139,7 +145,13 @@ void DeviceWorker::onRegistrationReceived(
         auto existing = sessions_.find(id);
         if (disconnected) {
             if (existing != sessions_.end()) {
-                adapter_.disconnect(existing->second);
+                const auto logout = adapter_.disconnect(existing->second);
+                if (!logout.success) {
+                    emit registrationObservation(QStringLiteral(
+                        "Gravador desconectou, mas o NetSDK não confirmou a liberação da sessão"));
+                }
+                // Device is gone even when the SDK can't complete logout.
+                // The process-wide CLIENT_Cleanup remains the final fallback.
                 sessions_.erase(existing);
                 emit registrationLost(qstring(id));
             }
@@ -159,6 +171,12 @@ void DeviceWorker::onRegistrationReceived(
         const auto result = adapter_.connectRegistered(request, utf8(registrationId));
         if (result.success) {
             sessions_.emplace(id, result.session);
+            emit registrationObservation(QStringLiteral(
+                "Login NetSDK por Registro Automático concluído; canais reais obtidos: %1")
+                .arg(result.channel_count));
+        } else {
+            emit registrationObservation(QStringLiteral(
+                "Registro reconhecido, mas login NetSDK falhou (verifique diagnóstico do dispositivo)"));
         }
         emit connectFinished(logicalId, result.success,
                              result.channel_count, qstring(result.diagnostic));
