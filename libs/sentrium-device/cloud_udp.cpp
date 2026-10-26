@@ -46,13 +46,29 @@ private:
 };
 
 bool isNumericIpv4(std::string_view address) noexcept {
-    if (address.empty() || address.size() > 15) return false;
-    int dots = 0;
-    for (const unsigned char ch : address) {
-        if (ch == '.') { ++dots; continue; }
-        if (ch < '0' || ch > '9') return false;
+    if (address.empty() || address.size() > 15 ||
+        address == "0.0.0.0" || address == "255.255.255.255") return false;
+
+    int octets = 0;
+    std::size_t pos = 0;
+    while (pos < address.size()) {
+        const auto end = address.find('.', pos);
+        const auto last = end == std::string_view::npos ? address.size() : end;
+        const auto count = last - pos;
+        if (count == 0 || count > 3) return false;
+        if (count > 1 && address[pos] == '0') return false;
+        unsigned value = 0;
+        for (auto i = pos; i < last; ++i) {
+            const char ch = address[i];
+            if (ch < '0' || ch > '9') return false;
+            value = value * 10 + static_cast<unsigned>(ch - '0');
+        }
+        if (value > 255) return false;
+        ++octets;
+        if (end == std::string_view::npos) break;
+        pos = end + 1;
     }
-    return dots == 3;
+    return octets == 4 && address.back() != '.';
 }
 
 CloudUdpResult failure(CloudUdpError error, int attempt = 0) {
@@ -61,16 +77,10 @@ CloudUdpResult failure(CloudUdpError error, int attempt = 0) {
 } // namespace
 
 void CloudUdpSettings::validate() const {
+    // Pure value validation: no need to initialize Winsock or touch the
+    // network just to reject an invalid configuration in the Qt form.
     if (!isNumericIpv4(server_ipv4)) {
-        throw std::invalid_argument("Cloud UDP server must be an explicit numeric IPv4 address");
-    }
-    in_addr parsed{};
-    // InetPtonA validates the actual octet values; no hostname resolution.
-    if (InetPtonA(AF_INET, server_ipv4.c_str(), &parsed) != 1) {
-        throw std::invalid_argument("Cloud UDP server IPv4 address is invalid");
-    }
-    if (parsed.S_un.S_addr == INADDR_ANY || parsed.S_un.S_addr == INADDR_BROADCAST) {
-        throw std::invalid_argument("Cloud UDP server cannot be wildcard or broadcast");
+        throw std::invalid_argument("Cloud UDP server must be a valid unicast IPv4 address");
     }
     if (server_port == 0 || timeout_ms < 100 || timeout_ms > 10000 ||
         attempts < 1 || attempts > 3) {
