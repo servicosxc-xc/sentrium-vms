@@ -17,6 +17,8 @@ class DeviceController final : public QObject {
     Q_PROPERTY(QString lastError READ lastError NOTIFY lastErrorChanged)
     Q_PROPERTY(bool registrationListening READ registrationListening NOTIFY registrationStatusChanged)
     Q_PROPERTY(QString registrationStatus READ registrationStatus NOTIFY registrationStatusChanged)
+    Q_PROPERTY(QString registrationLastEvent READ registrationLastEvent NOTIFY registrationEventsChanged)
+    Q_PROPERTY(int registrationEventCount READ registrationEventCount NOTIFY registrationEventsChanged)
 
 public:
     explicit DeviceController(QObject* parent = nullptr);
@@ -26,6 +28,8 @@ public:
     QString lastError() const { return last_error_; }
     bool registrationListening() const { return registration_listening_; }
     QString registrationStatus() const { return registration_status_; }
+    QString registrationLastEvent() const { return registration_last_event_; }
+    int registrationEventCount() const { return registration_event_count_; }
 
     Q_INVOKABLE void addAndConnect(
         const QString& displayName,
@@ -48,6 +52,7 @@ signals:
     void devicesChanged();
     void lastErrorChanged();
     void registrationStatusChanged();
+    void registrationEventsChanged();
     void auditEvent(const QString& eventId, const QString& message);
 
     void requestConnect(
@@ -67,6 +72,7 @@ signals:
 private slots:
     void onRegistrationServerChanged(bool listening, const QString& diagnostic);
     void onRegistrationLost(const QString& id);
+    void onRegistrationObservation(const QString& message);
     void onConnectFinished(
         const QString& id,
         bool success,
@@ -97,6 +103,8 @@ private:
     std::vector<Record> records_;
     QString last_error_;
     QString registration_status_ = QStringLiteral("Servidor de registro desativado");
+    QString registration_last_event_ = QStringLiteral("Nenhum registro recebido");
+    int registration_event_count_ = 0;
     bool registration_listening_ = false;
     bool shutdown_ = false;
 };
