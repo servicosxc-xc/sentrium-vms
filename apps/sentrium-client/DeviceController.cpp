@@ -203,47 +203,18 @@ void DeviceController::addAndConnect(
 void DeviceController::addCloudBridgeAndConnect(
     const QString& displayName, int localPort,
     const QString& username, const QString& password) {
-    if (shutdown_) {
-        setError(QStringLiteral("SENTRIUM está encerrando"));
-        return;
-    }
-    try {
-        if (displayName.trimmed().isEmpty() || displayName.size() > 128) {
-            throw std::invalid_argument("Cloud bridge device name must contain 1 to 128 characters");
-        }
-        if (localPort < 1 || localPort > 65535) {
-            throw std::invalid_argument("Local bridge port must be between 1 and 65535");
-        }
-        // Only the local computer can be used as an explicit bridge endpoint.
-        // P2P negotiation belongs to the external proof-of-concept transport.
-        sentrium::device::LoginRequest request{
-            "127.0.0.1", static_cast<std::uint16_t>(localPort),
-            utf8(username), utf8(password)};
-        request.validate();
-
-        const QString id = QUuid::createUuid().toString(QUuid::WithoutBraces);
-        Record record;
-        record.device.id = utf8(id);
-        record.device.display_name = utf8(displayName.trimmed());
-        record.device.access_method = sentrium::device::AccessMethod::Cloud;
-        record.device.cloud_route = sentrium::device::CloudRoute::Unknown;
-        record.device.host = request.host;
-        record.device.port = request.port;
-        record.device.state = sentrium::device::ConnectionState::Connecting;
-        record.device.diagnostic = "NetSDK tentando conectar através do túnel TCP local";
-        record.username = request.username;
-        record.password = request.password;
-
-        records_.push_back(std::move(record));
-        setError({});
-        emit devicesChanged();
-        emit auditEvent(QStringLiteral("cloud-local-bridge-net-sdk-requested"),
-                        QStringLiteral("Tentativa NetSDK por túnel local administrado pelo operador"));
-        emit requestConnect(id, QStringLiteral("127.0.0.1"),
-                            static_cast<quint16>(localPort), username, password);
-    } catch (const std::exception&) {
-        setError(QStringLiteral("Dados do túnel Cloud local inválidos"));
-    }
+    // A Windows Defender detection suspended the external Cloud bridge.
+    // Enforce the same safety hold at the C++ boundary, not only in QML:
+    // an unknown loopback process must never receive NVR credentials.
+    Q_UNUSED(displayName)
+    Q_UNUSED(localPort)
+    Q_UNUSED(username)
+    Q_UNUSED(password)
+    if (shutdown_) return;
+    setError(QStringLiteral(
+        "Cloud/P2P bloqueado: não existe transporte independente verificado"));
+    emit auditEvent(QStringLiteral("cloud-blocked"),
+                    QStringLiteral("Túnel de terceiros bloqueado por segurança"));
 }
 
 bool DeviceController::addAutoRegistration(
