@@ -79,7 +79,7 @@ void DeviceWorker::startRegistrationServer(const QString& bindAddress, quint16 p
             // SDK thread: copy bounded event values into Qt's queued signal.
             // Never call NetSDK Login from inside a native SDK callback.
             emit registrationReceived(
-                qstring(event.registrationId),
+                qstring(event.registration_id),
                 qstring(event.peer_address),
                 event.peer_port,
                 event.disconnected);
