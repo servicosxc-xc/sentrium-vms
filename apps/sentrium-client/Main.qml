@@ -21,6 +21,47 @@ ApplicationWindow {
     property color accent: "#4f8cff"
     property string runtimeState: "Starting"
 
+    // Operational shell, modeled on the legacy UX, but implemented natively in Qt.
+    // Home is permanent; other modules behave like browser tabs.
+    property var openModules: ["Home"]
+    property string activeModule: "Home"
+    property string selectedDeviceId: ""
+
+    function openModule(name) {
+        if (openModules.indexOf(name) === -1)
+            openModules = openModules.concat([name])
+        activeModule = name
+    }
+
+    function closeModule(name) {
+        if (name === "Home")
+            return
+        const items = openModules.filter(function(item) { return item !== name })
+        const index = openModules.indexOf(name)
+        openModules = items
+        if (activeModule === name)
+            activeModule = items[Math.max(0, Math.min(index - 1, items.length - 1))]
+    }
+
+    function connectedCount() {
+        const items = deviceController.devices
+        let n = 0
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].state === "Connected")
+                n++
+        }
+        return n
+    }
+
+    function selectedDevice() {
+        const items = deviceController.devices
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].id === selectedDeviceId)
+                return items[i]
+        }
+        return null
+    }
+
     Dialog {
         id: addDeviceDialog
         parent: Overlay.overlay
@@ -385,7 +426,7 @@ ApplicationWindow {
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }
-                onClicked: settingsDialog.open()
+                onClicked: window.openModule("Configurações")
             }
 
             Label {
@@ -408,9 +449,561 @@ ApplicationWindow {
         }
     }
 
-    SplitView {
+    ColumnLayout {
         anchors.fill: parent
-        orientation: Qt.Horizontal
+        spacing: 0
+
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 40
+            color: "#0d121a"
+            border.color: window.borderColor
+
+            Row {
+                anchors.fill: parent
+                anchors.leftMargin: 8
+                spacing: 3
+
+                Repeater {
+                    model: window.openModules
+                    delegate: Rectangle {
+                        id: moduleTab
+                        property string moduleName: modelData
+                        height: 39
+                        width: Math.max(96, tabTitle.implicitWidth + (moduleName === "Home" ? 30 : 59))
+                        color: window.activeModule === moduleName
+                               ? window.panelColor : "#0d121a"
+                        border.color: window.activeModule === moduleName
+                                      ? window.accent : "transparent"
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 10
+                            anchors.rightMargin: 5
+                            spacing: 4
+
+                            Label {
+                                id: tabTitle
+                                Layout.fillWidth: true
+                                text: moduleTab.moduleName
+                                color: window.activeModule === moduleTab.moduleName
+                                       ? window.textPrimary : window.textSecondary
+                                font.pixelSize: 11
+                                elide: Text.ElideRight
+                            }
+                            ToolButton {
+                                visible: moduleTab.moduleName !== "Home"
+                                text: "×"
+                                font.pixelSize: 14
+                                implicitWidth: 23
+                                implicitHeight: 26
+                                onClicked: window.closeModule(moduleTab.moduleName)
+                            }
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            anchors.rightMargin: moduleTab.moduleName === "Home" ? 0 : 27
+                            onClicked: window.openModule(moduleTab.moduleName)
+                        }
+                    }
+                }
+
+                ToolButton {
+                    text: "+ Nova visualização"
+                    height: 38
+                    onClicked: window.openModule("Visualização")
+                }
+            }
+        }
+
+        Item {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+
+            Flickable {
+                id: homeScreen
+                anchors.fill: parent
+                visible: window.activeModule === "Home"
+                clip: true
+                contentWidth: width
+                contentHeight: homeLayout.implicitHeight + 60
+                ScrollBar.vertical: ScrollBar {}
+
+                ColumnLayout {
+                    id: homeLayout
+                    x: 24
+                    y: 26
+                    width: homeScreen.width - 48
+                    spacing: 14
+
+                    Label {
+                        text: "Central de operação"
+                        color: window.textPrimary
+                        font.pixelSize: 24
+                        font.bold: true
+                    }
+                    Label {
+                        text: "SENTRIUM VMS  •  Plataforma de gerenciamento de vídeo"
+                        color: window.textSecondary
+                        font.pixelSize: 12
+                    }
+                    Label {
+                        Layout.topMargin: 16
+                        text: "OPERAÇÃO"
+                        color: window.textSecondary
+                        font.pixelSize: 10
+                    }
+                    GridLayout {
+                        Layout.fillWidth: true
+                        columns: 4
+                        rowSpacing: 10
+                        columnSpacing: 10
+
+                        Repeater {
+                            model: [
+                                { title: "Visualização", glyph: "◉", module: "Visualização" },
+                                { title: "Dispositivos", glyph: "▦", module: "Dispositivos" },
+                                { title: "Eventos", glyph: "ϟ", module: "Eventos" },
+                                { title: "Regras IA", glyph: "◇", module: "Regras IA" },
+                                { title: "Mídia", glyph: "▣", module: "Mídia" },
+                                { title: "LPR", glyph: "▤", module: "LPR" },
+                                { title: "Configurações", glyph: "⚙", module: "Configurações" }
+                            ]
+
+                            delegate: Rectangle {
+                                id: homeCard
+                                required property var modelData
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 120
+                                radius: 5
+                                color: cardMouse.containsMouse ? "#253247" : window.panelColor
+                                border.color: cardMouse.containsMouse ? window.accent : window.borderColor
+                                ColumnLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: 14
+                                    spacing: 4
+                                    Label {
+                                        text: homeCard.modelData.glyph
+                                        color: window.accent
+                                        font.pixelSize: 19
+                                    }
+                                    Label {
+                                        text: homeCard.modelData.title
+                                        color: window.textPrimary
+                                        font.pixelSize: 14
+                                        font.bold: true
+                                    }
+                                    Item { Layout.fillHeight: true }
+                                    Label {
+                                        Layout.alignment: Qt.AlignRight
+                                        text: "Abrir  →"
+                                        color: window.accent
+                                        font.pixelSize: 11
+                                    }
+                                }
+                                MouseArea {
+                                    id: cardMouse
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: window.openModule(homeCard.modelData.module)
+                                }
+                            }
+                        }
+                    }
+                    Label {
+                        Layout.topMargin: 18
+                        text: "ESTADO OPERACIONAL"
+                        color: window.textSecondary
+                        font.pixelSize: 10
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 10
+
+                        Repeater {
+                            model: [
+                                { title: "Dispositivos cadastrados", value: String(deviceController.devices.length) },
+                                { title: "Sessões conectadas", value: String(window.connectedCount()) },
+                                { title: "Registro Automático", value: deviceController.registrationListening ? "Ativo" : "Inativo" },
+                                { title: "Cloud / P2P", value: "Em implementação" }
+                            ]
+                            delegate: Rectangle {
+                                required property var modelData
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 90
+                                color: window.panelColor
+                                border.color: window.borderColor
+                                radius: 4
+                                ColumnLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: 12
+                                    Label {
+                                        text: modelData.title
+                                        color: window.textSecondary
+                                        font.pixelSize: 10
+                                    }
+                                    Label {
+                                        text: modelData.value
+                                        color: window.textPrimary
+                                        font.pixelSize: 15
+                                        font.bold: true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Label {
+                        Layout.topMargin: 10
+                        text: "Conectividade real por LAN e Registro Automático em evolução. Recursos sem backend permanecem identificados como indisponíveis."
+                        color: window.textSecondary
+                        font.pixelSize: 11
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
+                    }
+                }
+            }
+
+            Rectangle {
+                id: devicesModule
+                anchors.fill: parent
+                visible: window.activeModule === "Dispositivos"
+                color: "#0f1319"
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 14
+                    spacing: 10
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Label {
+                            text: "Dispositivos"
+                            color: window.textPrimary
+                            font.bold: true
+                            font.pixelSize: 21
+                        }
+                        Item { Layout.fillWidth: true }
+                        Label {
+                            text: "Cadastrados: " + deviceController.devices.length
+                                  + "    Conectados: " + window.connectedCount()
+                            color: window.textSecondary
+                            font.pixelSize: 11
+                        }
+                    }
+                    Label {
+                        text: "Cadastro, conexão e diagnóstico de gravadores e câmeras"
+                        color: window.textSecondary
+                        font.pixelSize: 11
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 8
+                        TextField {
+                            id: deviceSearch
+                            Layout.preferredWidth: 300
+                            placeholderText: "Pesquisar dispositivo"
+                        }
+                        Item { Layout.fillWidth: true }
+                        Button { text: "Novo"; onClicked: addDeviceDialog.open() }
+                        Button {
+                            text: "Conectar"
+                            enabled: window.selectedDevice() !== null
+                                     && window.selectedDevice().state !== "Connected"
+                                     && window.selectedDevice().method !== "Cloud"
+                            onClicked: deviceController.connectDevice(window.selectedDeviceId)
+                        }
+                        Button {
+                            text: "Desconectar"
+                            enabled: window.selectedDevice() !== null
+                                     && window.selectedDevice().state === "Connected"
+                            onClicked: deviceController.disconnectDevice(window.selectedDeviceId)
+                        }
+                        Button {
+                            text: "Excluir"
+                            enabled: window.selectedDevice() !== null
+                            onClicked: {
+                                deviceController.removeDevice(window.selectedDeviceId)
+                                window.selectedDeviceId = ""
+                            }
+                        }
+                    }
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 30
+                        color: window.panelAltColor
+                        border.color: window.borderColor
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 12
+                            anchors.rightMargin: 12
+                            Label { text: "Dispositivo"; Layout.fillWidth: true; color: window.textSecondary; font.pixelSize: 11 }
+                            Label { text: "Tipo de conexão"; Layout.preferredWidth: 165; color: window.textSecondary; font.pixelSize: 11 }
+                            Label { text: "Canais"; Layout.preferredWidth: 90; color: window.textSecondary; font.pixelSize: 11 }
+                            Label { text: "Estado"; Layout.preferredWidth: 120; color: window.textSecondary; font.pixelSize: 11 }
+                        }
+                    }
+                    ListView {
+                        id: devicesTable
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        clip: true
+                        spacing: 4
+                        model: deviceController.devices
+
+                        delegate: Rectangle {
+                            id: deviceRow
+                            property var item: modelData
+                            width: devicesTable.width
+                            height: (!deviceSearch.text
+                                     || item.name.toLowerCase().indexOf(deviceSearch.text.toLowerCase()) >= 0)
+                                    ? 48 : 0
+                            visible: height > 0
+                            radius: 3
+                            color: window.selectedDeviceId === item.id ? "#273449" : window.panelColor
+                            border.color: window.selectedDeviceId === item.id ? window.accent : window.borderColor
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 12
+                                anchors.rightMargin: 12
+                                spacing: 8
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 0
+                                    Label {
+                                        text: deviceRow.item.name
+                                        color: window.textPrimary
+                                        font.pixelSize: 12
+                                        font.bold: true
+                                        elide: Text.ElideRight
+                                    }
+                                    Label {
+                                        text: deviceRow.item.connectionLabel
+                                        color: window.textSecondary
+                                        font.pixelSize: 10
+                                        elide: Text.ElideRight
+                                    }
+                                }
+                                Label {
+                                    Layout.preferredWidth: 165
+                                    text: deviceRow.item.method
+                                    color: window.textSecondary
+                                    font.pixelSize: 11
+                                }
+                                Label {
+                                    Layout.preferredWidth: 90
+                                    text: String(deviceRow.item.channels.length)
+                                    color: window.textSecondary
+                                    font.pixelSize: 11
+                                }
+                                Label {
+                                    Layout.preferredWidth: 120
+                                    text: deviceRow.item.state
+                                    color: deviceRow.item.state === "Connected"
+                                            ? "#7dd3a7" : window.textSecondary
+                                    font.pixelSize: 11
+                                }
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: window.selectedDeviceId = deviceRow.item.id
+                            }
+                        }
+                    }
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 146
+                        radius: 4
+                        color: window.panelColor
+                        border.color: window.borderColor
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 12
+                            spacing: 7
+                            Label {
+                                text: "Dispositivo selecionado"
+                                color: window.textPrimary
+                                font.bold: true
+                                font.pixelSize: 12
+                            }
+                            Label {
+                                Layout.fillWidth: true
+                                text: window.selectedDevice() !== null
+                                      ? window.selectedDevice().name + "  •  " + window.selectedDevice().method
+                                        + "  •  " + window.selectedDevice().state
+                                      : "Selecione um dispositivo na tabela"
+                                color: window.textSecondary
+                                font.pixelSize: 11
+                                elide: Text.ElideRight
+                            }
+                            Label {
+                                Layout.fillWidth: true
+                                text: window.selectedDevice() !== null
+                                      ? window.selectedDevice().diagnostic : ""
+                                color: window.textSecondary
+                                font.pixelSize: 11
+                                wrapMode: Text.WordWrap
+                            }
+                            Label {
+                                Layout.fillWidth: true
+                                text: window.selectedDevice() !== null
+                                      ? "Canais retornados pelo NetSDK: " + window.selectedDevice().channels.length
+                                      : ""
+                                color: window.textSecondary
+                                font.pixelSize: 11
+                            }
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                visible: ["Eventos", "Regras IA", "Mídia", "LPR"].indexOf(window.activeModule) !== -1
+                color: "#0f1319"
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 18
+                    spacing: 12
+                    Label {
+                        text: window.activeModule
+                        color: window.textPrimary
+                        font.pixelSize: 22
+                        font.bold: true
+                    }
+                    Label {
+                        text: window.activeModule === "Eventos"
+                            ? "Central de eventos — estrutura preparada para dados operacionais"
+                            : window.activeModule === "Regras IA"
+                              ? "Gerenciamento de regras por câmera"
+                              : window.activeModule === "LPR"
+                                ? "Leitura de placas e perfis LPR"
+                                : "Fotos, vídeos e evidências"
+                        color: window.textSecondary
+                        font.pixelSize: 11
+                    }
+                    TabBar {
+                        id: featureTabs
+                        Layout.fillWidth: true
+                        background: Rectangle { color: window.panelColor }
+                        Repeater {
+                            model: window.activeModule === "Regras IA"
+                                   ? ["Câmeras com regras", "Regras da câmera", "Detalhes"]
+                                   : window.activeModule === "LPR"
+                                     ? ["Perfis LPR", "Pipeline", "Leituras", "Diagnóstico"]
+                                     : window.activeModule === "Eventos"
+                                       ? ["Todos", "Pessoa", "Veículo", "LPR", "Movimento"]
+                                       : ["Evidências", "Visualizar", "Detalhes"]
+                            delegate: TabButton { text: modelData }
+                        }
+                    }
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        color: window.panelColor
+                        border.color: window.borderColor
+                        Column {
+                            anchors.centerIn: parent
+                            spacing: 9
+                            Label {
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                text: "Módulo em desenvolvimento"
+                                font.pixelSize: 17
+                                color: window.textPrimary
+                            }
+                            Label {
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                text: "Estrutura de navegação disponível; backend deste módulo ainda não implementado no SENTRIUM."
+                                font.pixelSize: 11
+                                color: window.textSecondary
+                            }
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                visible: window.activeModule === "Configurações"
+                color: "#0f1319"
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 18
+                    spacing: 12
+                    Label {
+                        text: "Configurações"
+                        color: window.textPrimary
+                        font.pixelSize: 22
+                        font.bold: true
+                    }
+                    Label {
+                        text: "Preferências do sistema, conectividade e gerenciamento"
+                        color: window.textSecondary
+                        font.pixelSize: 11
+                    }
+                    TabBar {
+                        id: settingsTabs
+                        Layout.fillWidth: true
+                        background: Rectangle { color: window.panelColor }
+                        TabButton { text: "Sistema" }
+                        TabButton { text: "Armazenamento" }
+                        TabButton { text: "Usuários e permissões" }
+                        TabButton { text: "Notificações" }
+                        TabButton { text: "Integrações" }
+                    }
+                    StackLayout {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        currentIndex: settingsTabs.currentIndex
+                        Repeater {
+                            model: 5
+                            delegate: Rectangle {
+                                required property int index
+                                color: window.panelColor
+                                border.color: window.borderColor
+                                ColumnLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: 18
+                                    spacing: 12
+                                    Label {
+                                        text: index === 0 ? "Sistema e conectividade"
+                                              : ["", "Armazenamento", "Usuários e permissões", "Notificações", "Integrações"][index]
+                                        color: window.textPrimary
+                                        font.pixelSize: 15
+                                        font.bold: true
+                                    }
+                                    Label {
+                                        visible: index === 0 || index === 4
+                                        text: "Registro Automático: " +
+                                              (deviceController.registrationListening ? "Ativo" : "Inativo")
+                                        color: deviceController.registrationListening
+                                               ? "#7dd3a7" : window.textSecondary
+                                        font.pixelSize: 11
+                                    }
+                                    Button {
+                                        visible: index === 0 || index === 4
+                                        text: "Configurar servidor de Registro Automático"
+                                        onClicked: settingsDialog.open()
+                                    }
+                                    Label {
+                                        visible: index !== 0 && index !== 4
+                                        text: "Configuração ainda não disponível nesta Foundation."
+                                        color: window.textSecondary
+                                        font.pixelSize: 11
+                                    }
+                                    Item { Layout.fillHeight: true }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            SplitView {
+                visible: window.activeModule === "Visualização"
+                anchors.fill: parent
+                orientation: Qt.Horizontal
 
         Rectangle {
             SplitView.preferredWidth: 310
@@ -494,7 +1087,7 @@ ApplicationWindow {
 
                     ToolButton {
                         text: "Abrir"
-                        onClicked: settingsDialog.open()
+                        onClicked: window.openModule("Configurações")
                     }
                 }
 
@@ -830,7 +1423,9 @@ ApplicationWindow {
                 }
             }
         }
-    }
+            } // SplitView
+        } // module content
+    } // application shell
 
     footer: Rectangle {
         height: 30
