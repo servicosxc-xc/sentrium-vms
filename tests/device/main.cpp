@@ -4,6 +4,7 @@
 #include <sentrium/cloud_udp.hpp>
 #include <sentrium/cloud_signaling.hpp>
 #include <sentrium/cloud_ptcp.hpp>
+#include <sentrium/cloud_ptcp_session.hpp>
 #include <sentrium/cloud_auth.hpp>
 
 #include <iostream>
@@ -418,6 +419,85 @@ int main(int argc, char** argv) {
                 static_cast<void>(prepareCloudDeviceAuth(
                     "admin","pass", "abc123",0,1761500000ULL,"payload"));
             });
+            break;
+        }
+
+        case 13: {
+            PtcpReliableSession s;
+            PtcpPacket frame{};
+            frame.kind = PtcpKind::Payload;
+            frame.realm = 7;
+            frame.body = "hello";
+            frame.sent = 999; frame.pid = 77;
+            const auto first = s.send(frame, 1000);
+            require(first.ok(), "R3 first payload");
+            const auto decoded = parsePtcpPacket(first.datagram);
+            require(decoded.ok() && decoded.packet.sent == 0 &&
+                    decoded.packet.received == 0 && decoded.packet.pid == 0xffffu &&
+                    decoded.packet.local_message_id == 0 &&
+                    decoded.packet.body == "hello", "owned PTCP header");
+            require(s.stats().sent_bytes == 17 &&
+                    s.stats().in_flight_packets == 1, "body bytes counted");
+            PtcpPacket ack{};
+            ack.kind = PtcpKind::Heartbeat;
+            ack.received = 17;
+            ack.local_message_id = 90;
+            std::string wire;
+            require(encodePtcpPacket(ack,wire) == PtcpError::None &&
+                    s.receive(wire).ok(), "peer ACK");
+            require(s.stats().peer_acked_bytes == 17 &&
+                    s.stats().in_flight_packets == 0, "ACK retires bytes");
+            require(s.receive(wire).error == PtcpSessionError::Duplicate &&
+                    s.stats().duplicates == 1 &&
+                    s.stats().received_bytes == 12, "replay rejected");
+            auto second = s.send(frame, 1001);
+            const auto next = parsePtcpPacket(second.datagram);
+            require(second.ok() && next.ok() && next.packet.sent == 17 &&
+                    next.packet.received == 12 && next.packet.pid == 0xfffeu &&
+                    next.packet.local_message_id == 1 &&
+                    next.packet.remote_message_id == 90, "next frame sequence");
+            require(s.send(frame, 999).error == PtcpSessionError::ClockReversed,
+                    "monotonic time enforced");
+            break;
+        }
+        case 14: {
+            PtcpReliableSession s;
+            PtcpPacket frame{};
+            frame.kind = PtcpKind::Payload;
+            frame.body = "abc";
+            const auto first = s.send(frame, 1000);
+            require(first.ok() && s.dueRetransmissions(1200).empty(),
+                    "early retry suppressed");
+            const auto retry = s.dueRetransmissions(1400);
+            require(retry.size() == 1 && retry.front() == first.datagram &&
+                    s.stats().sent_bytes == 15 && s.stats().retransmissions == 1,
+                    "retry exact wire and no double counting");
+            PtcpPacket peer{};
+            peer.kind = PtcpKind::Heartbeat;
+            peer.local_message_id = 10;
+            peer.received = 999;
+            std::string raw;
+            require(encodePtcpPacket(peer,raw) == PtcpError::None &&
+                    s.receive(raw).error == PtcpSessionError::InvalidAck &&
+                    s.stats().in_flight_packets == 1, "forged ACK rejected");
+            peer.received = 0;
+            require(encodePtcpPacket(peer,raw) == PtcpError::None &&
+                    s.receive(raw).ok(), "first peer frame");
+            peer.local_message_id = 12;
+            require(encodePtcpPacket(peer,raw) == PtcpError::None &&
+                    s.receive(raw).error == PtcpSessionError::SequenceGap &&
+                    s.stats().received_bytes == 12, "gap not delivered");
+            require(s.dueRetransmissions(1800).size() == 1, "retry two");
+            require(s.dueRetransmissions(2200).size() == 1, "retry three");
+            require(s.dueRetransmissions(2600).empty() && s.expired(),
+                    "retry cap expires session");
+            require(s.send(frame,2700).error == PtcpSessionError::Expired,
+                    "closed session refuses write");
+            PtcpReliableSession full;
+            for(int i=0;i<32;++i) require(full.send(frame,1000).ok(),"window slot");
+            require(full.stats().in_flight_packets == 32 &&
+                    full.send(frame,1000).error == PtcpSessionError::WindowFull,
+                    "window cannot grow without ACK");
             break;
         }
 

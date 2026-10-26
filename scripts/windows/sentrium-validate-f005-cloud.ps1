@@ -3,7 +3,7 @@
   Validate the current Foundation-005 Cloud PTCP / device-auth increment.
 .DESCRIPTION
   One command: verify clean branch, fast-forward, PRE-FLIGHT, configure/build
-  Debug, and run ONLY D-11 and D-12 (D-9/D-10 already passed on Windows).
+  Debug, and run ONLY D-11 through D-14 (D-9/D-10 already passed on Windows).
   Refuse to link while SENTRIUM client is running. No Cloud service contact,
   third-party executable, Defender bypass, firewall changes or credentials.
 #>
@@ -68,13 +68,26 @@ try {
         throw "CTest executable not found: $ctest"
     }
 
-    & $ctest --preset sentrium-debug -R '^D-(11|12)$' --output-on-failure
-    if ($LASTEXITCODE -ne 0) { throw 'D-11/D-12 PTCP and device-auth regressions failed.' }
+    & $ctest --preset sentrium-debug -R '^D-(11|12|13|14) --output-on-failure
+    if ($LASTEXITCODE -ne 0) { throw 'D-11/D-14 PTCP and device-auth regressions failed.' }
 
     $commit = (& git rev-parse HEAD).Trim()
     if ($LASTEXITCODE -ne 0) { throw 'Cannot read Git commit.' }
 
-    Write-Host 'F005 DEBUG BUILD + D-11/D-12: PASS' -ForegroundColor Green
+    Write-Host 'F005 DEBUG BUILD + D-11/D-14: PASS' -ForegroundColor Green
+    Write-Host "Commit: $commit"
+    Write-Host 'Cloud bootstrap, Direct/Relay and real P2P login: NOT VERIFIED.'
+}
+finally {
+    Pop-Location
+}
+ --output-on-failure
+    if ($LASTEXITCODE -ne 0) { throw 'D-11/D-14 PTCP and device-auth regressions failed.' }
+
+    $commit = (& git rev-parse HEAD).Trim()
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot read Git commit.' }
+
+    Write-Host 'F005 DEBUG BUILD + D-11/D-14: PASS' -ForegroundColor Green
     Write-Host "Commit: $commit"
     Write-Host 'Cloud bootstrap, Direct/Relay and real P2P login: NOT VERIFIED.'
 }
