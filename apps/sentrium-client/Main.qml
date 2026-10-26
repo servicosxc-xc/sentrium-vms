@@ -10,7 +10,7 @@ ApplicationWindow {
     minimumWidth: 1080
     minimumHeight: 680
     visible: true
-    title: sentriumProduct + " — Device Foundation"
+    title: sentriumProduct + " — Device Connectivity"
     color: "#11151c"
 
     property color panelColor: "#171c24"
@@ -30,9 +30,9 @@ ApplicationWindow {
         y: Math.round((parent.height - height) / 2)
         title: "Adicionar dispositivo"
         // Unsupported methods cannot submit fictional connection requests.
-        standardButtons: connectionMethod.currentIndex === 0
-                         ? (Dialog.Ok | Dialog.Cancel)
-                         : Dialog.Cancel
+        standardButtons: connectionMethod.currentIndex === 1
+                         ? Dialog.Cancel
+                         : (Dialog.Ok | Dialog.Cancel)
 
         onOpened: {
             connectionMethod.currentIndex = 0
@@ -40,17 +40,27 @@ ApplicationWindow {
         }
 
         onAccepted: {
-            deviceController.addAndConnect(
-                deviceName.text,
-                deviceHost.text,
-                devicePort.value,
-                deviceUser.text,
-                devicePassword.text)
+            if (connectionMethod.currentIndex === 0) {
+                deviceController.addAndConnect(
+                    deviceName.text,
+                    deviceHost.text,
+                    devicePort.value,
+                    deviceUser.text,
+                    devicePassword.text)
+            } else if (connectionMethod.currentIndex === 2) {
+                deviceController.addAutoRegistration(
+                    deviceName.text,
+                    registrationSerial.text,
+                    registrationUser.text,
+                    registrationPassword.text)
+            }
             devicePassword.text = ""
+            registrationPassword.text = ""
         }
 
         onRejected: {
             devicePassword.text = ""
+            registrationPassword.text = ""
         }
 
         ColumnLayout {
@@ -77,8 +87,8 @@ ApplicationWindow {
                 color: window.textSecondary
                 font.pixelSize: 11
                 text: connectionMethod.currentIndex === 1
-                      ? "Cloud/P2P: integração com SDK real ainda pendente. Nenhuma conexão simulada será criada."
-                      : "Registro Automático: listener real e configuração segura ainda pendentes."
+                      ? "Cloud/P2P exige os binários oficiais do SIM Next e validação do túnel. Ainda indisponível."
+                      : "Registro Automático real via NetSDK. Configure o dispositivo para enviar seu número de série para o IP e a porta do SENTRIUM."
             }
 
             Label {
@@ -147,6 +157,91 @@ ApplicationWindow {
                 text: "As credenciais permanecem somente em memória nesta Foundation e não são persistidas."
                 color: window.textSecondary
                 font.pixelSize: 11
+            }
+
+            TextField {
+                id: registrationSerial
+                visible: connectionMethod.currentIndex === 2
+                Layout.fillWidth: true
+                placeholderText: "Número de série exato do gravador"
+                maximumLength: 47
+                selectByMouse: true
+            }
+
+            TextField {
+                id: registrationUser
+                visible: connectionMethod.currentIndex === 2
+                Layout.fillWidth: true
+                placeholderText: "Usuário do gravador"
+                selectByMouse: true
+            }
+
+            TextField {
+                id: registrationPassword
+                visible: connectionMethod.currentIndex === 2
+                Layout.fillWidth: true
+                placeholderText: "Senha do gravador"
+                echoMode: TextInput.Password
+                selectByMouse: true
+            }
+
+            Label {
+                visible: connectionMethod.currentIndex === 2
+                Layout.fillWidth: true
+                text: "SERVIDOR DE REGISTRO"
+                color: window.textSecondary
+                font.pixelSize: 11
+                font.bold: true
+            }
+
+            RowLayout {
+                visible: connectionMethod.currentIndex === 2
+                Layout.fillWidth: true
+
+                TextField {
+                    id: registrationBind
+                    Layout.fillWidth: true
+                    text: "127.0.0.1"
+                    placeholderText: "IP local do PC"
+                    selectByMouse: true
+                }
+
+                SpinBox {
+                    id: registrationListenPort
+                    from: 1
+                    to: 65535
+                    editable: true
+                    value: 9500
+                }
+            }
+
+            RowLayout {
+                visible: connectionMethod.currentIndex === 2
+                Layout.fillWidth: true
+
+                Label {
+                    Layout.fillWidth: true
+                    wrapMode: Text.WordWrap
+                    color: window.textSecondary
+                    font.pixelSize: 10
+                    text: deviceController.registrationStatus
+                }
+
+                Button {
+                    text: "Ativar servidor"
+                    enabled: !deviceController.registrationListening
+                    onClicked: deviceController.startRegistrationServer(
+                                   registrationBind.text, registrationListenPort.value)
+                }
+            }
+
+            Label {
+                visible: connectionMethod.currentIndex === 2
+                Layout.fillWidth: true
+                wrapMode: Text.WordWrap
+                color: window.textSecondary
+                font.pixelSize: 10
+                text: "Use o IP LAN do PC para receber registros remotos. O SENTRIUM não altera firewall, roteador ou NAT. Credenciais e série ficam apenas em memória."
             }
         }
     }
@@ -261,6 +356,31 @@ ApplicationWindow {
                     color: window.borderColor
                 }
 
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.leftMargin: 12
+                    Layout.rightMargin: 12
+                    Layout.topMargin: 5
+                    Layout.bottomMargin: 5
+
+                    Label {
+                        Layout.fillWidth: true
+                        elide: Text.ElideRight
+                        text: deviceController.registrationListening
+                              ? "Registro Automático ativo"
+                              : "Registro Automático inativo"
+                        color: deviceController.registrationListening
+                               ? "#7dd3a7" : window.textSecondary
+                        font.pixelSize: 10
+                    }
+
+                    ToolButton {
+                        visible: deviceController.registrationListening
+                        text: "Parar"
+                        onClicked: deviceController.stopRegistrationServer()
+                    }
+                }
+
                 Rectangle {
                     visible: deviceController.lastError.length > 0
                     Layout.fillWidth: true
@@ -364,7 +484,7 @@ ApplicationWindow {
 
                                 Label {
                                     Layout.fillWidth: true
-                                    text: deviceDelegate.deviceData.host + ":" + deviceDelegate.deviceData.port
+                                    text: deviceDelegate.deviceData.connectionLabel
                                     color: window.textSecondary
                                     font.pixelSize: 11
                                     elide: Text.ElideRight
@@ -416,6 +536,8 @@ ApplicationWindow {
                                     Button {
                                         text: "Desconectar"
                                         visible: deviceDelegate.deviceData.state === "Connected"
+                                                 || (deviceDelegate.deviceData.method === "AutoRegistration"
+                                                     && deviceDelegate.deviceData.state === "Connecting")
                                         onClicked: deviceController.disconnectDevice(deviceDelegate.deviceData.id)
                                     }
 
