@@ -3,6 +3,7 @@
 #include <charconv>
 #include <string>
 #include <string_view>
+#include <utility>
 
 namespace sentrium::device {
 namespace {
@@ -112,8 +113,8 @@ CloudWireResult parseCloudWireResponse(std::string_view packet) {
         const auto value = trimSpace(line.substr(colon + 1));
         if (value.size() > 4096) return failure(CloudWireError::BadHeader);
 
-        const auto [it, inserted] = response.headers.emplace(
-            lowerAscii(line.substr(0, colon)), std::string(value));
+        const bool inserted = response.headers.emplace(
+            lowerAscii(line.substr(0, colon)), std::string(value)).second;
         if (!inserted) return failure(CloudWireError::BadHeader);
     }
     if (!terminated || cursor > packet.size()) return failure(CloudWireError::BadHeader);
