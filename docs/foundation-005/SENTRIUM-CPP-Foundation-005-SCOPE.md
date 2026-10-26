@@ -4,7 +4,7 @@
 **Produto:** SENTRIUM VMS — Intelligent Video Management System  
 **Branch:** `foundation/005-device-connectivity`  
 **Autorização humana:** **F005-AUTH-001 — AUTHORIZED FOR EXECUTION**, confirmação do responsável “vamos seguir” à proposta de priorizar interface, Cloud/P2P e Registro Automático.  
-**Estado:** **AUTHORIZED / IMPLEMENTATION PENDING LOCAL EXECUTOR**.
+**Estado:** **AUTHORIZED / IN IMPLEMENTATION — DIRECT GITHUB DEVELOPMENT / WINDOWS BUILD PENDING**. O desenvolvimento passa a ser feito diretamente neste chat, sem Codex.
 
 ## Objetivo verificável
 
@@ -53,3 +53,12 @@ Live View de produção, render Qt Quick/mosaico, playback, gravação, IA/LPR, 
 - **F005-AC-10** — relatório distingue `PASS`, `NOT RUN`, `BLOCKED` e dependência externa para cada modalidade.
 
 **Resultado máximo do executor:** `FOUNDATION-005 — PASS / READY FOR HUMAN REVIEW` somente se os critérios relevantes estiverem comprovados. Aprovação humana posterior.
+
+## Checkpoint de implementação direta — 25/10/2026
+
+- Interface Qt já permite cadastro LAN e cadastro de dispositivo esperado por número de série para Registro Automático.
+- Listener real NetSDK implementado com `CLIENT_ListenServer` / `CLIENT_StopListenServer` e retorno `DH_DVR_SERIAL_RETURN`, `DH_DVR_DISCONNECT` e `NET_DEV_AUTOREGISTER_RETURN`.
+- Login ao receber registro por `CLIENT_LoginEx2` com `EM_LOGIN_SPEC_CAP_SERVER_CONN` e serial validada; contrato verificado no header Win64 NetSDK 3.050 e no exemplo oficial VehicleGPS do ZIP original preservado fora do Git.
+- Associados os eventos à thread Qt existente, sem executar login dentro do callback nativo; dispositivos inesperados não são admitidos automaticamente; listener desligado por padrão até comando na interface.
+- **Implementado no código, ainda não compilado ou testado no Windows.** Portanto não declarar PASS nem fazer merge.
+- Cloud/P2P continua pendente da inspeção/integração binária com o SIM Next instalado; menu Cloud não simula conexão.
