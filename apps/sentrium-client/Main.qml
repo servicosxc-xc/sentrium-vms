@@ -517,6 +517,20 @@ ApplicationWindow {
                                     }
                                 }
 
+                                // Cloud status comes from measured tunnel telemetry only.
+                                // Unknown never becomes Direct merely because a port exists.
+                                Label {
+                                    visible: deviceDelegate.deviceData.method === "Cloud"
+                                             && deviceDelegate.deviceData.state === "Connected"
+                                             && deviceDelegate.deviceData.cloudRoute !== "Unknown"
+                                    Layout.fillWidth: true
+                                    text: deviceDelegate.deviceData.cloudRoute === "Relay"
+                                          ? "Cloud / Relay" : "Cloud / P2P direto"
+                                    color: deviceDelegate.deviceData.cloudRoute === "Relay"
+                                           ? "#f6cf74" : "#6da4ff"
+                                    font.pixelSize: 10
+                                }
+
                                 Label {
                                     Layout.fillWidth: true
                                     text: deviceDelegate.deviceData.connectionLabel
