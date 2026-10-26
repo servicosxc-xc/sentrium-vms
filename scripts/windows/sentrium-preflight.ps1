@@ -54,7 +54,20 @@ foreach ($binary in @($env:SENTRIUM_CL,$env:SENTRIUM_LINK)) {
 Assert-Sentrium ($env:WindowsSDKVersion -eq '10.0.26100.0\') 'SDK directory version mismatch'
 $rc = Join-Path $env:WindowsSdkDir 'bin\10.0.26100.0\x64\rc.exe'
 Assert-Sentrium ((Get-Item -LiteralPath $rc).VersionInfo.ProductVersion -eq '10.0.26100.9457') 'SDK servicing revision mismatch'
-$sdkPackages = @(Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*','HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*' -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -match 'Windows SDK|Windows Software Development Kit' -and $_.DisplayVersion -eq '10.1.26100.9457' } | Select-Object DisplayName,DisplayVersion)
+# Uninstall registry keys do not all expose DisplayName/DisplayVersion.
+# Access them through PSObject to remain compatible with Set-StrictMode.
+$sdkPackages = @(
+    Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*',
+                     'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*' -ErrorAction SilentlyContinue |
+        Where-Object {
+            $nameProperty = $_.PSObject.Properties['DisplayName']
+            $versionProperty = $_.PSObject.Properties['DisplayVersion']
+            $null -ne $nameProperty -and $null -ne $versionProperty -and
+                [string]$nameProperty.Value -match 'Windows SDK|Windows Software Development Kit' -and
+                [string]$versionProperty.Value -eq '10.1.26100.9457'
+        } |
+        Select-Object DisplayName, DisplayVersion
+)
 Assert-Sentrium ($sdkPackages.Count -gt 0) 'SDK package identity unavailable'
 foreach ($relative in @('Include\10.0.26100.0\um\Windows.h','Lib\10.0.26100.0\um\x64\kernel32.lib','Lib\10.0.26100.0\ucrt\x64\ucrt.lib')) {
     Assert-Sentrium (Test-Path -LiteralPath (Join-Path $env:WindowsSdkDir $relative)) 'SDK header/lib missing'
@@ -205,4 +218,4 @@ if (-not $VerifyOnly -and $EvidenceDirectory) {
     $paths | ForEach-Object { Get-FileHash -LiteralPath $_ -Algorithm SHA256 } | Select-Object Path,Hash,Algorithm | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $EvidenceDirectory 'toolchain-hashes.json') -Encoding UTF8
     [ordered]@{Result='PREFLIGHT PASS';Workspace=$sentriumRoot;VS=$vs.installationVersion;VSProduct=$vs.catalog.productDisplayVersion;Installation=$vs.installationPath;VCTools=$env:VCToolsVersion;Compiler=$env:SENTRIUM_CL;Linker=$env:SENTRIUM_LINK;Host=$env:VSCMD_ARG_HOST_ARCH;Target=$env:VSCMD_ARG_TGT_ARCH;SDK='10.0.26100.9457';SDKDirectories=$env:WindowsSDKVersion;CMake=$cmakeVersion;Ninja=$ninjaVersion;QtVersion=$qtVersion;QtRoot=$qtRoot;QtSpec=$qtSpec;IntelbrasSDKRoot=$sdkRoot;PlaySDKRoot=$playSdkRoot;PlaySDK='validated-x64';VcpkgCommit=$head;VcpkgTag=$tag;VcpkgOrigin=$origin;VcpkgTool=$vcpkgTool} | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $EvidenceDirectory 'preflight.json') -Encoding UTF8
 }
-Write-Host 'PREFLIGHT PASS: Foundation-004 workspace; exact toolchain lock; Qt 6.12.0 MSVC; external NetSDK/PlaySDK x64; single vcpkg baseline.'
+Write-Host 'PREFLIGHT PASS: SENTRIUM Foundation-005 workspace; exact toolchain lock; Qt 6.12.0 MSVC; external NetSDK/PlaySDK x64; single vcpkg baseline.'
