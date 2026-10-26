@@ -11,6 +11,8 @@
 
 > **CHECKPOINT NOVO — 26/10/2026:** F005 R2 PTCP + autenticação nativa do dispositivo (CNG) **CODIFICADOS, SEM BUILD WINDOWS DESTE LOTE**; ver seção 13. Última execução confirmada continua `4185a700`: Build Debug PASS [46/46], D-9/D-10 PASS. Próxima validação focal: D-11/D-12. Cloud remoto e Direct/Relay ainda NÃO COMPROVADOS.
 
+> **TRANSFERÊNCIA SEGURA ENTRE CHATS — 26/10/2026:** documentação durável e versionada: `CONTINUE-HERE.md` + este handoff. O último lote de código é F005 R2 **PTCP/CNG ainda sem build Windows validado**, ao contrário do lote R1 D-9/D-10 já aprovado. O script PowerShell único de R2 tinha comando CTest truncado e bloco duplicado; **corrigido no commit `3de0980fb5397503c06c5fe38cab509c75913676`**. Continuar desse ponto, sem reinstalar ferramentas e sem reiniciar Foundations anteriores. Consultar HEAD GitHub novamente ao iniciar o próximo chat.
+
 ## 1. Decisão de colaboração — O MAIS IMPORTANTE
 
 O usuário pediu expressamente para **PARAR de fragmentar trabalho em microentregas e executar cada bloco de implementação de uma vez**. Fazer o maior avanço de código seguro/justificável por etapa, escrever todo o lote no GitHub, conferir consistência estática e **entregar UM procedimento de build/teste no final**, não dezenas de comandos intercalados. Não prometer em chat um Cloud completo se faltar contrato real. Não propor testes repetitivos sem benefício concreto.
@@ -202,3 +204,52 @@ git pull --ff-only origin foundation/005-device-connectivity
 Essa execução fará build Debug e apenas testes D-11/D-12. **Ainda pendente de log Windows real.** Manter PR draft, `main` intacta, sem Human Review Approved.
 
 **Fonte adicional da pesquisa de formato de protocolo:** <https://github.com/blackjid/dahua-p2p>, arquivos `ptcp/types.go` e `dh/crypto.go` (MIT). O C++ foi escrito independentemente; não foi integrado nenhum executável nem DLL externos.
+
+## 14. Protocolo exato de retomada entre conversas — atualizado 26/10/2026
+
+**OBJETIVO:** transferir o estado *reproduzível* do projeto e a intenção técnica sem depender da janela de contexto do ChatGPT. Todos os arquivos citados abaixo são versionados no GitHub. A conversa antiga pode atingir limite de mensagens sem afetar código, commits e documentação.
+
+### Arquivos que o novo chat deve consultar ANTES de alterar código
+
+1. `CONTINUE-HERE.md` (ponte curta com o prompt de início);
+2. **este arquivo** `docs/HANDOFF-SENTRIUM-CURRENT.md` (histórico técnico vivo);
+3. `docs/foundation-005/F005-CLOUD-PTCP-AUTH-R2.md` (último lote PTCP/CNG, não compilado após implementação);
+4. `docs/foundation-005/SENTRIUM-CLOUD-P2P-DESCOBERTAS-CONSOLIDADAS.md` (comprovado vs inferido no estudo de engenharia reversa do legado);
+5. `docs/foundation-005/F005-CLOUD-SECURITY-INCIDENT-001.md` (bloqueio obrigatório ao executável terceiros sinalizado pelo Defender);
+6. `docs/foundation-005/F005-UI-SHELL-R1.md` (Home/abas e preferências ergonômicas; retoque estético adiado);
+7. `docs/foundation-005/SENTRIUM-CPP-Foundation-005-SCOPE.md` e a PR #4 (escopo/governança);
+8. `docs/HANDOFF-SENTRIUM-2026-10-25.md` apenas como retrospecto F004.
+
+### Estado verificado / últimos checkpoints
+
+- **GitHub** `servicosxc-xc/sentrium-vms`; branch de implementação `foundation/005-device-connectivity`; PR #4 **DRAFT**; **NÃO efetuar merge**, não aprovar ADR/Human Review sem ordem do proprietário.
+- **Última execução Windows aprovada**: commit `4185a7000940c2c31f8dbdd050198f5070429bf1`, PRE-FLIGHT/CMake/Debug build **PASS [46/46]** e device `D-9/D-10 PASS` — **somente código R1**. Não atribuir PASS ao R2 ou às alterações de script feitas depois.
+- **R2 mais recente (branch GitHub)**: `cloud_ptcp.*`, `cloud_auth.*`, BCrypt, CMake, D-11/D-12; **BUILD R2 / TESTES D-11/D-12 AINDA NÃO EXECUTADOS** no computador do proprietário.
+- **Correção do runner**: `scripts/windows/sentrium-validate-f005-cloud.ps1` tinha `-R '^D-(11|12)` incompleto e código duplicado; reescrito corretamente no commit `3de0980fb5397503c06c5fe38cab509c75913676`, com `ctest -R '^D-(11|12)$'`. A correção só teve **inspeção de fonte**, não execução Windows.
+- **AutoRegistro já comprovado no campo**: NVR Intelbras por `AutoRegistration` **Connected, 8 canais reais** (ID configurado no gravador coincide com o ID cadastrado; **não é serial físico**). Porta/IP de escuta acessível; falha de registro desconhecido em histórico separada da sessão conectada. Outros cenários/long-run ainda não comprovados.
+- **Cloud operacional ainda não comprovado**: temos parser wire, UDP, sinalização, framing PTCP e autenticação do dispositivo (R2 código), porém faltam bootstrap legítimo da infraestrutura, P2P/Relay estável, túnel TCP local e NetSDK sobre Cloud real. Não afirmar que existe conexão Cloud funcional.
+- **Dois níveis de autenticação diferentes**: credenciais de NVR próprias do operador (usadas nos módulos de interoperabilidade) ≠ credenciais/identidade de aplicativo exigidas pelo serviço Cloud (ainda não disponibilizadas). Não hardcodear/copiar segredos de SIM Next ou terceiros, nem inventar endpoints.
+- **Incidente de segurança:** `dh-fwd_win_x64.exe` identificado por Windows Defender como `Trojan:Win32/Bearfoos.A!ml`, quarantena e execução bloqueada. Não restaurar, excluir Defender, executar ou recompilar para contornar. Cloud externo fica bloqueado tanto no QML quanto no DeviceController.
+- **UI legado de referência:** XC Video IA r25, shell Home e abas estilo navegador, Visualização/Dispositivos/Eventos/Regras IA/Mídia/LPR/Configurações. O próximo ajuste dos botões Home: ícones pequenos quadrados arredondados com rótulo embaixo — **adiado em favor de Cloud**.
+- **Modo de trabalho:** entrega C++/Qt em **lotes maiores**, sem Codex, atualizar documentação e GitHub, executar **um gate Windows focado no final**; não refazer 33 testes e benchmarks F004 sem causa; não exigir screenshots antigos novamente se estão nos documentos e no contexto.
+- **Hardware/testes:** NVR LAN local limitado (não representa 16/32 câmeras); meta Cloud/AutoRegistro remoto para gravadores com 16/32 canais. F004 ingest NetSDK, PlaySDK e DHAV/FFmpeg demonstrados, mas não generalizar benchmark como aprovação 16/32.
+
+### Próxima ação objetivamente correta
+
+**Antes de continuar engenharia Cloud, obter UMA verificação focal R2 no Windows**, após fechar o SENTRIUM, porque esse lote adicionou CNG/PTCP e ainda não foi compilado:
+
+```powershell
+cd "C:\Projetos\SENTRIUM VMS\sentrium-vms"
+git pull --ff-only origin foundation/005-device-connectivity
+.\scripts\windows\sentrium-validate-f005-cloud.ps1
+```
+
+O script faz `git pull --ff-only` também, mas não há conflito em fazê-lo antes; pode invocar apenas o script após atualizar o repositório. Ele compila Debug e roda **somente D-11/D-12**. Se houver erro, ler código e log, corrigir na mesma branch. Não pedir credenciais Cloud/NetSDK ao usuário no chat.
+
+Depois do gate, prosseguir num **lote substancial** rumo a negociação de sessão PTCP e transporte real, dentro da condição de autorização e segurança. Registrar commit validado, resultados reais, limitações e nova ação neste arquivo.
+
+### Prompt que preserva intenção e reduz retrabalho
+
+> Estou continuando o **SENTRIUM VMS** em um novo chat porque o anterior atingiu o limite. Utilize o conector GitHub: `servicosxc-xc/sentrium-vms`, branch `foundation/005-device-connectivity`. Leia integralmente `CONTINUE-HERE.md`, `docs/HANDOFF-SENTRIUM-CURRENT.md` e `docs/foundation-005/F005-CLOUD-PTCP-AUTH-R2.md`; confira HEAD real, docs relevantes e PR #4. **Não recomece projeto; não peça ZIP; não use Codex; não faça merge.** O AutoRegistro já conectou 8 canais reais. D-9/D-10 aprovados em Windows no commit 4185a700; **R2 PTCP/CNG e D-11/D-12 aguardam build**, runner corrigido. Cloud funcional ainda bloqueado por bootstrap/negociação; não depende do SIM Next e `dh-fwd` teve alerta Defender. Desenvolva em lotes maiores, priorize conexão remota real e preserve decisões, evidências e segurança. Corrija bugs no GitHub e dê só um comando focal de Windows ao fim. Atualize handoff ao concluir.
+
+O próximo assistente **não precisa reproduzir toda a conversa antiga** nem possuir memória perfeita: precisa ler os artefatos citados e o HEAD do repositório, que são o registro técnico durável.
