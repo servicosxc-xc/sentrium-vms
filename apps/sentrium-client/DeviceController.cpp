@@ -54,6 +54,20 @@ DeviceController::DeviceController(QObject* parent) : QObject(parent) {
         &DeviceController::onDisconnectFinished,
         Qt::QueuedConnection);
 
+
+    connect(this, &DeviceController::requestStartRegistrationServer,
+            worker_, &DeviceWorker::startRegistrationServer, Qt::QueuedConnection);
+    connect(this, &DeviceController::requestStopRegistrationServer,
+            worker_, &DeviceWorker::stopRegistrationServer, Qt::QueuedConnection);
+    connect(this, &DeviceController::requestRegisterAutoDevice,
+            worker_, &DeviceWorker::registerAutoDevice, Qt::QueuedConnection);
+    connect(this, &DeviceController::requestUnregisterAutoDevice,
+            worker_, &DeviceWorker::unregisterAutoDevice, Qt::QueuedConnection);
+    connect(worker_, &DeviceWorker::registrationServerChanged,
+            this, &DeviceController::onRegistrationServerChanged, Qt::QueuedConnection);
+    connect(worker_, &DeviceWorker::registrationLost,
+            this, &DeviceController::onRegistrationLost, Qt::QueuedConnection);
+
     worker_thread_.setObjectName(QStringLiteral("sentrium-device-worker"));
     worker_thread_.start();
 }
@@ -79,6 +93,16 @@ QVariantList DeviceController::devices() const {
         QVariantMap item;
         item.insert(QStringLiteral("id"), qstring(record.device.id));
         item.insert(QStringLiteral("name"), qstring(record.device.display_name));
+
+        item.insert(QStringLiteral("method"), record.auto_registration
+                    ? QStringLiteral("AutoRegistration") : QStringLiteral("LAN"));
+        item.insert(QStringLiteral("connectionLabel"), record.auto_registration
+                    ? QStringLiteral("Registro Automático • série final ")
+                        + qstring(record.expected_serial.substr(
+                            record.expected_serial.size() > 4
+                            ? record.expected_serial.size() - 4 : 0))
+                    : qstring(record.device.host) + QStringLiteral(":")
+                        + QString::number(record.device.port));
         item.insert(QStringLiteral("host"), qstring(record.device.host));
         item.insert(QStringLiteral("port"), static_cast<int>(record.device.port));
         item.insert(QStringLiteral("manufacturer"), qstring(record.device.manufacturer));
@@ -167,6 +191,93 @@ void DeviceController::addAndConnect(
     }
 }
 
+
+void DeviceController::addAutoRegistration(
+    const QString& displayName, const QString& serial,
+    const QString& username, const QString& password) {
+    if (shutdown_) return;
+    const QString cleanSerial = serial.trimmed();
+    if (displayName.trimmed().isEmpty() || displayName.size() > 128
+        || cleanSerial.isEmpty() || cleanSerial.size() >= 48
+        || username.isEmpty() || username.size() > 128 || password.size() > 256) {
+        setError(QStringLiteral("Dados de Registro Automático inválidos"));
+        return;
+    }
+    for (const QChar c : cleanSerial) {
+        if (!((c >= QLatin1Char('0') && c <= QLatin1Char('9'))
+              || (c >= QLatin1Char('A') && c <= QLatin1Char('Z'))
+              || (c >= QLatin1Char('a') && c <= QLatin1Char('z'))
+              || c == QLatin1Char('-') || c == QLatin1Char('_')
+              || c == QLatin1Char('.'))) {
+            setError(QStringLiteral("Número de série contém caracteres inválidos"));
+            return;
+        }
+    }
+    for (const auto& record : records_) {
+        if (record.auto_registration && qstring(record.expected_serial) == cleanSerial) {
+            setError(QStringLiteral("Número de série já cadastrado"));
+            return;
+        }
+    }
+
+    const QString id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    Record record;
+    record.auto_registration = true;
+    record.device.id = utf8(id);
+    record.device.display_name = utf8(displayName.trimmed());
+    record.expected_serial = utf8(cleanSerial);
+    record.username = utf8(username);
+    record.password = utf8(password);
+    record.device.state = sentrium::device::ConnectionState::Connecting;
+    record.device.diagnostic = "Aguardando registro do dispositivo";
+    records_.push_back(std::move(record));
+    setError({});
+    emit devicesChanged();
+    emit requestRegisterAutoDevice(id, cleanSerial, username, password);
+    emit auditEvent(QStringLiteral("auto-register-expected-device-added"),
+                    QStringLiteral("Dispositivo aguardando registro, sem sessão simulada"));
+}
+
+void DeviceController::startRegistrationServer(const QString& bindAddress, int port) {
+    if (shutdown_ || port < 1 || port > 65535) {
+        setError(QStringLiteral("Porta de Registro Automático inválida"));
+        return;
+    }
+    registration_status_ = QStringLiteral("Iniciando serviço de registro...");
+    emit registrationStatusChanged();
+    emit requestStartRegistrationServer(bindAddress.trimmed(), static_cast<quint16>(port));
+}
+
+void DeviceController::stopRegistrationServer() {
+    if (shutdown_) return;
+    emit requestStopRegistrationServer();
+}
+
+void DeviceController::onRegistrationServerChanged(
+    bool listening, const QString& diagnostic) {
+    registration_listening_ = listening;
+    registration_status_ = diagnostic;
+    emit registrationStatusChanged();
+    if (!listening) {
+        for (auto& record : records_) {
+            if (record.auto_registration
+                && record.device.state == sentrium::device::ConnectionState::Connecting) {
+                record.device.diagnostic = "Serviço de registro desativado";
+            }
+        }
+        emit devicesChanged();
+    }
+}
+
+void DeviceController::onRegistrationLost(const QString& id) {
+    auto* record = find(id);
+    if (!record || !record->auto_registration || record->pending_remove) return;
+    record->device.state = sentrium::device::ConnectionState::Connecting;
+    record->device.channels.clear();
+    record->device.diagnostic = "Aguardando reconexão do gravador";
+    emit devicesChanged();
+}
+
 void DeviceController::connectDevice(const QString& id) {
     if (shutdown_) {
         return;
@@ -191,12 +302,20 @@ void DeviceController::connectDevice(const QString& id) {
     emit auditEvent(
         QStringLiteral("device-connect-requested"),
         QStringLiteral("Device connection requested"));
-    emit requestConnect(
-        id,
-        qstring(record->device.host),
-        record->device.port,
-        qstring(record->username),
-        qstring(record->password));
+    if (record->auto_registration) {
+        record->device.diagnostic = "Aguardando registro do dispositivo";
+        emit devicesChanged();
+        emit requestRegisterAutoDevice(
+            id, qstring(record->expected_serial),
+            qstring(record->username), qstring(record->password));
+    } else {
+        emit requestConnect(
+            id,
+            qstring(record->device.host),
+            record->device.port,
+            qstring(record->username),
+            qstring(record->password));
+    }
 }
 
 void DeviceController::disconnectDevice(const QString& id) {
@@ -207,7 +326,9 @@ void DeviceController::disconnectDevice(const QString& id) {
     }
 
     if (record->device.state != sentrium::device::ConnectionState::Connected
-        && record->device.state != sentrium::device::ConnectionState::Failed) {
+        && record->device.state != sentrium::device::ConnectionState::Failed
+        && !(record->auto_registration
+             && record->device.state == sentrium::device::ConnectionState::Connecting)) {
         return;
     }
 
@@ -217,7 +338,11 @@ void DeviceController::disconnectDevice(const QString& id) {
     emit auditEvent(
         QStringLiteral("device-disconnect-requested"),
         QStringLiteral("Device disconnect requested"));
-    emit requestDisconnect(id);
+    if (record->auto_registration) {
+        emit requestUnregisterAutoDevice(id);
+    } else {
+        emit requestDisconnect(id);
+    }
 }
 
 void DeviceController::removeDevice(const QString& id) {
@@ -237,6 +362,9 @@ void DeviceController::removeDevice(const QString& id) {
 
     if (record->device.state == sentrium::device::ConnectionState::Connecting) {
         record->pending_remove = true;
+        if (record->auto_registration) {
+            disconnectDevice(id);
+        }
         return;
     }
 
@@ -256,6 +384,11 @@ void DeviceController::erase(const QString& id) {
         return;
     }
 
+    if (found->auto_registration) {
+        emit requestUnregisterAutoDevice(id);
+    }
+    std::fill(found->expected_serial.begin(), found->expected_serial.end(), '\0');
+    found->expected_serial.clear();
     std::fill(found->password.begin(), found->password.end(), '\0');
     found->password.clear();
     found->username.clear();
@@ -363,6 +496,8 @@ void DeviceController::shutdown() {
 
     worker_ = nullptr;
     for (auto& record : records_) {
+        std::fill(record.expected_serial.begin(), record.expected_serial.end(), '\0');
+        record.expected_serial.clear();
         std::fill(record.password.begin(), record.password.end(), '\0');
         record.password.clear();
         record.username.clear();
