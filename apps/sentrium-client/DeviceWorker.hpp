@@ -6,6 +6,7 @@
 #include <QString>
 
 #include <unordered_map>
+#include <unordered_set>
 
 class DeviceWorker final : public QObject {
     Q_OBJECT
@@ -61,4 +62,6 @@ private:
     std::unordered_map<std::string, RegisteredTarget> registered_;
     sentrium::intelbras::Adapter adapter_;
     std::unordered_map<std::string, sentrium::device::Session> sessions_;
+    // A failed logout is retried before accepting a new registration.
+    std::unordered_set<std::string> stale_registration_sessions_;
 };
