@@ -265,15 +265,15 @@ void DeviceController::onRegistrationServerChanged(
     registration_listening_ = listening;
     registration_status_ = diagnostic;
     emit registrationStatusChanged();
-    if (!listening) {
-        for (auto& record : records_) {
-            if (record.auto_registration
-                && record.device.state == sentrium::device::ConnectionState::Connecting) {
-                record.device.diagnostic = "Serviço de registro desativado";
-            }
+    for (auto& record : records_) {
+        if (record.auto_registration && !record.pending_remove
+            && record.device.state == sentrium::device::ConnectionState::Connecting) {
+            record.device.diagnostic = listening
+                ? "Aguardando registro do dispositivo"
+                : "Serviço de registro desativado";
         }
-        emit devicesChanged();
     }
+    emit devicesChanged();
 }
 
 void DeviceController::onRegistrationObservation(const QString& message) {
