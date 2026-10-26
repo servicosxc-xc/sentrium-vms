@@ -9,6 +9,8 @@
 
 > **ÚLTIMO CHECKPOINT CONFIRMADO — 26/10/2026, 17:08 (Brasil):** Commit `4185a7000940c2c31f8dbdd050198f5070429bf1` **PREFLIGHT PASS, CMake configure PASS, Debug build/link PASS [46/46], D-9 PASS, D-10 PASS**. Evidência: log real `Texto colado(20261026-170803).txt` encaminhado pelo operador. As seções 6 e 11 descrevem **erros históricos já superados**, não o estado corrente. Cloud real continua **não implementado/não comprovado**. Veja seção 12.
 
+> **CHECKPOINT NOVO — 26/10/2026:** F005 R2 PTCP + autenticação nativa do dispositivo (CNG) **CODIFICADOS, SEM BUILD WINDOWS DESTE LOTE**; ver seção 13. Última execução confirmada continua `4185a700`: Build Debug PASS [46/46], D-9/D-10 PASS. Próxima validação focal: D-11/D-12. Cloud remoto e Direct/Relay ainda NÃO COMPROVADOS.
+
 ## 1. Decisão de colaboração — O MAIS IMPORTANTE
 
 O usuário pediu expressamente para **PARAR de fragmentar trabalho em microentregas e executar cada bloco de implementação de uma vez**. Fazer o maior avanço de código seguro/justificável por etapa, escrever todo o lote no GitHub, conferir consistência estática e **entregar UM procedimento de build/teste no final**, não dezenas de comandos intercalados. Não prometer em chat um Cloud completo se faltar contrato real. Não propor testes repetitivos sem benefício concreto.
@@ -168,3 +170,35 @@ Cloud bootstrap, Direct/Relay and real P2P login: NOT VERIFIED.
 **IMPORTANTE:** testes D-9/D-10 usam dados offline; **não** estabeleceram P2P/Relay, sessão Cloud nem canal remoto. Não reinterpretar PASS como Cloud funcional e não exigir repetição de testes já aprovados sem alterações relacionadas.
 
 **PRÓXIMA FRENTE DO PRODUTO:** conectividade remota real (bootstrap e autenticação Cloud com material legítimo), ou alternativa operacional independente usando o Registro Automático já comprovado, para acesso autorizado a NVRs remotos de 16/32 canais. Conservar o bloqueio de segurança do `dh-fwd`; nenhum SIM Next runtime. Avançar em blocos, com uma única validação por entrega, e manter `CONTINUE-HERE.md` atualizado se o estado mudar.
+
+## 13. F005 R2 — PTCP e autenticação do dispositivo em código C++ (26/10/2026)
+
+**Situação:** lote escrito diretamente na branch `foundation/005-device-connectivity`, **NÃO compilado no Windows após estes commits**. Não herdar PASS dos testes do commit `4185a700`.
+
+### Entrega desta etapa
+
+- `libs/sentrium-device/include/sentrium/cloud_ptcp.hpp` e `cloud_ptcp.cpp`: framing de datagramas PTCP em C++20 com header de 24 bytes, big-endian e tipos SYNC, PAYLOAD, BIND, STATUS, HEARTBEAT e comandos `0x17..0x1b`. Limites para payload (1280 bytes) e rejeição de dados malformados.
+- `libs/sentrium-device/include/sentrium/cloud_auth.hpp` e `cloud_auth.cpp`: Windows CNG / BCrypt com **MD5 de interoperabilidade**, HMAC-SHA256, PBKDF2-HMAC-SHA256 (20 mil iterações) e transformação **AES-256-OFB** de endereços com IV fornecido pelo chamador. Usa apenas **credenciais que o operador possui do próprio dispositivo**, randsalt e nonce; não inclui nenhuma chave de aplicativo SIM Next, servidor fixo nem segredo de bootstrap.
+- Estrutura `CloudDeviceAuth` não copiável, limpa memória de assinatura/chave derivada em destruição; entrada intermediária contendo senha também é zerada.
+- `CMakeLists.txt`: adiciona PTCP/CNG ao `sentrium-device`, vincula `bcrypt`.
+- `tests/device/main.cpp`: acrescenta `D-11` (framing PTCP) e `D-12` (assinatura/derivação, AES-OFB e entrada inválida).
+- `scripts/windows/sentrium-validate-f005-cloud.ps1`: agora executa apenas `D-11/D-12`, **não repete D-9/D-10**; a saída de includes do compilador é gravada em `out/sentrium-debug/f005-cloud-build-latest.log` e reduzida no console.
+- `docs/foundation-005/F005-CLOUD-PTCP-AUTH-R2.md`: especificação, limitações e instrução de validação.
+
+### Limites explícitos
+
+**Este código NÃO estabelece uma sessão P2P real.** Ainda faltam: bootstrap/autenticação da infraestrutura Cloud a partir de contrato legítimo; negociação do canal/rendezvous; sessões PTCP confiáveis e retransmissões/ACKs ordenados; Direct/Relay; ponte TCP local para NetSDK; teste efetivo com NVR remoto.
+
+Dois níveis de credenciais são distintos: (1) **usuário/senha do NVR**, agora usados no módulo criptográfico CNG; (2) **identidade/autorização de aplicativo na infraestrutura Cloud**, ainda ausente e não deve ser extraída de SIM Next nem copiada de terceiros. O alerta Defender do `dh-fwd_win_x64.exe` mantém o piloto de terceiros desativado.
+
+### Próximo comando único para o operador (após fechar SENTRIUM)
+
+```powershell
+cd "C:\Projetos\SENTRIUM VMS\sentrium-vms"
+git pull --ff-only origin foundation/005-device-connectivity
+.\scripts\windows\sentrium-validate-f005-cloud.ps1
+```
+
+Essa execução fará build Debug e apenas testes D-11/D-12. **Ainda pendente de log Windows real.** Manter PR draft, `main` intacta, sem Human Review Approved.
+
+**Fonte adicional da pesquisa de formato de protocolo:** <https://github.com/blackjid/dahua-p2p>, arquivos `ptcp/types.go` e `dh/crypto.go` (MIT). O C++ foi escrito independentemente; não foi integrado nenhum executável nem DLL externos.
