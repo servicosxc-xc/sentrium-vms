@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace sentrium::device {
 
@@ -26,5 +27,14 @@ struct CloudDeviceAuth {
     std::uint32_t nonce,
     std::uint64_t unix_seconds,
     std::string_view payload);
+
+// AES-256-OFB transform for the P2P device address field. The protocol's IV
+// must come from a verified protocol configuration; no app secret is shipped.
+// Applying this transform twice with the same key/IV recovers plaintext.
+// NOT authenticated encryption: callers must validate the signed envelope.
+[[nodiscard]] std::vector<std::uint8_t> cryptCloudAddress(
+    const std::array<std::uint8_t,32>& derived_key,
+    const std::array<std::uint8_t,16>& iv,
+    std::string_view input);
 
 } // namespace sentrium::device
