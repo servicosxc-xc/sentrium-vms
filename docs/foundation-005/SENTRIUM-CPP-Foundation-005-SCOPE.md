@@ -101,3 +101,19 @@ O responsável determinou: **"não vamos depender dos arquivos do SIM Next para 
 - `LAN` e `AutoRegistration` permanecem na mesma identidade lógica. Um túnel Cloud entrega somente um endpoint de controle para NetSDK; seu lifetime é separado do RealPlay.
 - Evidência fornecida pelo operador: texto `SENTRIUM VMS — PROGRESSO CLOUD / P2P` datado de 25/10/2026, originalmente documento de progresso "sem autorização de implementação"; a autorização geral posterior da F005 foi concedida no chat, mas **não elimina os requisitos de bootstrap/ABI/licença**.
 - Checkpoint de construção recebido: após atualização `1db29e9..a48c833`, o operador informou `[25/25] Linking CXX executable sentrium-client.exe` em Debug, **PASS para esse commit anterior**. As novas alterações de modelo/transporte nesta branch ainda requerem build Windows; não herdar PASS automaticamente.
+
+## Fonte Cloud consolidada e avanço de código — 25/10/2026
+
+**Fonte factual primária importada integralmente** para a branch de trabalho:
+`docs/foundation-005/SENTRIUM-CLOUD-P2P-DESCOBERTAS-CONSOLIDADAS.md`
+(blob de origem: `cd2eb3a72b795b3a5f648c19e42da9c9449ab161`; arquivo originalmente presente em `foundation/004-media-lab`, não em F005).
+
+Evidência relevante:
+- `AddSDKPort(deviceId, uuid, remotePort, localPort)` e `t2u_add_port_v3` são comportamento legado observado, não contrato ABI nativo do novo projeto.
+- `remotePort=37000` é observação de **um** equipamento, não default geral; o retorno bem-sucedido é porta TCP **local dinâmica**, usada pelo NetSDK em `127.0.0.1:porta`.
+- O status `proxy==1` correspondeu a Relay nos probes; **Direct não foi demonstrado**. `P2pIsActive` não implica Direct.
+- Lifetime do túnel por dispositivo é maior que o do RealPlay; não encerrar túnel quando o último tile fecha.
+- O bootstrap `t2u_init(server,1250,key)` foi observado, mas servidor/credential/ABI/licença **não foram fornecidos como contrato utilizável**. Endpoints históricos e segredos não entram no código.
+
+**Código acrescentado (ainda sem build local validado):**
+`sentrium-device/cloud.hpp` e `cloud.cpp` estabelecem request Cloud com service port explícita, um endpoint local somente após túnel pronto, `CloudRoute::Unknown` por padrão e interface abstrata de provider/túnel. O método `netSdkLogin` cria login local `127.0.0.1:local_port`, **nunca** envia Cloud UUID/remotePort como host/porta NetSDK. Incluído teste focal D-8 para essas invariantes. **Nenhuma implementação P2P/Relay real foi declarada**, pois ainda faltam bootstrap e protocolo/autorização de distribuição independentes; não se admite tunnel mock como funcionalidade real.
