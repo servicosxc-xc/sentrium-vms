@@ -97,10 +97,10 @@ QVariantList DeviceController::devices() const {
         item.insert(QStringLiteral("method"), record.auto_registration
                     ? QStringLiteral("AutoRegistration") : QStringLiteral("LAN"));
         item.insert(QStringLiteral("connectionLabel"), record.auto_registration
-                    ? QStringLiteral("Registro Automático • série final ")
-                        + qstring(record.expected_serial.substr(
-                            record.expected_serial.size() > 4
-                            ? record.expected_serial.size() - 4 : 0))
+                    ? QStringLiteral("Registro Automático • ID de registro · final ")
+                        + qstring(record.registration_id.substr(
+                            record.registration_id.size() > 4
+                            ? record.registration_id.size() - 4 : 0))
                     : qstring(record.device.host) + QStringLiteral(":")
                         + QString::number(record.device.port));
         item.insert(QStringLiteral("host"), qstring(record.device.host));
@@ -193,29 +193,29 @@ void DeviceController::addAndConnect(
 
 
 bool DeviceController::addAutoRegistration(
-    const QString& displayName, const QString& serial,
+    const QString& displayName, const QString& registrationId,
     const QString& username, const QString& password) {
     if (shutdown_) return false;
-    const QString cleanSerial = serial.trimmed();
+    const QString cleanRegistrationId = registrationId.trimmed();
     if (displayName.trimmed().isEmpty() || displayName.size() > 128
-        || cleanSerial.isEmpty() || cleanSerial.size() >= 48
+        || cleanRegistrationId.isEmpty() || cleanRegistrationId.size() >= 48
         || username.isEmpty() || username.size() > 128 || password.size() > 256) {
         setError(QStringLiteral("Dados de Registro Automático inválidos"));
         return false;
     }
-    for (const QChar c : cleanSerial) {
+    for (const QChar c : cleanRegistrationId) {
         if (!((c >= QLatin1Char('0') && c <= QLatin1Char('9'))
               || (c >= QLatin1Char('A') && c <= QLatin1Char('Z'))
               || (c >= QLatin1Char('a') && c <= QLatin1Char('z'))
               || c == QLatin1Char('-') || c == QLatin1Char('_')
               || c == QLatin1Char('.'))) {
-            setError(QStringLiteral("Número de série contém caracteres inválidos"));
+            setError(QStringLiteral("ID de Registro Automático contém caracteres inválidos"));
             return false;
         }
     }
     for (const auto& record : records_) {
-        if (record.auto_registration && qstring(record.expected_serial) == cleanSerial) {
-            setError(QStringLiteral("Número de série já cadastrado"));
+        if (record.auto_registration && qstring(record.registration_id) == cleanRegistrationId) {
+            setError(QStringLiteral("ID de Registro Automático já cadastrado"));
             return false;
         }
     }
@@ -225,7 +225,7 @@ bool DeviceController::addAutoRegistration(
     record.auto_registration = true;
     record.device.id = utf8(id);
     record.device.display_name = utf8(displayName.trimmed());
-    record.expected_serial = utf8(cleanSerial);
+    record.registration_id = utf8(cleanRegistrationId);
     record.username = utf8(username);
     record.password = utf8(password);
     record.device.state = sentrium::device::ConnectionState::Connecting;
@@ -233,7 +233,7 @@ bool DeviceController::addAutoRegistration(
     records_.push_back(std::move(record));
     setError({});
     emit devicesChanged();
-    emit requestRegisterAutoDevice(id, cleanSerial, username, password);
+    emit requestRegisterAutoDevice(id, cleanRegistrationId, username, password);
     emit auditEvent(QStringLiteral("auto-register-expected-device-added"),
                     QStringLiteral("Dispositivo aguardando registro, sem sessão simulada"));
     return true;
@@ -307,7 +307,7 @@ void DeviceController::connectDevice(const QString& id) {
         record->device.diagnostic = "Aguardando registro do dispositivo";
         emit devicesChanged();
         emit requestRegisterAutoDevice(
-            id, qstring(record->expected_serial),
+            id, qstring(record->registration_id),
             qstring(record->username), qstring(record->password));
     } else {
         emit requestConnect(
@@ -388,8 +388,8 @@ void DeviceController::erase(const QString& id) {
     if (found->auto_registration) {
         emit requestUnregisterAutoDevice(id);
     }
-    std::fill(found->expected_serial.begin(), found->expected_serial.end(), '\0');
-    found->expected_serial.clear();
+    std::fill(found->registration_id.begin(), found->registration_id.end(), '\0');
+    found->registration_id.clear();
     std::fill(found->password.begin(), found->password.end(), '\0');
     found->password.clear();
     found->username.clear();
@@ -497,8 +497,8 @@ void DeviceController::shutdown() {
 
     worker_ = nullptr;
     for (auto& record : records_) {
-        std::fill(record.expected_serial.begin(), record.expected_serial.end(), '\0');
-        record.expected_serial.clear();
+        std::fill(record.registration_id.begin(), record.registration_id.end(), '\0');
+        record.registration_id.clear();
         std::fill(record.password.begin(), record.password.end(), '\0');
         record.password.clear();
         record.username.clear();
