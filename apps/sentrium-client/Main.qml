@@ -53,6 +53,12 @@ ApplicationWindow {
                     registrationSerial.text,
                     registrationUser.text,
                     registrationPassword.text)
+                if (!deviceController.registrationListening) {
+                    // The target is queued before the listener starts, so the
+                    // expected serial is registered before the first callback.
+                    deviceController.startRegistrationServer(
+                        registrationBind.text, registrationListenPort.value)
+                }
             }
             devicePassword.text = ""
             registrationPassword.text = ""
@@ -241,7 +247,7 @@ ApplicationWindow {
                 wrapMode: Text.WordWrap
                 color: window.textSecondary
                 font.pixelSize: 10
-                text: "Use o IP LAN do PC para receber registros remotos. O SENTRIUM não altera firewall, roteador ou NAT. Credenciais e série ficam apenas em memória."
+                text: "Ao adicionar, o servidor será ativado no IP e porta informados, se estiver inativo. Para gravadores remotos, substitua 127.0.0.1 pelo endereço alcançável do PC. Não altera firewall/NAT. Credenciais e série ficam apenas em memória."
             }
         }
     }
