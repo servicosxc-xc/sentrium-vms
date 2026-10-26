@@ -1,4 +1,5 @@
 #include <sentrium/device.hpp>
+#include <sentrium/cloud.hpp>
 
 #include <iostream>
 #include <stdexcept>
@@ -129,6 +130,28 @@ int main(int argc, char** argv) {
                 make_channels(result.channel_count),
                 result.diagnostic};
             require(device.diagnostic.find(secret) == std::string::npos, "secret not in model");
+            break;
+        }
+
+        case 8: {
+            // Only a real provider can supply a ready dynamic TCP port.
+            CloudConnectRequest request{"cloud-uuid-example", 37000};
+            request.validate();
+            rejects([] { CloudConnectRequest{"device", 0}.validate(); });
+            rejects([] { CloudConnectRequest{"", 37000}.validate(); });
+            rejects([] { CloudConnectRequest{"contains spaces", 37000}.validate(); });
+
+            CloudTunnelEndpoint endpoint{59143, CloudRoute::Relay};
+            endpoint.validate();
+            const auto login = endpoint.netSdkLogin("operator", "secret");
+            require(login.host == "127.0.0.1", "Cloud NetSDK host must be loopback");
+            require(login.port == 59143, "Cloud NetSDK port must come from live tunnel");
+            require(login.port != request.service_port,
+                    "Remote service port must not leak into local NetSDK login");
+            require(endpoint.observed_route == CloudRoute::Relay, "Relay must stay Relay");
+            require(CloudTunnelEndpoint{59144}.observed_route == CloudRoute::Unknown,
+                    "Do not infer direct P2P from presence of tunnel");
+            rejects([] { CloudTunnelEndpoint{}.validate(); });
             break;
         }
 
