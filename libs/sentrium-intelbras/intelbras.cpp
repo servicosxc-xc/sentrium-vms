@@ -119,7 +119,12 @@ struct Adapter::Impl {
                 }
                 ++length;
             }
-            if (length == 0 || length >= bound) {
+            // Old serial callbacks may pass an exact byte length without a
+            // trailing NUL. Fixed NET_CB_AUTOREGISTER buffers must be terminated.
+            if (length == 0 ||
+                (length == bound &&
+                 (command == NET_DEV_AUTOREGISTER_RETURN ||
+                  length >= static_cast<std::size_t>(DH_DEV_SERIALNO_LEN)))) {
                 return 0;
             }
             RegistrationNotice notice;
