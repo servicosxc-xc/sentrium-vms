@@ -28,7 +28,7 @@ Abrir o `sentrium-client`, adicionar um gravador real por **LAN, Cloud/P2P ou Re
 
 ## Requisitos não negociáveis
 
-- Não persistir usuário/senha/serial sensível sem decisão explícita; minimizar vida útil de segredos na memória e sanitizar logs.
+- Não persistir usuário/senha/ID de registro sensível sem decisão explícita; minimizar vida útil de segredos na memória e sanitizar logs.
 - Não acoplar ciclo de vida do túnel P2P ao RealPlay; sessões liberadas e conexões fechadas deterministicamente.
 - Mesma identidade lógica de dispositivo e árvore de canais independentemente do transporte.
 - Não introduzir broker/framework genérico sem consumidor, nem registros de câmera inventados, fallback de transporte silencioso ou estados falsos.
@@ -58,7 +58,7 @@ Live View de produção, render Qt Quick/mosaico, playback, gravação, IA/LPR, 
 
 - Interface Qt já permite cadastro LAN e cadastro de dispositivo esperado por número de série para Registro Automático.
 - Listener real NetSDK implementado com `CLIENT_ListenServer` / `CLIENT_StopListenServer` e retorno `DH_DVR_SERIAL_RETURN`, `DH_DVR_DISCONNECT` e `NET_DEV_AUTOREGISTER_RETURN`.
-- Login ao receber registro por `CLIENT_LoginEx2` com `EM_LOGIN_SPEC_CAP_SERVER_CONN` e serial validada; contrato verificado no header Win64 NetSDK 3.050 e no exemplo oficial VehicleGPS do ZIP original preservado fora do Git.
+- Login ao receber registro por `CLIENT_LoginEx2` com `EM_LOGIN_SPEC_CAP_SERVER_CONN` e ID de registro validado; contrato verificado no header Win64 NetSDK 3.050 e no exemplo oficial VehicleGPS do ZIP original preservado fora do Git.
 - Associados os eventos à thread Qt existente, sem executar login dentro do callback nativo; dispositivos inesperados não são admitidos automaticamente; listener desligado por padrão até comando na interface.
 - **Implementado no código, ainda não compilado ou testado no Windows.** Portanto não declarar PASS nem fazer merge.
 - Cloud/P2P continua pendente da inspeção/integração binária com o SIM Next instalado; menu Cloud não simula conexão.
@@ -69,6 +69,23 @@ Após abrir o cliente Debug no Windows, o operador apresentou capturas reais do 
 
 1. Botão `+ Adicionar` aparece como retângulo branco/sem rótulo no primeiro momento; aplicar `background` e `contentItem` explícitos no `Main.qml` para renderização estável (commit `6e61f1fce3f33c3c38adf09341220d94e5d3e0ab`).
 2. Clicar fora de `Adicionar dispositivo` **não pode fechar o diálogo**. `closePolicy: Popup.CloseOnEscape` evita fechamento por clique externo e mantém Escape / Cancelar; validar no cliente Windows após rebuild.
-3. Os parâmetros do **servidor** de Registro Automático (bind/IP, porta, ligar/desligar, estado) ficam **temporariamente** no diálogo para permitir testes. **Mover para futuro módulo `Configurações > Registro Automático`**, preservando o cadastro do **dispositivo** (série, usuário, senha) no fluxo `Adicionar dispositivo`. Migrar com separação do estado do listener e dos gravadores, sem acoplar ativação do servidor ao cadastro, e sem habilitar listener automaticamente após a futura migração.
+3. Os parâmetros do **servidor** de Registro Automático (bind/IP, porta, ligar/desligar, estado) ficam **temporariamente** no diálogo para permitir testes. **Mover para futuro módulo `Configurações > Registro Automático`**, preservando o cadastro do **dispositivo** (ID de registro, usuário, senha) no fluxo `Adicionar dispositivo`. Migrar com separação do estado do listener e dos gravadores, sem acoplar ativação do servidor ao cadastro, e sem habilitar listener automaticamente após a futura migração.
 
 O ajuste foi feito somente em QML e **precisa de rebuild/inspeção visual no Windows** para confirmação. Não afeta o estado `IN IMPLEMENTATION` nem concede Human Review.
+
+## Correção funcional — identificador do Registro Automático
+
+**O operador confirmou em campo:** no gravador Intelbras, a opção Registro Automático recebe um **ID do dispositivo definido pelo operador**, que deve coincidir com o ID cadastrado no servidor SENTRIUM. **Não é necessário usar o número de série físico/fábrica.**
+
+Esta interpretação foi confrontada com o exemplo oficial `VehicleGPSDlg.cpp` do NetSDK 3.050: o callback `DH_DVR_SERIAL_RETURN` atribui `pParam` à variável local `szDevSerial`, porém compara com `m_strListenDevID`, que representa o ID configurado no dispositivo, antes do login `CLIENT_LoginEx2(... EM_LOGIN_SPEC_CAP_SERVER_CONN ...)`. O SDK tem estrutura de configuração `DHDEV_REGISTER_SERVER.szDeviceID[32]` e variante `CFG_REGISTER_SERVER_INFO.szDeviceID`. A nomenclatura de buffer `szDevSerial` é histórica do fabricante e **não define a semântica de cadastro**.
+
+Portanto, na F005 o modelo próprio utiliza `registration_id` / `registrationId`; o formulário diz **ID de Registro Automático**, e o matching exige igualdade ao ID devolvido no callback. **ID Cloud/P2P permanece outro campo, com outra finalidade**. A validação no equipamento real ainda está pendente.
+
+### Referências históricas recebidas em 25/10/2026
+
+- `XC-VideoIA-v1-Foundation-007-r25(3).zip`: contém `src/XC.VideoIA.Infrastructure.Intelbras/Cloud/IntelbrasCloudTunnelService.cs`, que usa `SIMNext.P2PSDK.VVEyeAdapter` por reflexão e métodos `AddSDKPort`, `P2pIsActive`, `RelayConnection` e `DeleteSDKPort`; esta revisão contém preparação de UI para Registro Automático, mas o serviço `IntelbrasDeviceService.cs` indica explicitamente `NOT_IMPLEMENTED` para `AutoRegister`. Isso **não nega** a operação relatada de uma versão anterior/instalação diferente; apenas delimita o ZIP inspecionado.
+- `XC-VideoIA-v2-CPP-AUDIT-001 (2)(2).zip`: addendum Cloud 23/10/2026 documenta o caminho `SIMNext.P2PSDK.dll → Libt2uWrapper.dll → libt2u.dll`, portas e status Direct/Relay, porém é levantamento documental e não contém a runtime da DLL.
+- `XC-VideoIA-v2-CPP-AUDIT-001(4).zip`: auditoria original reconhece bloqueio de SDK Cloud para implementação autônoma; comparado ao adendo mais recente, esse ponto é atualização documental, não contradição técnica.
+- ZIPs fornecidos no chat **não são adicionados ao repositório**; SDK/Cloud proprietários permanecem fora do Git. `F005-LEGACY-REFERENCE-R1.md` registra apenas a orientação necessária.
+
+**Estado:** código de IDs corrigido e versionado, ainda sem rebuild Windows depois dessa correção; Cloud/P2P ainda `BLOCKED` sem inspeção/prova de DLLs e bootstrap autorizado.
