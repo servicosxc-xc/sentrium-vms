@@ -35,7 +35,9 @@ struct CloudLoopbackBridge::Impl {
     bool winsock = false;
 
     void close() noexcept {
-        stopped.store(true, std::memory_order_release);
+        // Idempotent teardown: do not close an upstream stream twice when
+        // caller close() is followed by the bridge/Impl destructor.
+        if (stopped.exchange(true, std::memory_order_acq_rel)) return;
         if (stream) stream->close();
         if (worker.joinable()) worker.join();
         // Worker alone reads/writes listener; join synchronizes teardown.
