@@ -10,7 +10,7 @@
 namespace sentrium::intelbras {
 
 struct RegistrationNotice {
-    std::string serial;
+    std::string registration_id;
     std::string peer_address;
     std::uint16_t peer_port = 0;
     bool disconnected = false;
@@ -43,7 +43,7 @@ public:
     void stopRegistration() noexcept;
     device::ConnectResult connectRegistered(
         const device::LoginRequest& peer,
-        const std::string& expected_serial);
+        const std::string& expected_registration_id);
 
 private:
     struct Impl;
