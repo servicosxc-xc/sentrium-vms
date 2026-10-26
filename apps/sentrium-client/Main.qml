@@ -85,9 +85,10 @@ ApplicationWindow {
         x: Math.round((parent.width - width) / 2)
         y: Math.round((parent.height - height) / 2)
         title: "Adicionar dispositivo"
-        // Cloud bridge mode is explicit: it only logs in through a local
-        // port supplied by an independently running operator-owned tunnel.
-        standardButtons: Dialog.Ok | Dialog.Cancel
+        // Cloud pilot remains blocked after Defender flagged its external
+        // bridge binary. Never submit NetSDK credentials to an unknown proxy.
+        standardButtons: connectionMethod.currentIndex === 1
+                         ? Dialog.Cancel : (Dialog.Ok | Dialog.Cancel)
 
         onOpened: {
             connectionMethod.currentIndex = 0
@@ -152,7 +153,7 @@ ApplicationWindow {
                 color: window.textSecondary
                 font.pixelSize: 11
                 text: connectionMethod.currentIndex === 1
-                      ? "Modo experimental: conecte por NetSDK através da porta TCP local de um túnel P2P independente já estabelecido. O SENTRIUM ainda não inicia esse túnel automaticamente nem comprova a rota Direct/Relay."
+                      ? "Cloud/P2P temporariamente indisponível: o executável auxiliar foi bloqueado pelo Microsoft Defender. Não restaure, não adicione exceções e não informe credenciais em túneis não verificados."
                       : "O ID precisa ser igual ao configurado no gravador. O servidor é ativado separadamente em Configurações > Registro Automático."
             }
 
@@ -234,6 +235,7 @@ ApplicationWindow {
             SpinBox {
                 id: cloudLocalPort
                 visible: connectionMethod.currentIndex === 1
+                enabled: false
                 Layout.fillWidth: true
                 from: 1024
                 to: 65535
@@ -244,6 +246,7 @@ ApplicationWindow {
             TextField {
                 id: cloudUser
                 visible: connectionMethod.currentIndex === 1
+                enabled: false
                 Layout.fillWidth: true
                 placeholderText: "Usuário NetSDK do gravador remoto"
                 selectByMouse: true
@@ -252,6 +255,7 @@ ApplicationWindow {
             TextField {
                 id: cloudPassword
                 visible: connectionMethod.currentIndex === 1
+                enabled: false
                 Layout.fillWidth: true
                 placeholderText: "Senha NetSDK do gravador remoto"
                 echoMode: TextInput.Password
@@ -262,7 +266,7 @@ ApplicationWindow {
                 visible: connectionMethod.currentIndex === 1
                 Layout.fillWidth: true
                 wrapMode: Text.WordWrap
-                text: "Abra primeiro o túnel independente e confira que a porta TCP local pertence ao processo esperado. Não use a porta remota do NVR nem forneça credenciais a um serviço local desconhecido."
+                text: "A implementação de túnel nativo continua em desenvolvimento. O piloto baseado em dh-fwd está suspenso até conclusão da análise de segurança."
                 color: window.textSecondary
                 font.pixelSize: 10
             }
