@@ -37,3 +37,8 @@ Durante a revisão do handoff foi detectado e **corrigido** um erro crítico no 
 ## R3 — checkpoint posterior (26/10/2026)
 
 Nova camada C++ `cloud_ptcp_session.*` para contadores PTCP, ACK, anti-duplicata, detecção de lacunas, retransmissão e janela limitada; testes D-13/D-14. Atualização de CMake e script focal para **D-11 a D-14**. **Nenhum build Windows deste lote ainda.** D-9/D-10 seguem PASS histórico, sem repetição. Cloud real ainda sem bootstrap autorizado, Direct/Relay e túnel NetSDK. Ver §15 do handoff e `docs/foundation-005/F005-CLOUD-PTCP-SESSION-R3.md`. PR #4 permanece draft.
+
+
+## R3 runner — ParserError reparado apos retorno Windows (26/10/2026)
+
+O script R3 publicado no commit anterior estava corrompido: CTest regex truncada e bloco finally duplicado. O Windows abortou no parse; nao fez build nem D-11 a D-14. O script foi reescrito na branch em um unico bloco e passou apenas por checagens estaticas. A copia local quebrada exige PRIMEIRO git pull --ff-only origin foundation/005-device-connectivity, DEPOIS executar o script corrigido. Ver secao 16 do handoff. Nao repetir D-9/D-10, F004, nem afirmar Cloud real.

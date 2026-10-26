@@ -262,3 +262,14 @@ Checkpoint iniciado sobre HEAD `42396b5d`; R2 PTCP/CNG D-11/D-12 ainda sem valid
 **BUILD R2/R3 Windows: NOT RUN; D-11/D-12/D-13/D-14: NOT RUN.** Não interpretar inspeção estática como PASS. A camada não é provider Cloud: bootstrap autorizado/identidade de aplicativo, handshake, NAT/Direct/Relay, ordenação de stream/túnel TCP local e NetSDK Cloud real seguem bloqueados/não comprovados. Nenhum segredo, binário SIM Next, `dh-fwd` ou endpoint Cloud foi incorporado. Registro Automático de 8 canais segue PASS; teste remoto 16/32 canais ainda não executado. PR #4 draft; main e Human Review intactos.
 
 **Validação focal única**, após fechar `sentrium-client.exe`, na pasta do repositório Windows: `\.\scripts\windows\sentrium-validate-f005-cloud.ps1` (ver script para pull --ff-only, PRE-FLIGHT, build Debug, D-11 a D-14). Ao receber log real, corrigir falhas na mesma branch sem repetir F004 ou D-9/D-10.
+
+
+## 16. Reparacao do runner R3 apos ParserError real (26/10/2026)
+
+Evidencia do operador: PowerShell detectou uma string sem terminador, chave de fechamento ausente e bloco try sem finally, ANTES de qualquer git pull, PRE-FLIGHT, build CMake ou CTest. Logo, R2/R3 D-11 a D-14 continuam NOT RUN.
+
+Diagnostico conferido no GitHub HEAD f37ae9e4: o argumento ctest -R foi truncado (perdeu terminador da expressao regular e aspas) e o ultimo bloco foi duplicado apos o primeiro finally. A alteracao anterior usou substituicao textual JavaScript com sequencia especial cifrao+apostrofo na replacement string, que expandiu acidentalmente o sufixo inteiro do arquivo. Nao foi falha do SDK ou CMake.
+
+Reparacao: arquivo PowerShell reescrito por completo. O regex de filtro agora esta completo para D-11, D-12, D-13 e D-14; existe um unico ctest, unico try/finally e bloco de encerramento. Feita verificacao estatica de conteudo, aspas/chaves balanceadas e ausencia de bloco duplicado. Execucao PowerShell nativa, compilacao e testes no Windows ainda NAO EXECUTADOS.
+
+ATENCAO: o script local do operador esta invalido e nao consegue executar o pull embutido. E preciso executar o git pull --ff-only origin foundation/005-device-connectivity primeiro, depois executar scripts/windows/sentrium-validate-f005-cloud.ps1 com cliente SENTRIUM fechado. Nada foi alterado na main ou aprovado em Human Review; PR #4 permanece draft. D-9/D-10 seguem PASS anterior.

@@ -1,11 +1,10 @@
 <#
 .SYNOPSIS
-  Validate the current Foundation-005 Cloud PTCP / device-auth increment.
+  Validate Foundation-005 Cloud R2/R3 (PTCP, device auth, session state).
 .DESCRIPTION
-  One command: verify clean branch, fast-forward, PRE-FLIGHT, configure/build
-  Debug, and run ONLY D-11 through D-14 (D-9/D-10 already passed on Windows).
-  Refuse to link while SENTRIUM client is running. No Cloud service contact,
-  third-party executable, Defender bypass, firewall changes or credentials.
+  One command after updating local checkout: check branch and worktree,
+  fast-forward, PRE-FLIGHT, configure/build Debug and run only D-11 to D-14.
+  D-9 and D-10 were previously approved on Windows.
 #>
 [CmdletBinding()]
 param()
@@ -33,10 +32,11 @@ try {
     }
 
     & git pull --ff-only origin $expectedBranch
-    if ($LASTEXITCODE -ne 0) { throw 'Git fast-forward failed.' }
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Git fast-forward failed.'
+    }
 
-    # PRE-FLIGHT has its own defensive registry checks. Run it before
-    # StrictMode, while preserving the environment variables it exports.
+    # PRE-FLIGHT registry checks run before StrictMode Latest.
     & (Join-Path $PSScriptRoot 'sentrium-preflight.ps1') -VerifyOnly
     Set-StrictMode -Version Latest
 
@@ -46,14 +46,15 @@ try {
     }
 
     & $env:SENTRIUM_CMAKE --preset sentrium-debug
-    if ($LASTEXITCODE -ne 0) { throw 'CMake configure failed.' }
+    if ($LASTEXITCODE -ne 0) {
+        throw 'CMake configure failed.'
+    }
 
     $logDir = Join-Path $repoRoot 'out\sentrium-debug'
     if (-not (Test-Path -LiteralPath $logDir -PathType Container)) {
         throw "Build directory was not created: $logDir"
     }
 
-    # Preserve verbose MSVC /showIncludes output without flooding chat.
     $buildLog = Join-Path $logDir 'f005-cloud-build-latest.log'
     & $env:SENTRIUM_CMAKE --build --preset sentrium-debug > $buildLog 2>&1
     $buildCode = $LASTEXITCODE
@@ -68,26 +69,17 @@ try {
         throw "CTest executable not found: $ctest"
     }
 
-    & $ctest --preset sentrium-debug -R '^D-(11|12|13|14) --output-on-failure
-    if ($LASTEXITCODE -ne 0) { throw 'D-11/D-14 PTCP and device-auth regressions failed.' }
+    & $ctest --preset sentrium-debug -R '^D-(11|12|13|14)$' --output-on-failure
+    if ($LASTEXITCODE -ne 0) {
+        throw 'D-11 to D-14 PTCP and device-auth regressions failed.'
+    }
 
     $commit = (& git rev-parse HEAD).Trim()
-    if ($LASTEXITCODE -ne 0) { throw 'Cannot read Git commit.' }
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Cannot read Git commit.'
+    }
 
-    Write-Host 'F005 DEBUG BUILD + D-11/D-14: PASS' -ForegroundColor Green
-    Write-Host "Commit: $commit"
-    Write-Host 'Cloud bootstrap, Direct/Relay and real P2P login: NOT VERIFIED.'
-}
-finally {
-    Pop-Location
-}
- --output-on-failure
-    if ($LASTEXITCODE -ne 0) { throw 'D-11/D-14 PTCP and device-auth regressions failed.' }
-
-    $commit = (& git rev-parse HEAD).Trim()
-    if ($LASTEXITCODE -ne 0) { throw 'Cannot read Git commit.' }
-
-    Write-Host 'F005 DEBUG BUILD + D-11/D-14: PASS' -ForegroundColor Green
+    Write-Host 'F005 DEBUG BUILD + D-11 to D-14: PASS' -ForegroundColor Green
     Write-Host "Commit: $commit"
     Write-Host 'Cloud bootstrap, Direct/Relay and real P2P login: NOT VERIFIED.'
 }
