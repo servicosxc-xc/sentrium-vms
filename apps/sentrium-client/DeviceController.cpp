@@ -94,8 +94,10 @@ QVariantList DeviceController::devices() const {
         item.insert(QStringLiteral("id"), qstring(record.device.id));
         item.insert(QStringLiteral("name"), qstring(record.device.display_name));
 
-        item.insert(QStringLiteral("method"), record.auto_registration
-                    ? QStringLiteral("AutoRegistration") : QStringLiteral("LAN"));
+        item.insert(QStringLiteral("method"),
+                    qstring(sentrium::device::name(record.device.access_method)));
+        item.insert(QStringLiteral("cloudRoute"),
+                    qstring(sentrium::device::name(record.device.cloud_route)));
         item.insert(QStringLiteral("connectionLabel"), record.auto_registration
                     ? QStringLiteral("Registro Automático • ID de registro · final ")
                         + qstring(record.registration_id.substr(
@@ -223,6 +225,7 @@ bool DeviceController::addAutoRegistration(
     const QString id = QUuid::createUuid().toString(QUuid::WithoutBraces);
     Record record;
     record.auto_registration = true;
+    record.device.access_method = sentrium::device::AccessMethod::AutoRegistration;
     record.device.id = utf8(id);
     record.device.display_name = utf8(displayName.trimmed());
     record.registration_id = utf8(cleanRegistrationId);
