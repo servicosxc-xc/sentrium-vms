@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace sentrium::device {
 namespace {
@@ -133,6 +134,79 @@ CloudDeviceAuth prepareCloudDeviceAuth(
     output.signature_base64=base64(hmacSha256(output.device_key_hex,toSign));
     output.address_key=pbkdf2Sha256(output.device_key_hex,nonceStr);
     return output;
+}
+
+
+std::vector<std::uint8_t> cryptCloudAddress(
+    const std::array<std::uint8_t,32>& derived_key,
+    const std::array<std::uint8_t,16>& iv,
+    std::string_view input) {
+    if (input.size() > 4096) {
+        throw std::invalid_argument("Cloud device address exceeds maximum");
+    }
+    if (input.empty()) return {};
+
+    HashAlgorithm aes(BCRYPT_AES_ALGORITHM,0);
+    constexpr wchar_t kEcb[] = BCRYPT_CHAIN_MODE_ECB;
+    if (!BCRYPT_SUCCESS(BCryptSetProperty(
+        aes.get(),BCRYPT_CHAINING_MODE,
+        reinterpret_cast<PUCHAR>(const_cast<wchar_t*>(kEcb)),
+        static_cast<ULONG>(sizeof(kEcb)),0))) {
+        throw std::runtime_error("Cloud AES mode unavailable");
+    }
+
+    DWORD objectSize=0;
+    DWORD resultLength=0;
+    if (!BCRYPT_SUCCESS(BCryptGetProperty(
+        aes.get(),BCRYPT_OBJECT_LENGTH,
+        reinterpret_cast<PUCHAR>(&objectSize),
+        static_cast<ULONG>(sizeof(objectSize)),&resultLength,0)) ||
+        objectSize==0 || objectSize>4096) {
+        throw std::runtime_error("Cloud AES key object unavailable");
+    }
+
+    std::vector<std::uint8_t> keyObject(objectSize);
+    BCRYPT_KEY_HANDLE key=nullptr;
+    if (!BCRYPT_SUCCESS(BCryptGenerateSymmetricKey(
+        aes.get(),&key,keyObject.data(),objectSize,
+        const_cast<PUCHAR>(derived_key.data()),
+        static_cast<ULONG>(derived_key.size()),0))) {
+        SecureZeroMemory(keyObject.data(),keyObject.size());
+        throw std::runtime_error("Cloud AES key preparation failed");
+    }
+
+    // CNG's ECB encrypt acts only on the evolving 16-byte feedback block.
+    // OFB never pads and works for arbitrary plaintext lengths.
+    std::array<std::uint8_t,16> feedback=iv;
+    std::vector<std::uint8_t> out(input.size());
+    try {
+        for (std::size_t pos=0;pos<input.size();pos+=feedback.size()) {
+            std::array<std::uint8_t,16> stream{};
+            ULONG written=0;
+            if (!BCRYPT_SUCCESS(BCryptEncrypt(
+                key,feedback.data(),static_cast<ULONG>(feedback.size()),
+                nullptr,nullptr,0,
+                stream.data(),static_cast<ULONG>(stream.size()),
+                &written,0)) || written!=stream.size()) {
+                throw std::runtime_error("Cloud AES keystream failed");
+            }
+            feedback=stream;
+            for (std::size_t i=0;i<feedback.size() && pos+i<input.size();++i) {
+                out[pos+i]=static_cast<std::uint8_t>(
+                    static_cast<unsigned char>(input[pos+i]) ^ stream[i]);
+            }
+            SecureZeroMemory(stream.data(),stream.size());
+        }
+    } catch (...) {
+        BCryptDestroyKey(key);
+        SecureZeroMemory(keyObject.data(),keyObject.size());
+        SecureZeroMemory(feedback.data(),feedback.size());
+        throw;
+    }
+    BCryptDestroyKey(key);
+    SecureZeroMemory(keyObject.data(),keyObject.size());
+    SecureZeroMemory(feedback.data(),feedback.size());
+    return out;
 }
 
 } // namespace sentrium::device
