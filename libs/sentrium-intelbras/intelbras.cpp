@@ -94,32 +94,32 @@ struct Adapter::Impl {
         try {
             // This callback is issued by an SDK-owned thread. Copy only bounded
             // fields, never persist token/credentials or hold SDK buffers.
-            const char* serial = nullptr;
+            const char* registration_id = nullptr;
             std::size_t bound = 0;
             if (command == NET_DEV_AUTOREGISTER_RETURN) {
                 if (bytes < sizeof(NET_CB_AUTOREGISTER)) {
                     return 0;
                 }
                 const auto* payload = static_cast<const NET_CB_AUTOREGISTER*>(data);
-                serial = payload->szDevSerial;
+                registration_id = payload->szDevSerial;
                 bound = sizeof(payload->szDevSerial);
             } else {
-                serial = static_cast<const char*>(data);
+                registration_id = static_cast<const char*>(data);
                 bound = (std::min)(static_cast<std::size_t>(bytes),
                                    static_cast<std::size_t>(DH_DEV_SERIALNO_LEN));
             }
-            if (!serial || bound == 0) {
+            if (!registration_id || bound == 0) {
                 return 0;
             }
             std::size_t length = 0;
-            while (length < bound && serial[length] != '\0') {
-                const unsigned char ch = static_cast<unsigned char>(serial[length]);
+            while (length < bound && registration_id[length] != '\0') {
+                const unsigned char ch = static_cast<unsigned char>(registration_id[length]);
                 if (!(std::isalnum(ch) || ch == '-' || ch == '_' || ch == '.')) {
                     return 0;
                 }
                 ++length;
             }
-            // Old serial callbacks may pass an exact byte length without a
+            // Legacy registration ID callbacks may pass an exact byte length without a
             // trailing NUL. Fixed NET_CB_AUTOREGISTER buffers must be terminated.
             if (length == 0 ||
                 (length == bound &&
@@ -128,7 +128,7 @@ struct Adapter::Impl {
                 return 0;
             }
             RegistrationNotice notice;
-            notice.serial.assign(serial, length);
+            notice.registration_id.assign(serial, length);
             notice.peer_port = port;
             notice.disconnected = command == DH_DVR_DISCONNECT;
             if (peer) {
@@ -334,7 +334,7 @@ ListenerResult Adapter::startRegistration(
             return {false, "NetSDK registration listener failed (sdk_error=" + std::to_string(code) + ")"};
         }
         impl_->listener_handle = handle;
-        return {true, "Registration listener active; waiting for known device serials"};
+        return {true, "Registration listener active; waiting for configured device registration IDs"};
     } catch (const std::exception&) {
         return {false, "Registration listener initialization failed"};
     }
@@ -351,25 +351,26 @@ void Adapter::stopRegistration() noexcept {
 
 device::ConnectResult Adapter::connectRegistered(
     const device::LoginRequest& peer,
-    const std::string& expected_serial) {
+    const std::string& expected_registration_id) {
     try {
         peer.validate();
-        if (expected_serial.empty() || expected_serial.size() >= DH_DEV_SERIALNO_LEN ||
-            !std::all_of(expected_serial.begin(), expected_serial.end(),
+        if (expected_registration_id.empty() || expected_registration_id.size() >= DH_DEV_SERIALNO_LEN ||
+            !std::all_of(expected_registration_id.begin(), expected_registration_id.end(),
                 [](unsigned char c) { return std::isalnum(c) || c == '-' || c == '_' || c == '.'; })) {
-            return {false, {}, 0, "Invalid expected auto-registration serial"};
+            return {false, {}, 0, "Invalid expected auto-registration device ID"};
         }
         impl_->ensure_initialized();
         NET_DEVICEINFO_Ex info{};
         int login_error = 0;
         // Verified against NetSDK 3.050 Win64 header and official
-        // VehicleGPS demo: SERVER_CONN receives device serial in pCapParam.
-        std::string serial = expected_serial;
+        // VehicleGPS demo: SERVER_CONN passes the user-configured device registration ID
+        // via pCapParam, despite the vendor naming the callback buffer DevSerial.
+        std::string registration_id = expected_registration_id;
         const LLONG handle = impl_->login(
             peer.host.c_str(), static_cast<WORD>(peer.port),
             peer.username.c_str(), peer.password.c_str(),
             EM_LOGIN_SPEC_CAP_SERVER_CONN,
-            serial.data(), &info, &login_error);
+            registration_id.data(), &info, &login_error);
         if (!handle) {
             const int sdk_error = impl_->last_error ? impl_->last_error() : 0;
             return {false, {}, 0, login_failure(login_error, sdk_error)};
