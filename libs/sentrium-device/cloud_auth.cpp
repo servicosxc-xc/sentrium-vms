@@ -126,10 +126,16 @@ CloudDeviceAuth prepareCloudDeviceAuth(
         throw std::invalid_argument("Cloud device authentication fields invalid");
     }
 
-    const std::string raw = std::string(username)+":Login to "+
+    std::string raw = std::string(username)+":Login to "+
         std::string(device_randsalt)+":"+std::string(password);
     CloudDeviceAuth output;
-    output.device_key_hex = upperHex(md5(raw));
+    try {
+        output.device_key_hex = upperHex(md5(raw));
+    } catch (...) {
+        SecureZeroMemory(raw.data(),raw.size());
+        throw;
+    }
+    SecureZeroMemory(raw.data(),raw.size());
     const std::string nonceStr=std::to_string(nonce);
     const std::string toSign=nonceStr+std::to_string(unix_seconds)+std::string(payload);
     output.signature_base64=base64(hmacSha256(output.device_key_hex,toSign));
