@@ -31,11 +31,13 @@ Executar `scripts/windows/sentrium-preflight.ps1 -VerifyOnly` e comprovar os pat
 
 Produzir em poucas linhas o inventário técnico necessário à implementação (`VERIFIED / MISSING / INCONCLUSIVE`). **Não produzir novo estudo longo**. Falta de Cloud SDK ou lacuna de Auto Registration bloqueia somente a respectiva funcionalidade, não o avanço no cliente.
 
-## 2. Entregar F005.1 — UI funcional antes de novo benchmark
+## 2. Entregar F005.1 — concluir UI funcional antes de novo benchmark
 
-Estender o diálogo real `Adicionar dispositivo` para escolher LAN/IP, Cloud/P2P ou Registro Automático. Campos e validação específicos por modalidade. Reutilizar a mesma árvore de dispositivos/canais e controle de estado. Preservar o caminho LAN existente, incluindo disconnect/remove. Uma modalidade ainda indisponível fica claramente desabilitada com razão, sem simular conexão/streams/canais.
+**Checkpoint já no GitHub:** o commit `e72014ce53001b34018e332e23159e1c032b9984` adicionou a escolha visual das três modalidades no diálogo existente. A ação de conectar permanece ativa **somente para LAN**; Cloud e Registro Automático exibem indisponibilidade real e não enviam ações falsas. **Este patch ainda não foi compilado/testado no Windows**. Não recriar esse seletor; conferir o código e evoluir a partir dele.
 
-Usar apenas os tipos/rotas de código estritamente necessários no `DeviceController`, `DeviceWorker` e `sentrium-device`. Não construir abstração genérica de plugins. Testes automatizados apenas para casos modificados; validar Debug/Release quando apropriado. Criar commit de código `feat(f005): device connection method UI`.
+Concluir o formulário real por modalidade ao implementar sua respectiva API/SDK, com campos e validação específicos. Reutilizar a mesma árvore de dispositivos/canais e controle de estado. Preservar LAN existente, incluindo disconnect/remove. Enquanto modalidade sem integração estiver indisponível, manter ação desabilitada com explicação.
+
+Usar apenas tipos e rotas necessários em `DeviceController`, `DeviceWorker` e `sentrium-device`. Não construir framework de plugins. Rodar **um build/smoke focal após código funcional**, não repetir benchmarks antigos. Criar commits de código de cada slice real.
 
 ## 3. Entregar F005.2 — Cloud/P2P real
 
