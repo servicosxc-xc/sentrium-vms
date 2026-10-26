@@ -76,7 +76,13 @@ target_include_directories(sentrium-platform-win PUBLIC libs/sentrium-platform-w
 target_compile_definitions(sentrium-platform-win PUBLIC UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX)
 target_link_libraries(sentrium-platform-win PUBLIC sentrium-core PRIVATE shell32 ole32 advapi32)
 
-add_library(sentrium-device libs/sentrium-device/device.cpp libs/sentrium-device/cloud.cpp libs/sentrium-device/cloud_wire.cpp)
+add_library(sentrium-device
+  libs/sentrium-device/device.cpp
+  libs/sentrium-device/cloud.cpp
+  libs/sentrium-device/cloud_wire.cpp
+  libs/sentrium-device/cloud_udp.cpp
+  libs/sentrium-device/cloud_signaling.cpp)
+target_link_libraries(sentrium-device PRIVATE ws2_32)
 target_include_directories(sentrium-device PUBLIC libs/sentrium-device/include)
 
 add_library(sentrium-intelbras libs/sentrium-intelbras/intelbras.cpp)
@@ -123,7 +129,7 @@ endforeach()
 foreach(id RANGE 1 11)
   add_test(NAME I-${id} COMMAND sentrium-integration-tests ${id} $<TARGET_FILE:sentrium-server>)
 endforeach()
-foreach(id RANGE 1 9)
+foreach(id RANGE 1 10)
   add_test(NAME D-${id} COMMAND sentrium-device-tests ${id})
 endforeach()
 foreach(id RANGE 1 6)
