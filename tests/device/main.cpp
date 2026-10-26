@@ -384,6 +384,20 @@ int main(int argc, char** argv) {
                     auth.address_key == repeat.address_key,
                     "reproducible device proof");
 
+            // AES-OFB uses the derived key and a caller-supplied IV; no
+            // untrusted vendor-app initialization constant in the binary.
+            const std::array<std::uint8_t,16> iv{
+                1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16};
+            const std::string address = "127.0.0.1:49300";
+            const auto encrypted = cryptCloudAddress(auth.address_key,iv,address);
+            require(encrypted.size() == address.size(), "AES-OFB preserves length");
+            const std::string encryptedBytes(encrypted.begin(),encrypted.end());
+            require(encryptedBytes != address, "AES-OFB must transform address");
+            const auto decrypted = cryptCloudAddress(
+                auth.address_key,iv,encryptedBytes);
+            require(std::string(decrypted.begin(),decrypted.end()) == address,
+                    "AES-OFB roundtrip");
+
             const auto wrongPass = prepareCloudDeviceAuth(
                 "admin","other-password","abc123",12345,1761500000ULL,"127.0.0.1:49300");
             require(wrongPass.device_key_hex != auth.device_key_hex &&
