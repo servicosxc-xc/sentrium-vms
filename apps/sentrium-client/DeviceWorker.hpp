@@ -24,7 +24,7 @@ public slots:
     void startRegistrationServer(const QString& bindAddress, quint16 port);
     void stopRegistrationServer();
     void registerAutoDevice(
-        const QString& id, const QString& serial,
+        const QString& id, const QString& registrationId,
         const QString& username, const QString& password);
     void unregisterAutoDevice(const QString& id);
     void shutdown();
@@ -37,7 +37,7 @@ signals:
         const QString& diagnostic);
     void registrationServerChanged(bool listening, const QString& diagnostic);
     void registrationReceived(
-        const QString& serial, const QString& peer, quint16 port, bool disconnected);
+        const QString& registrationId, const QString& peer, quint16 port, bool disconnected);
     void registrationLost(const QString& id);
     void disconnectFinished(
         const QString& id,
@@ -46,11 +46,11 @@ signals:
 
 private slots:
     void onRegistrationReceived(
-        const QString& serial, const QString& peer, quint16 port, bool disconnected);
+        const QString& registrationId, const QString& peer, quint16 port, bool disconnected);
 
 private:
     struct RegisteredTarget {
-        QString serial;
+        QString registrationId;
         QString username;
         QString password;
     };
