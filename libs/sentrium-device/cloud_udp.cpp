@@ -68,7 +68,17 @@ bool isNumericIpv4(std::string_view address) noexcept {
         if (end == std::string_view::npos) break;
         pos = end + 1;
     }
-    return octets == 4 && address.back() != '.';
+    // Unicast only: never send bootstrap packets to 0/8, multicast or
+    // reserved/high address space (224.0.0.0/4 and 240.0.0.0/4).
+    const auto firstDot = address.find('.');
+    unsigned first = 0;
+    if (firstDot != std::string_view::npos) {
+        for (std::size_t i = 0; i < firstDot; ++i) {
+            first = first * 10 + static_cast<unsigned>(address[i] - '0');
+        }
+    }
+    return octets == 4 && address.back() != '.' &&
+           first >= 1 && first <= 223;
 }
 
 CloudUdpResult failure(CloudUdpError error, int attempt = 0) {
