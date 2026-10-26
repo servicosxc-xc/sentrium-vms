@@ -112,3 +112,32 @@ O script já executa preflight, CMake configure/build e **apenas D-9 e D-10**. P
 ## 10. Mensagem ideal para iniciar a próxima conversa
 
 > Continue o desenvolvimento **SENTRIUM VMS** a partir do repositório GitHub `servicosxc-xc/sentrium-vms`, branch `foundation/005-device-connectivity`. **Leia integralmente `CONTINUE-HERE.md` e `docs/HANDOFF-SENTRIUM-CURRENT.md` no GitHub e confira o HEAD real**. Não recomece fundamentos nem repita benchmarks. O Registro Automático já conectou um NVR real com 8 canais; Cloud P2P nativo está em desenvolvimento, sem SIM Next e sem executar `dh-fwd` (bloqueio Defender). O último build de 26/10 falhou por **LNK1168 (cliente aberto)**, não por diagnóstico confirmado de C++. Já existe um script único de build/validação `scripts/windows/sentrium-validate-f005-cloud.ps1`. **Trabalhe em blocos grandes**, aplique código diretamente na branch, preserve `main`, atualize handoff e forneça comandos só ao fim.
+
+## 11. Último resultado e correção do PRE-FLIGHT (26/10/2026)
+
+O operador atualizou a branch até `c7d7d08106d4b8a021d21785b77d757904a27fca` e executou `sentrium-validate-f005-cloud.ps1`. O `git pull` retornou `Already up to date`, mas o script **falhou antes do CMake/build** com:
+
+```text
+Where-Object : A propriedade 'DisplayName' não foi encontrada neste objeto.
+scripts/windows/sentrium-preflight.ps1:57
+PropertyNotFoundStrict
+```
+
+**Causa verificada no código:** o wrapper ativava `Set-StrictMode -Version Latest` e **dot-source** carregava o PRE-FLIGHT no mesmo escopo. O comando `Get-ItemProperty HKLM:...Uninstall\*` retorna itens sem `DisplayName`/`DisplayVersion`; acesso direto `$_.DisplayName` dispara `PropertyNotFoundStrict`.
+
+**Correções commitadas:**
+1. `sentrium-preflight.ps1`: consulta defensiva de `$_.PSObject.Properties['DisplayName']`/`['DisplayVersion']`, mantendo exigência original do nome e da versão do Windows SDK 10.1.26100.9457.
+2. `sentrium-validate-f005-cloud.ps1`: muda a invocação de `. script.ps1` para `& script.ps1`, isolando escopo de variáveis/StrictMode sem perder variáveis de ambiente de processo `SENTRIUM_CMAKE`, etc.
+3. Identificação da saída de PRE-FLIGHT nesta branch corrigida para Foundation-005.
+
+**Evidência:** reparo foi revisado no GitHub, **NÃO executado no Windows**. D-9/D-10 e compilação nativa seguem NOT RUN nessa tentativa. Não chamar de PASS até novo retorno do operador.
+
+**Próximo comando único** (com SENTRIUM fechado):
+
+```powershell
+cd "C:\Projetos\SENTRIUM VMS\sentrium-vms"
+git pull --ff-only origin foundation/005-device-connectivity
+.\scripts\windows\sentrium-validate-f005-cloud.ps1
+```
+
+**Modo de colaboração:** corrigir o problema real da etapa corrente sem iniciar novo ciclo de refatoração, builds repetidos ou testes sem valor; manter este documento atualizado a cada etapa relevante.
