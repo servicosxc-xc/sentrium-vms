@@ -62,6 +62,9 @@ void DeviceWorker::disconnectDevice(const QString& id) {
     const auto result = adapter_.disconnect(found->second);
     if (result.success) {
         sessions_.erase(found);
+        stale_registration_sessions_.erase(key);
+    } else if (registered_.contains(key)) {
+        stale_registration_sessions_.insert(key);
     }
 
     emit disconnectFinished(id, result.success, qstring(result.diagnostic));
@@ -99,7 +102,9 @@ void DeviceWorker::stopRegistrationServer() {
         const auto result = adapter_.disconnect(session->second);
         if (result.success) {
             sessions_.erase(session);
+            stale_registration_sessions_.erase(key);
         } else {
+            stale_registration_sessions_.insert(key);
             emit registrationObservation(
                 QStringLiteral("Servidor: não foi possível confirmar logout de um dispositivo"));
         }
@@ -150,14 +155,29 @@ void DeviceWorker::onRegistrationReceived(
                     emit registrationObservation(QStringLiteral(
                         "Gravador desconectou, mas o NetSDK não confirmou a liberação da sessão"));
                 }
-                // Device is gone even when the SDK can't complete logout.
-                // The process-wide CLIENT_Cleanup remains the final fallback.
-                sessions_.erase(existing);
+                if (logout.success) {
+                    sessions_.erase(existing);
+                    stale_registration_sessions_.erase(id);
+                } else {
+                    // Keep the handle for retry on the next registration,
+                    // rather than accepting a duplicate NetSDK session.
+                    stale_registration_sessions_.insert(id);
+                }
                 emit registrationLost(qstring(id));
             }
             return;
         }
-        if (existing != sessions_.end()) return;
+        if (existing != sessions_.end()) {
+            if (!stale_registration_sessions_.contains(id)) return;
+            const auto logout = adapter_.disconnect(existing->second);
+            if (!logout.success) {
+                emit registrationObservation(QStringLiteral(
+                    "Novo registro aguardando liberação da sessão NetSDK anterior"));
+                return;
+            }
+            sessions_.erase(existing);
+            stale_registration_sessions_.erase(id);
+        }
         const QString logicalId = qstring(id);
         if (peer.isEmpty() || port == 0) {
             emit registrationObservation(QStringLiteral("Registro reconhecido sem endpoint válido"));
@@ -204,4 +224,5 @@ void DeviceWorker::shutdown() {
     // Adapter destruction performs CLIENT_Cleanup even if an individual
     // logout could not be completed, so process shutdown remains bounded.
     sessions_.clear();
+    stale_registration_sessions_.clear();
 }
