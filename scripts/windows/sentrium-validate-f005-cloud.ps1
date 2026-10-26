@@ -10,7 +10,6 @@
 [CmdletBinding()]
 param()
 $ErrorActionPreference = 'Stop'
-Set-StrictMode -Version Latest
 
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
 Push-Location $repoRoot
@@ -36,6 +35,11 @@ try {
     # A child script shares process environment exports (SENTRIUM_CMAKE etc.)
     # but does not inherit this runner's strict variable/property scope.
     & (Join-Path $PSScriptRoot 'sentrium-preflight.ps1') -VerifyOnly
+
+    # The PRE-FLIGHT enumerates heterogeneous registry entries; it has its
+    # own defensive property checks. StrictMode is enabled for the remaining
+    # orchestration AFTER the preflight returns.
+    Set-StrictMode -Version Latest
 
     if (-not $env:SENTRIUM_CMAKE -or
         -not (Test-Path -LiteralPath $env:SENTRIUM_CMAKE -PathType Leaf)) {
