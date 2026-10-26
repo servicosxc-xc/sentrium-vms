@@ -33,7 +33,9 @@ try {
     & git pull --ff-only origin foundation/005-device-connectivity
     if ($LASTEXITCODE -ne 0) { throw 'Git fast-forward failed' }
 
-    . (Join-Path $PSScriptRoot 'sentrium-preflight.ps1') -VerifyOnly
+    # A child script shares process environment exports (SENTRIUM_CMAKE etc.)
+    # but does not inherit this runner's strict variable/property scope.
+    & (Join-Path $PSScriptRoot 'sentrium-preflight.ps1') -VerifyOnly
 
     if (-not $env:SENTRIUM_CMAKE -or
         -not (Test-Path -LiteralPath $env:SENTRIUM_CMAKE -PathType Leaf)) {
