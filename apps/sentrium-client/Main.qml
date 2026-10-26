@@ -51,7 +51,7 @@ ApplicationWindow {
                     deviceUser.text,
                     devicePassword.text)
             } else if (connectionMethod.currentIndex === 2) {
-                const added = deviceController.addAutoRegistration(
+                deviceController.addAutoRegistration(
                     deviceName.text,
                     registrationDeviceId.text,
                     registrationUser.text,
