@@ -107,6 +107,16 @@ std::string base64(const std::array<std::uint8_t,32>& raw) {
 
 } // namespace
 
+CloudDeviceAuth::~CloudDeviceAuth() noexcept {
+    if (!device_key_hex.empty()) {
+        SecureZeroMemory(device_key_hex.data(),device_key_hex.size());
+    }
+    if (!signature_base64.empty()) {
+        SecureZeroMemory(signature_base64.data(),signature_base64.size());
+    }
+    SecureZeroMemory(address_key.data(),address_key.size());
+}
+
 CloudDeviceAuth prepareCloudDeviceAuth(
     std::string_view username,std::string_view password,
     std::string_view device_randsalt,std::uint32_t nonce,
