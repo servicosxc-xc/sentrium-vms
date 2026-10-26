@@ -91,7 +91,8 @@ void DeviceWorker::startRegistrationServer(const QString& bindAddress, quint16 p
 void DeviceWorker::stopRegistrationServer() {
     adapter_.stopRegistration();
     listening_ = false;
-    for (const auto& [key, target] : registered_) {
+    for (const auto& entry : registered_) {
+        const auto& key = entry.first;
         const auto session = sessions_.find(key);
         if (session != sessions_.end()) {
             adapter_.disconnect(session->second);
