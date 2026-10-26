@@ -48,12 +48,12 @@ ApplicationWindow {
                     deviceUser.text,
                     devicePassword.text)
             } else if (connectionMethod.currentIndex === 2) {
-                deviceController.addAutoRegistration(
+                const added = deviceController.addAutoRegistration(
                     deviceName.text,
                     registrationSerial.text,
                     registrationUser.text,
                     registrationPassword.text)
-                if (!deviceController.registrationListening) {
+                if (added && !deviceController.registrationListening) {
                     // The target is queued before the listener starts, so the
                     // expected serial is registered before the first callback.
                     deviceController.startRegistrationServer(
