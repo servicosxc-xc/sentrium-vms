@@ -262,7 +262,7 @@ ApplicationWindow {
                 visible: connectionMethod.currentIndex === 1
                 Layout.fillWidth: true
                 wrapMode: Text.WordWrap
-                text: "Inicie o túnel Cloud independente primeiro (piloto F005), usando a mesma porta TCP local. Não use a porta remota do NVR neste campo."
+                text: "Abra primeiro o túnel independente e confira que a porta TCP local pertence ao processo esperado. Não use a porta remota do NVR nem forneça credenciais a um serviço local desconhecido."
                 color: window.textSecondary
                 font.pixelSize: 10
             }
@@ -772,8 +772,8 @@ ApplicationWindow {
                         Button {
                             text: "Conectar"
                             enabled: window.selectedDevice() !== null
-                                     && window.selectedDevice().state !== "Connected"
-                                     && window.selectedDevice().method !== "Cloud"
+                                     && (window.selectedDevice().state === "Disconnected"
+                                         || window.selectedDevice().state === "Failed")
                             onClicked: deviceController.connectDevice(window.selectedDeviceId)
                         }
                         Button {
