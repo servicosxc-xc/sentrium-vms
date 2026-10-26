@@ -79,7 +79,7 @@ void DeviceWorker::startRegistrationServer(const QString& bindAddress, quint16 p
             // SDK thread: copy bounded event values into Qt's queued signal.
             // Never call NetSDK Login from inside a native SDK callback.
             emit registrationReceived(
-                qstring(event.serial),
+                qstring(event.registrationId),
                 qstring(event.peer_address),
                 event.peer_port,
                 event.disconnected);
@@ -104,19 +104,19 @@ void DeviceWorker::stopRegistrationServer() {
 }
 
 void DeviceWorker::registerAutoDevice(
-    const QString& id, const QString& serial,
+    const QString& id, const QString& registrationId,
     const QString& username, const QString& password) {
     const auto key = utf8(id);
-    // Serial uniqueness prevents accidentally authenticating the same
+    // Registration ID uniqueness prevents accidentally authenticating the same
     // recorder with credentials intended for a different logical device.
     for (const auto& [existing_id, target] : registered_) {
-        if (existing_id != key && target.serial == serial) {
+        if (existing_id != key && target.registrationId == registrationId) {
             emit connectFinished(id, false, 0,
-                                 QStringLiteral("Número de série já cadastrado"));
+                                 QStringLiteral("ID de Registro Automático já cadastrado"));
             return;
         }
     }
-    registered_.insert_or_assign(key, RegisteredTarget{serial, username, password});
+    registered_.insert_or_assign(key, RegisteredTarget{registrationId, username, password});
 }
 
 void DeviceWorker::unregisterAutoDevice(const QString& id) {
@@ -126,10 +126,10 @@ void DeviceWorker::unregisterAutoDevice(const QString& id) {
 }
 
 void DeviceWorker::onRegistrationReceived(
-    const QString& serial, const QString& peer, quint16 port, bool disconnected) {
+    const QString& registrationId, const QString& peer, quint16 port, bool disconnected) {
     if (!listening_) return;
     for (const auto& [id, target] : registered_) {
-        if (serial != target.serial) continue;
+        if (registrationId != target.registrationId) continue;
         auto existing = sessions_.find(id);
         if (disconnected) {
             if (existing != sessions_.end()) {
@@ -149,7 +149,7 @@ void DeviceWorker::onRegistrationReceived(
         const sentrium::device::LoginRequest request{
             utf8(peer), static_cast<std::uint16_t>(port),
             utf8(target.username), utf8(target.password)};
-        const auto result = adapter_.connectRegistered(request, utf8(serial));
+        const auto result = adapter_.connectRegistered(request, utf8(registrationId));
         if (result.success) {
             sessions_.emplace(id, result.session);
         }
@@ -157,7 +157,7 @@ void DeviceWorker::onRegistrationReceived(
                              result.channel_count, qstring(result.diagnostic));
         return;
     }
-    // Unknown serial: ignore it; never auto-enroll unexpected equipment.
+    // Unknown registration ID: ignore it; never auto-enroll unexpected equipment.
 }
 
 void DeviceWorker::shutdown() {
