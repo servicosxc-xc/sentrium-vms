@@ -56,12 +56,8 @@ ApplicationWindow {
                     registrationDeviceId.text,
                     registrationUser.text,
                     registrationPassword.text)
-                if (added && !deviceController.registrationListening) {
-                    // The target is queued before the listener starts, so the
-                    // device registration ID is registered before the first callback.
-                    deviceController.startRegistrationServer(
-                        registrationBind.text, registrationListenPort.value)
-                }
+                // The server is managed independently in Configurações.
+                // Registering a device does not implicitly open a network port.
             }
             devicePassword.text = ""
             registrationPassword.text = ""
@@ -97,7 +93,7 @@ ApplicationWindow {
                 font.pixelSize: 11
                 text: connectionMethod.currentIndex === 1
                       ? "Cloud/P2P nativo do SENTRIUM em desenvolvimento. Não depende da instalação do SIM Next. Ainda não há conexão Cloud funcional."
-                      : "Registro Automático real via NetSDK. Configure o dispositivo para enviar o ID configurado nele para o IP e a porta do SENTRIUM."
+                      : "O ID precisa ser igual ao configurado no gravador. O servidor é ativado separadamente em Configurações > Registro Automático."
             }
 
             Label {
@@ -194,65 +190,131 @@ ApplicationWindow {
                 selectByMouse: true
             }
 
+        }
+    }
+
+    // Network listener configuration is separate from device enrollment.
+    Dialog {
+        id: settingsDialog
+        parent: Overlay.overlay
+        modal: true
+        closePolicy: Popup.CloseOnEscape
+        title: "Configurações — Registro Automático"
+        width: 480
+        x: Math.round((parent.width - width) / 2)
+        y: Math.round((parent.height - height) / 2)
+        standardButtons: Dialog.Close
+
+        ColumnLayout {
+            width: parent.width
+            spacing: 12
+
             Label {
-                visible: connectionMethod.currentIndex === 2
                 Layout.fillWidth: true
-                // Temporary placement: move server/listener settings to
-                // Configurações > Registro Automático when that module exists.
-                text: "SERVIDOR DE REGISTRO (TEMPORÁRIO)"
+                text: "SERVIDOR DE REGISTRO AUTOMÁTICO"
+                font.bold: true
+                color: window.textPrimary
+            }
+
+            Label {
+                Layout.fillWidth: true
+                wrapMode: Text.WordWrap
+                text: "O servidor só aceita registros após ativação manual. Para NVRs externos, utilize o endereço que o gravador consegue alcançar. Esta opção não configura NAT nem firewall."
                 color: window.textSecondary
                 font.pixelSize: 11
-                font.bold: true
+            }
+
+            Label {
+                text: "Endereço local para escuta (IPv4)"
+                color: window.textSecondary
+                font.pixelSize: 11
+            }
+
+            TextField {
+                id: registrationBind
+                Layout.fillWidth: true
+                text: "127.0.0.1"
+                placeholderText: "Ex.: 192.168.1.100"
+                enabled: !deviceController.registrationListening
+                selectByMouse: true
+            }
+
+            Label {
+                text: "Porta de escuta"
+                color: window.textSecondary
+                font.pixelSize: 11
+            }
+
+            SpinBox {
+                id: registrationListenPort
+                Layout.fillWidth: true
+                from: 1
+                to: 65535
+                value: 9500
+                editable: true
+                enabled: !deviceController.registrationListening
             }
 
             RowLayout {
-                visible: connectionMethod.currentIndex === 2
                 Layout.fillWidth: true
-
-                TextField {
-                    id: registrationBind
-                    Layout.fillWidth: true
-                    text: "127.0.0.1"
-                    placeholderText: "IP local do PC"
-                    selectByMouse: true
-                }
-
-                SpinBox {
-                    id: registrationListenPort
-                    from: 1
-                    to: 65535
-                    editable: true
-                    value: 9500
-                }
-            }
-
-            RowLayout {
-                visible: connectionMethod.currentIndex === 2
-                Layout.fillWidth: true
-
-                Label {
-                    Layout.fillWidth: true
-                    wrapMode: Text.WordWrap
-                    color: window.textSecondary
-                    font.pixelSize: 10
-                    text: deviceController.registrationStatus
-                }
+                spacing: 10
 
                 Button {
                     text: "Ativar servidor"
                     enabled: !deviceController.registrationListening
                     onClicked: deviceController.startRegistrationServer(
-                                   registrationBind.text, registrationListenPort.value)
+                                   registrationBind.text.trim(), registrationListenPort.value)
+                }
+
+                Button {
+                    text: "Parar servidor"
+                    enabled: deviceController.registrationListening
+                    onClicked: deviceController.stopRegistrationServer()
                 }
             }
 
             Label {
-                visible: connectionMethod.currentIndex === 2
+                Layout.fillWidth: true
+                wrapMode: Text.WordWrap
+                color: deviceController.registrationListening ? "#7dd3a7" : window.textSecondary
+                text: deviceController.registrationStatus
+                font.pixelSize: 11
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 1
+                color: window.borderColor
+            }
+
+            Label {
+                color: window.textPrimary
+                text: "Atividade de registro"
+                font.bold: true
+            }
+
+            Label {
                 Layout.fillWidth: true
                 wrapMode: Text.WordWrap
                 color: window.textSecondary
+                text: "Eventos recebidos: " + deviceController.registrationEventCount
+                font.pixelSize: 11
+            }
+
+            Label {
+                Layout.fillWidth: true
+                wrapMode: Text.WordWrap
+                color: window.textSecondary
+                text: deviceController.registrationLastEvent
+                font.pixelSize: 11
+            }
+
+            Label {
+                Layout.fillWidth: true
+                wrapMode: Text.WordWrap
+                color: window.textSecondary
+                text: "O SENTRIUM não cadastra dispositivos desconhecidos automaticamente. Se um registro chegar com ID diferente, ele será ignorado e aparecerá nesta atividade, sem revelar o ID recebido. As credenciais ficam em memória."
                 font.pixelSize: 10
-                text: "Nesta etapa, o servidor pode ser configurado aqui. Futuramente, IP, porta e ativação ficarão em Configurações > Registro Automático. Ao adicionar, o serviço será ativado se estiver inativo. Para acesso remoto, use um IP alcançável pelo gravador; não há alterações automáticas de firewall/NAT."
             }
         }
     }
@@ -304,6 +366,27 @@ ApplicationWindow {
             }
 
             Item { Layout.fillWidth: true }
+
+            Button {
+                id: settingsButton
+                text: "Configurações"
+                implicitWidth: 112
+                implicitHeight: 32
+                background: Rectangle {
+                    radius: 5
+                    color: settingsButton.down ? "#315db0"
+                           : settingsButton.hovered ? "#386dc6" : window.panelAltColor
+                    border.color: window.borderColor
+                }
+                contentItem: Label {
+                    text: settingsButton.text
+                    color: window.textPrimary
+                    font.pixelSize: 11
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+                onClicked: settingsDialog.open()
+            }
 
             Label {
                 text: window.runtimeState
@@ -410,9 +493,8 @@ ApplicationWindow {
                     }
 
                     ToolButton {
-                        visible: deviceController.registrationListening
-                        text: "Parar"
-                        onClicked: deviceController.stopRegistrationServer()
+                        text: "Abrir"
+                        onClicked: settingsDialog.open()
                     }
                 }
 
