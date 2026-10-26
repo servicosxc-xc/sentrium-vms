@@ -202,7 +202,7 @@ bool DeviceController::addAutoRegistration(
     if (shutdown_) return false;
     const QString cleanRegistrationId = registrationId.trimmed();
     if (displayName.trimmed().isEmpty() || displayName.size() > 128
-        || cleanRegistrationId.isEmpty() || cleanRegistrationId.size() >= 48
+        || cleanRegistrationId.isEmpty() || cleanRegistrationId.size() >= 32
         || username.isEmpty() || username.size() > 128 || password.size() > 256) {
         setError(QStringLiteral("Dados de Registro Automático inválidos"));
         return false;
