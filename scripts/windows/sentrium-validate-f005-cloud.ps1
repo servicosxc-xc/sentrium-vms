@@ -1,10 +1,11 @@
 <#
 .SYNOPSIS
-  Validate Foundation-005 R4 native loopback TCP bridge.
+  Validate Foundation-005 R5 CloudStreamTunnel and logout retry.
 .DESCRIPTION
   One command after updating local checkout: check branch and worktree,
-  fast-forward, PRE-FLIGHT, configure/build Debug and run only D-15/D-16.
-  D-9 through D-14 have already passed in the operator's Windows logs.
+  fast-forward, PRE-FLIGHT, configure/build Debug and run D-8/D-17/D-18.
+  D-8 is relevant because CloudDeviceSession logout semantics changed.
+  D-9 through D-16 have passed in prior operator Windows logs.
 #>
 [CmdletBinding()]
 param()
@@ -69,9 +70,9 @@ try {
         throw "CTest executable not found: $ctest"
     }
 
-    & $ctest --preset sentrium-debug -R '^D-(15|16)$' --output-on-failure
+    & $ctest --preset sentrium-debug -R '^D-(8|17|18)$' --output-on-failure
     if ($LASTEXITCODE -ne 0) {
-        throw 'D-15/D-16 native loopback tests failed.'
+        throw 'D-8/D-17/D-18 native Cloud lifetime regression failed.'
     }
 
     $commit = (& git rev-parse HEAD).Trim()
@@ -79,7 +80,7 @@ try {
         throw 'Cannot read Git commit.'
     }
 
-    Write-Host 'F005 DEBUG BUILD + D-15/D-16: PASS' -ForegroundColor Green
+    Write-Host 'F005 DEBUG BUILD + D-8/D-17/D-18: PASS' -ForegroundColor Green
     Write-Host "Commit: $commit"
     Write-Host 'Cloud bootstrap, Direct/Relay and real P2P login: NOT VERIFIED.'
 }

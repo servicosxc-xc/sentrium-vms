@@ -11,6 +11,7 @@
 #include <sentrium/cloud_ptcp.hpp>
 #include <sentrium/cloud_ptcp_session.hpp>
 #include <sentrium/cloud_loopback_bridge.hpp>
+#include <sentrium/cloud_stream_tunnel.hpp>
 #include <sentrium/cloud_auth.hpp>
 
 #include <array>
@@ -135,6 +136,77 @@ private:
     std::array<char, 512> pending_{};
     std::size_t size_ = 0;
     bool closed_ = false;
+};
+
+class FixtureStreamTransport final : public CloudTransport {
+public:
+    std::unique_ptr<CloudTunnel> open(const CloudConnectRequest& request) override {
+        request.validate();
+        ++opens;
+        return CloudStreamTunnel::create(std::make_unique<TestOnlyEchoStream>());
+    }
+    int opens = 0;
+};
+
+// Only a test Adapter: the NetSDK-shaped flow below has no real NVR login.
+class FixtureNetSdkSocket final : public Adapter {
+public:
+    explicit FixtureNetSdkSocket(int channelCount, bool failFirstLogout = false)
+        : count_(channelCount), fail_first_(failFirstLogout) {}
+    ~FixtureNetSdkSocket() override {
+        if (client_ != INVALID_SOCKET) ::closesocket(client_);
+    }
+    ConnectResult connect(const LoginRequest& request) override {
+        request.validate();
+        require(request.host == "127.0.0.1" && request.port != 0,
+                "only local dynamic NetSDK endpoint allowed");
+        client_ = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+        require(client_ != INVALID_SOCKET, "fake SDK socket");
+        const DWORD timeout = 2000;
+        require(::setsockopt(client_, SOL_SOCKET, SO_RCVTIMEO,
+                    reinterpret_cast<const char*>(&timeout),
+                    static_cast<int>(sizeof(timeout))) == 0, "socket recv timeout");
+        sockaddr_in addr{};
+        addr.sin_family = AF_INET;
+        addr.sin_port = htons(request.port);
+        addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+        require(::connect(client_, reinterpret_cast<const sockaddr*>(&addr),
+                    static_cast<int>(sizeof(addr))) == 0, "fixture TCP connected");
+        const std::string_view data = "synthetic-netsdk-probe";
+        require(::send(client_, data.data(), static_cast<int>(data.size()), 0)
+                    == static_cast<int>(data.size()), "fixture TCP sent");
+        std::array<char,128> response{};
+        std::string echoed;
+        while (echoed.size() < data.size()) {
+            const int n = ::recv(client_, response.data(),
+                                static_cast<int>(response.size()), 0);
+            require(n > 0, "fixture TCP echo received");
+            echoed.append(response.data(), static_cast<std::size_t>(n));
+        }
+        require(echoed == data, "exact ordered byte stream");
+        ++logins;
+        return {true, Session{615}, count_, "fixture only"};
+    }
+    DisconnectResult disconnect(Session session) override {
+        require(session.value == 615, "fixture session");
+        ++logouts;
+        if (fail_first_) {
+            fail_first_ = false;
+            return {false, "synthetic failure"};
+        }
+        if (client_ != INVALID_SOCKET) {
+            ::shutdown(client_, SD_BOTH);
+            ::closesocket(client_);
+            client_ = INVALID_SOCKET;
+        }
+        return {true, {}};
+    }
+    int logins = 0;
+    int logouts = 0;
+private:
+    int count_;
+    bool fail_first_;
+    SOCKET client_ = INVALID_SOCKET;
 };
 } // namespace
 
@@ -590,6 +662,54 @@ int main(int argc, char** argv) {
             ::closesocket(client);
             bridge->close();
             require(bridge->localPort() == 0, "teardown released port");
+            break;
+        }
+
+        case 17: {
+            // Local-only fixtures; returned channel counts do NOT originate
+            // from a recorder, and Cloud authentication has NOT occurred.
+            for (const int channels : {16, 32}) {
+                FixtureStreamTransport transport;
+                FixtureNetSdkSocket sdk(channels);
+                CloudDeviceSession session(transport,sdk);
+                CloudConnectRequest request{"fictional-local-fixture",37777};
+                const auto result = session.connect(request,"test-user","test-pass");
+                require(result.success && result.channel_count == channels &&
+                        session.connected() && result.route == CloudRoute::Unknown,
+                        "fixture adapter end-to-end TCP connection");
+                require(transport.opens == 1 && sdk.logins == 1,
+                        "one local stream and one fixture login");
+                require(session.disconnect().success && !session.connected() &&
+                        sdk.logouts == 1, "logout before local bridge cleanup");
+            }
+            break;
+        }
+        case 18: {
+            FixtureStreamTransport transport;
+            FixtureNetSdkSocket sdk(32,true);
+            CloudDeviceSession session(transport,sdk);
+            CloudConnectRequest request{"fictional-local-fixture",37777};
+            require(session.connect(request,"fixture","password").success,
+                    "test-only connection established");
+            require(!session.disconnect().success && session.connected() &&
+                    sdk.logouts == 1, "failed logout retains transport");
+            require(!session.connect(request,"fixture","password").success &&
+                    transport.opens == 1, "cannot duplicate pending connection");
+            require(session.disconnect().success && !session.connected() &&
+                    sdk.logouts == 2, "retry logout succeeds and closes");
+            rejects([] {
+                static_cast<void>(CloudStreamTunnel::create(nullptr));
+            });
+            auto bridge = CloudStreamTunnel::create(
+                std::make_unique<TestOnlyEchoStream>());
+            require(bridge->endpoint().local_port > 0 &&
+                    bridge->endpoint().observed_route == CloudRoute::Unknown,
+                    "no fake direct or relay mode");
+            bridge->close();
+            bool expired = false;
+            try { static_cast<void>(bridge->endpoint()); }
+            catch (const std::runtime_error&) { expired = true; }
+            require(expired, "closed tunnel must not publish stale port");
             break;
         }
 
