@@ -85,3 +85,8 @@ R8 foi reforcado para impedir std::terminate em callbacks noexcept se houver exc
 ## R8 focused Windows performance change
 
 F005 runner now builds only sentrium-device-tests plus transitive sentrium-device C++ library instead of Qt UI/media/server each round. CTest D-27..D-34. This is a native module gate, not a complete application build; PRE-FLIGHT remains mandatory. See handoff section 23. R8 Windows NOT RUN.
+
+
+## R8 runner self-reload fix (26/10/2026)
+
+Real operator log: starting old R7 runner on commit 2757ab6, git pull advanced to 881085a, full Debug build [44/44] PASS, but old in-memory script ran D-19..D-26 8/8 PASS (0.12s). R8 D-27..D-34 NOT RUN. Cause: PowerShell loads script before its internal pull. Updated Git runner compares own HEAD blob before/after pull and automatically enters new disk copy with internal SkipPull once if changed. Next operator command is just .\scripts\windows\sentrium-validate-f005-cloud.ps1; local disk copy already selects D-27..D-34. See handoff sec 24.

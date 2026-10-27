@@ -350,3 +350,12 @@ Antes do primeiro build Windows de R8, auditoria do novo PtcpVerifiedByteStream 
 ## 23. R8 single gate optimized to build only Cloud target (26/10/2026)
 
 To reduce unnecessary Windows rebuild work, the single runner uses cmake --build --preset sentrium-debug --target sentrium-device-tests instead of rebuilding the entire SENTRIUM client/server/media lab. The sentrium-device-tests target transitively rebuilds and links all changed sentrium-device C++ sources, including R8, plus focused fixtures; CTest remains D-27..D-34. A PASS proves the native device/Cloud module, not fresh compilation of the entire Qt VMS client. Complete product integration remains a separate later gate. Exact PRE-FLIGHT and CMake configure are preserved; R8 NOT RUN until real Windows evidence.
+
+
+## 24. R8 checkout atualizado, mas script antigo executou CTest R7 (26/10/2026)
+
+EVIDENCIA REAL do log operador: antes do inicio a copia local tinha script R7 do commit 2757ab6. O pull dentro do script foi fast-forward ate 881085a29dfa2aae2d34fe94a5630f28b1bb4c7c; PRE-FLIGHT, CMake configure e Debug full build [44/44] PASS, mas o PowerShell executou D-19 a D-26 (8/8 PASS 0.12s) porque havia interpretado em memoria o runner R7 antes do Git atualizar o arquivo. Portanto D-27..D-34 de R8 NAO foram executados e permanecem NOT RUN. O full build de HEAD 881085a PASS nao e equivalente a testes R8.
+
+CORRECAO permanente do runner no GitHub: ao iniciar captura blob SHA do proprio arquivo em HEAD, executa git pull ff-only, captura blob posterior; se o arquivo mudou, invoca nova copia do disco usando PSCommandPath e switch interno SkipPull para evitar segundo pull/build, e retorna da invocacao antiga. O novo runner revalida branch, worktree limpa e cliente fechado. Nao exige input adicional do usuario, nao altera main nem reduziu seguranca. O script que o usuario ja tem atualizado na copia local seleciona D-27..D-34, portanto na proxima execucao deve rodar testes R8 de verdade mesmo que o novo auto-reload so fique ativo em futuros pulls.
+
+PROXIMO GATE UNICO: com SENTRIUM fechado, no diretorio do repositorio executar .\scripts\windows\sentrium-validate-f005-cloud.ps1; o script fara pull ff-only, build focal sentrium-device-tests e somente D-27..D-34. Ate log real, R8 testes = NOT RUN. Nao iniciar R9 ate esse gate; Cloud externo com bootstrap/Direct/Relay e NVR remoto 16/32 permanece NOT VERIFIED. PR #4 draft, main e Human Review intactos.

@@ -2,13 +2,17 @@
 .SYNOPSIS
   Validate Foundation-005 R8 verified datagram stream (focused build).
 .DESCRIPTION
-  One command after updating local checkout: check branch and worktree,
-  fast-forward, PRE-FLIGHT, configure/build Debug and run D-27 to D-34.
+  One command: check branch/worktree, fast-forward and reload script
+  automatically if Git updated it, then PRE-FLIGHT, targeted build and
+  D-27 to D-34.
   D-19 through D-26 passed on the operator's R7 Windows checkpoint.
   Other earlier component tests are not repeated.
 #>
 [CmdletBinding()]
-param()
+param(
+    # Internal only: used to re-enter this script after a fast-forward.
+    [switch]$SkipPull
+)
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
@@ -32,9 +36,27 @@ try {
         throw "LNK1168 PREVENTED: sentrium-client.exe running (PID $pids). Close it normally and rerun. No process was terminated."
     }
 
-    & git pull --ff-only origin $expectedBranch
-    if ($LASTEXITCODE -ne 0) {
-        throw 'Git fast-forward failed.'
+    if (-not $SkipPull) {
+        $scriptInGit = 'scripts/windows/sentrium-validate-f005-cloud.ps1'
+        $oldBlob = (& git rev-parse "HEAD:$scriptInGit").Trim()
+        if ($LASTEXITCODE -ne 0 -or -not $oldBlob) {
+            throw 'Cannot verify runner before Git pull.'
+        }
+        & git pull --ff-only origin $expectedBranch
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Git fast-forward failed.'
+        }
+        $newBlob = (& git rev-parse "HEAD:$scriptInGit").Trim()
+        if ($LASTEXITCODE -ne 0 -or -not $newBlob) {
+            throw 'Cannot verify runner after Git pull.'
+        }
+        if ($newBlob -ne $oldBlob) {
+            # The running script is the OLD version, already parsed by PS.
+            # Enter the new disk copy exactly once, skip its nested pull.
+            Write-Host 'Runner changed on Git pull: loading updated script.'
+            & $PSCommandPath -SkipPull
+            return
+        }
     }
 
     # Pinned roots for fresh Developer PowerShell sessions; exact PRE-FLIGHT

@@ -41,3 +41,8 @@ Callbacks CloudByteStream are noexcept, so exceptions from allocations in queues
 ## Focused build gate
 
 R8 runner now targets CMake sentrium-device-tests and the dependent native sentrium-device library only, rather than unrelated Qt client/media/server. It still configures the same debug preset, verifies exact toolchain and runs D-27..D-34. It does NOT certify a full-client build, which will occur at a later integration gate. R8 Windows NOT RUN at this writing.
+
+
+## Operator checkpoint: build completed, R8 tests still unrun
+
+Checkout started using R7 runner at 2757ab6; internal pull moved to 881085a and the full Debug build [44/44] PASS. However the already-loaded runner executed old D-19..D-26 (8/8 PASS) rather than D-27..D-34. This is not R8 test evidence. Future runner updates now self-reload once using Git blob checks. Run the script again from the already-updated workspace to validate D-27..D-34.
