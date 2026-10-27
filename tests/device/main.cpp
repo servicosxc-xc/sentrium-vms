@@ -10,6 +10,7 @@
 #include <sentrium/cloud_signaling.hpp>
 #include <sentrium/cloud_ptcp.hpp>
 #include <sentrium/cloud_ptcp_session.hpp>
+#include <sentrium/cloud_ptcp_receive_window.hpp>
 #include <sentrium/cloud_loopback_bridge.hpp>
 #include <sentrium/cloud_stream_tunnel.hpp>
 #include <sentrium/cloud_auth.hpp>
@@ -710,6 +711,89 @@ int main(int argc, char** argv) {
             try { static_cast<void>(bridge->endpoint()); }
             catch (const std::runtime_error&) { expired = true; }
             require(expired, "closed tunnel must not publish stale port");
+            break;
+        }
+
+        case 19: {
+            // Post-auth LMID reorder fixture, NOT live Cloud.
+            PtcpReceiveWindow reorder(100);
+            PtcpPacket p{};
+            p.kind = PtcpKind::Payload;
+            p.local_message_id = 102;
+            p.body = "third";
+            auto queued = reorder.ingest(p);
+            require(queued.accepted() && queued.ready.empty() &&
+                    reorder.pendingPackets() == 1, "buffer ahead of gap");
+            require(reorder.ingest(p).error == PtcpOrderError::Duplicate,
+                    "same LMID deduplicated");
+            p.local_message_id = 103;
+            p.body = "fourth";
+            require(reorder.ingest(p).accepted() && reorder.pendingPackets() == 2,
+                    "multiple packets queued");
+            p.local_message_id = 100;
+            p.body = "first";
+            auto begin = reorder.ingest(p);
+            require(begin.accepted() && begin.ready.size() == 1 &&
+                    begin.ready.front().body == "first" &&
+                    reorder.expectedMessageId() == 101, "head delivered");
+            p.kind = PtcpKind::Heartbeat;
+            p.local_message_id = 101;
+            p.body.clear();
+            auto release = reorder.ingest(p);
+            require(release.accepted() && release.ready.size() == 3 &&
+                    release.ready[0].kind == PtcpKind::Heartbeat &&
+                    release.ready[1].body == "third" &&
+                    release.ready[2].body == "fourth" &&
+                    reorder.expectedMessageId() == 104 &&
+                    reorder.pendingPackets() == 0, "control LMID bridges data");
+            require(reorder.ingest(p).error == PtcpOrderError::Duplicate,
+                    "old messages do not replay");
+            break;
+        }
+        case 20: {
+            PtcpReceiveWindow wrap(0xfffffffeu);
+            PtcpPacket p{};
+            p.kind = PtcpKind::Payload;
+            p.local_message_id = 0;
+            p.body = "zero";
+            require(wrap.ingest(p).accepted() && wrap.pendingPackets() == 1,
+                    "wrap message buffered");
+            p.local_message_id = 0xfffffffeu;
+            p.body = "before-last";
+            require(wrap.ingest(p).ready.size() == 1, "start rollover");
+            p.local_message_id = 0xffffffffu;
+            p.body = "last";
+            auto released = wrap.ingest(p);
+            require(released.accepted() && released.ready.size() == 2 &&
+                    released.ready[0].body == "last" &&
+                    released.ready[1].body == "zero" &&
+                    wrap.expectedMessageId() == 1u, "wrap delivers in order");
+
+            PtcpReceiveWindow conflict(50);
+            p.local_message_id = 51;
+            p.body = "first";
+            require(conflict.ingest(p).accepted(), "pending conflict fixture");
+            p.body = "changed";
+            require(conflict.ingest(p).error == PtcpOrderError::ConflictingDuplicate &&
+                    conflict.closed() && conflict.pendingPackets() == 0,
+                    "conflicting replay fails closed");
+            require(conflict.ingest(p).error == PtcpOrderError::Closed,
+                    "closed window cannot resume");
+            PtcpReceiveWindow gap(10);
+            p.local_message_id = 43;
+            require(gap.ingest(p).error == PtcpOrderError::GapTooLarge &&
+                    gap.closed(), "large gap fails closed");
+
+            PtcpReceiveWindow memory(1);
+            p.body.assign(65000, 'x');
+            for (std::uint32_t id = 2; id <= 5; ++id) {
+                p.local_message_id = id;
+                require(memory.ingest(p).accepted(), "bounded memory fixture");
+            }
+            p.local_message_id = 6;
+            require(memory.ingest(p).error == PtcpOrderError::WindowFull &&
+                    memory.closed() && memory.pendingBytes() == 0,
+                    "memory limit fails closed");
             break;
         }
 

@@ -84,6 +84,7 @@ add_library(sentrium-device
   libs/sentrium-device/cloud_signaling.cpp
   libs/sentrium-device/cloud_ptcp.cpp
   libs/sentrium-device/cloud_ptcp_session.cpp
+  libs/sentrium-device/cloud_ptcp_receive_window.cpp
   libs/sentrium-device/cloud_loopback_bridge.cpp
   libs/sentrium-device/cloud_stream_tunnel.cpp
   libs/sentrium-device/cloud_auth.cpp)
@@ -134,7 +135,7 @@ endforeach()
 foreach(id RANGE 1 11)
   add_test(NAME I-${id} COMMAND sentrium-integration-tests ${id} $<TARGET_FILE:sentrium-server>)
 endforeach()
-foreach(id RANGE 1 18)
+foreach(id RANGE 1 20)
   add_test(NAME D-${id} COMMAND sentrium-device-tests ${id})
 endforeach()
 foreach(id RANGE 1 6)
