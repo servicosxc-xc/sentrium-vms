@@ -97,3 +97,11 @@ Real operator log: starting old R7 runner on commit 2757ab6, git pull advanced t
 R8 no commit 1294f5c482071e41cb6c0adb3676ef2c7c8ed94b: PRE-FLIGHT PASS, Debug build do sentrium-device-tests PASS e D-27..D-34 8/8 PASS (0,09 s). Nao repetir esse gate.
 
 R9 implementa PinnedUdpSocket nativo Windows com IPv4/porta fornecidos por futuro provedor autorizado, bind efemero, connected-UDP peer pinning, deadlines, limite de datagrama e close concorrente, D-35..D-40 com sockets UDP REAIS localhost. Nao e Cloud Intelbras operacional, nao autentica peers nem implementa VerifiedPtcpDatagramLink. CMake e runner agora D-35..D-40; R9 WINDOWS NOT RUN. Documento docs/foundation-005/F005-CLOUD-UDP-SOCKET-R9.md, handoff secao 25. Main e Human Review intactos, PR #4 draft.
+
+## 27/10/2026: R9 Windows PASS; R10 rede ponta a ponta em laboratório PENDENTE
+
+Operador comprovou R9 no commit 0f639c3e9638dcbd17850c0b118869032945fc2b: PRE-FLIGHT e Debug build focal PASS, D-35..D-40 **6/6 PASS** 0,26 s. O runner fez reload automático após pull e trabalhou corretamente. Não repetir.
+
+R10 cria somente o executável de testes `tests/device/cloud_network_lab.cpp` e alvo `sentrium-cloud-network-tests`, usando sockets Windows **TCP e UDP reais em 127.0.0.1**, PTCP R7/R8, PinnedUdpSocket R9 e CloudLoopbackBridge R4 com um respondedor de laboratório **sem autenticação**. Testes D-41..D-46 cobrem eco fragmentado, TCP→UDP→TCP, fonte externa filtrada, ACK/realm inválidos, retransmissão de UDP perdido e fechamento simultâneo. Runner focal passa a D-41..D-46. **R10 NOT RUN Windows** até log. Ver handoff seção 26 e docs/foundation-005/F005-CLOUD-NETWORK-LAB-R10.md.
+
+Continua BLOQUEADO o provedor Cloud Intelbras por serial: falta app identity/bootstrap/peer auth/Direct/Relay autorizado e ensaio NVR 16/32 real. O adaptador inseguro UnverifiedLabLink é SOMENTE fixture no executável de teste, NUNCA componente de produção. Main intacta, PR #4 draft, Human Review pendente. NÃO usar SIM Next nem dh-fwd.

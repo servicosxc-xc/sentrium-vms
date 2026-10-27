@@ -370,3 +370,24 @@ R9 IMPLEMENTADO NO GITHUB, WINDOWS NOT RUN: cloud_udp_socket.hpp/.cpp, classe Pi
 Testes D-35..D-40 usam sockets UDP Windows REAIS em 127.0.0.1: valida endereco, transmissao bidirecional, fonte nao autorizada filtrada, truncamento, close simultaneo e duas sessoes independentes. Nao testam gravador fisico nem servidor Intelbras. CMake integra novo .cpp e registros; runner unico agora compila SOMENTE sentrium-device-tests e seleciona D-35..D-40. R9 build e testes ainda NAO EXECUTADOS no Windows.
 
 BLOQUEIOS REAIS: identidade/aprovacao oficial do bootstrap Intelbras Cloud, resposta autenticada do rendezvous, peer verificado, NAT Direct/Relay e prova de rota, promocao segura para VerifiedPtcpDatagramLink, teste remoto fisico 16/32 canais pelo NetSDK. Sem SIM Next nem dh-fwd do Defender. PR #4 draft, main intacta e Human Review nao aprovado. Proximo comando focal unico: script windows sentrium-validate-f005-cloud.ps1 (cliente fechado, repo root). Ver documento R9.
+
+
+## 26. R9 PASS Windows e R10 integração real TCP/PTCP/UDP de laboratório (27/10/2026)
+
+**EVIDÊNCIA REAL DO OPERADOR — R9**: Developer PowerShell atualizou branch foundation/005-device-connectivity de 1294f5c para 0f639c3e9638dcbd17850c0b118869032945fc2b. Auto-reload do runner funcionou (mensagem `Runner changed on Git pull: loading updated script.`). PRE-FLIGHT PASS 2x, CMake configure/generate PASS, compilação focal `sentrium-device-tests` PASS com link [10/10], D-35 a D-40 **6/6 PASS (0,26 s)**. Avisos WrapVulkanHeaders e /showIncludes não foram falhas. Não repetir R9 sem modificação relacionada. Esse PASS prova transporte UDP Windows e isolamento de portas locais, NÃO P2P Intelbras.
+
+**R10 EM GITHUB, WINDOWS NOT RUN**: novo executável **exclusivamente de teste** `tests/device/cloud_network_lab.cpp` (sem alterar biblioteca de produção). Um respondedor de laboratório via SOCKET UDP real 127.0.0.1 recebe datagramas PTCP, ecoa corpo com LMID/ACK sintéticos, permite perda de primeiro pacote, ACK forjado, realm inesperado, injeção de origem diferente e silêncio. Adapter `UnverifiedLabLink` envolve `PinnedUdpSocket` R9 e implementa a interface R8 SOMENTE DENTRO DO EXECUTÁVEL DE TESTE. Ele NÃO autentica peer; sua presença não habilita a função Cloud nem serve de provedor em produção.
+
+Testes integrados:
+- **D-41**: fluxo PTCP de 3KB segmentado em UDP real com retorno ordenado R8+R9.
+- **D-42**: socket TCP real no loopback → CloudLoopbackBridge R4 → PtcpVerifiedByteStream R8 → UDP real R9 → respondedor local → retorno completo TCP (sem NetSDK real).
+- **D-43**: datagrama de outra porta de origem rejeitado pelo filtro UDP conectado, sem impedir resposta do peer fixado.
+- **D-44**: realm inválido e ACK futuro forjado por peer simulado geram encerramento fail-closed.
+- **D-45**: perda intencional do primeiro UDP e retransmissão PTCP original recuperam os dados.
+- **D-46**: `close()` simultâneo cancela leitura UDP, impede nova escrita e finaliza cooperativamente.
+
+CMake adiciona apenas o alvo `sentrium-cloud-network-tests` ligado a `sentrium-device`, com /W4 /WX, e registra D-41 a D-46. Runner único atualiza/recarrega script, PRE-FLIGHT, configura Debug e compila SOMENTE esse novo alvo e dependências; executa SOMENTE D-41 a D-46. Não reexecutar D-9 a D-40, já aprovados. Os testes usam sistema operacional REAL no localhost, mas **nenhum servidor ou NVR remoto, nenhuma autenticação Cloud, nenhum login NetSDK**. Um nome de interface contendo Verified não significa que a fixture de teste autentique: o adaptador de laboratório é explicitamente INSEGURO para produção.
+
+**Próxima dependência de produção**: obter SDK/contrato de aplicativo Cloud oficialmente autorizado (bootstrap, rendezvous, prova criptográfica de peer e Direct/Relay) OU autorizar um gateway remoto gerenciado próprio. Antes disso, `VerifiedPtcpDatagramLink` NÃO deve ser concretizado com simples `PinnedUdpSocket` e exposto aos clientes. Cloud por serial e NVR remoto 16/32 permanecem BLOQUEADOS. Sem copiar SIM Next, sem dh-fwd bloqueado pelo Defender, sem endpoints/segredos inventados. PR #4 permanece draft, main intacta, Human Review não aprovado.
+
+**PRÓXIMO ÚNICO GATE**: no Developer PowerShell, na pasta do projeto e com SENTRIUM fechado, executar `\.\scripts\windows\sentrium-validate-f005-cloud.ps1`. O autocarregamento do script cuida do pull; D-41..D-46 ficam NOT RUN até receber evidência Windows. Após esse teste, evitar novos lotes de simulação e priorizar autorização real do provider.

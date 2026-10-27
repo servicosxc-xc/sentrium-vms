@@ -18,3 +18,7 @@ CMake builds R9 with sentrium-device. The sole PowerShell runner preserves branc
 Obtain legitimate Intelbras Cloud application identity and bootstrap API/SDK; verify authorized rendezvous and authenticated peer; measure NAT Direct/Relay route; create independently authorized and verified datagram link; then use R8 byte stream and existing TCP/NetSDK bridge for real 16/32-channel NVR. SIM Next and Defender-quarantined dh-fwd remain prohibited. No main merge or Human Review approval.
 
 Single focal Windows command at repository root with client closed: scripts/windows/sentrium-validate-f005-cloud.ps1
+
+## Verified operator Windows evidence — 27/10/2026
+
+The operator submitted a Developer PowerShell log for commit 0f639c3e9638dcbd17850c0b118869032945fc2b: PRE-FLIGHT PASS, focused Debug device-tests build PASS, D-35 through D-40 **6/6 PASS in 0.26 seconds**. Script reloaded automatically after the Git pull. This supersedes historical R9 NOT RUN above. The actual Windows UDP tests are loopback and do not establish Intelbras Cloud.
