@@ -19,3 +19,8 @@ R5 remains source-reviewed only. Do not mark as compiled or passed until real Wi
 
 Single focal command after pull/with SENTRIUM closed:
 scripts/windows/sentrium-validate-f005-cloud.ps1
+
+
+## R5 Windows validation confirmed 26/10/2026
+
+The operator provided an actual PowerShell log for commit 97159ea2c0e0a274f68f5e7f4066c194a4462a6a. PRE-FLIGHT PASS, CMake configure/generate and Debug build PASS; D-8/D-17/D-18 all PASS (3/3, 0.10 seconds). Build output was reduced to the last few lines, so its exact [N/N] total is not known. This supersedes historical NOT RUN above. The synthetic 16/32 fixture counts were not real camera enumeration.

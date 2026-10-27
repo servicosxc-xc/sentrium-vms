@@ -56,3 +56,10 @@ O script R3 publicado no commit anterior estava corrompido: CTest regex truncada
 CONFIRMADO R4 no Windows pelo operador: PRE-FLIGHT PASS, Debug build [44/44] PASS, D-15/D-16 PASS 2/2 (0.08 s) em c30d25c65b0331dac0006c000712453e83edc84b. Historico D-9..D-14 tambem PASS. Nao repetir esses testes aprovados.
 
 NOVO R5: codigo C++ de CloudStreamTunnel liga a ponte TCP local ao contrato CloudTunnel/CloudDeviceSession; logout falho do NetSDK agora retém sessao + tunel para retry. Novos testes D-17 e D-18 exercitam somente fixtures TCP locais (16/32 canais FICTICIOS) e logout/retry; D-8 incluso no gate apenas porque cloud.cpp foi alterado. Script unico valida D-8/D-17/D-18. R5 Windows NOT RUN. Referencia: handoff secao 18 e docs/foundation-005/F005-CLOUD-STREAM-TUNNEL-R5.md. Nenhum Cloud remoto real, bootstrap autorizado ou NetSDK NVR remoto comprovado. Main preservada; PR #4 draft, Human Review nao aprovado. Nao usar SIM Next/dh-fwd.
+
+
+## Checkpoint 26/10/2026 — R5 PASS Windows, R6 pendente
+
+R5 (commit 97159ea2c0e0a274f68f5e7f4066c194a4462a6a) comprovado no Windows: PRE-FLIGHT, CMake/Debug build PASS e D-8/D-17/D-18 3/3 PASS (0,10 s). O log exibe build resumido sem contador [N/N] final. Todos D-9 ate D-16 foram aprovados antes. Nenhum Cloud real foi autenticado.
+
+R6 adiciona PtcpReceiveWindow para buffer PTCP LMID fora de ordem (incluindo controles), rollover de contador, replay e limites de 32 pacotes/256KiB; D-19/D-20 com testes offline; runner passa a executar somente D-19/D-20. R6 codigo COMMITADO, build/testes Windows NOT RUN. Ver handoff secao 19 e docs/foundation-005/F005-CLOUD-PTCP-REORDER-R6.md. Continuam sem autorizacao bootstrap do Cloud, Direct/Relay, stream confiavel ou NVR 16/32 real via Cloud; manter UI Cloud bloqueada, PR draft, main intacta, sem SIM Next/dh-fwd.
