@@ -115,6 +115,9 @@ target_link_libraries(sentrium-integration-tests PRIVATE sentrium-platform-win)
 add_executable(sentrium-device-tests tests/device/main.cpp)
 target_link_libraries(sentrium-device-tests PRIVATE sentrium-device ws2_32)
 
+add_executable(sentrium-cloud-network-tests tests/device/cloud_network_lab.cpp)
+target_link_libraries(sentrium-cloud-network-tests PRIVATE sentrium-device ws2_32)
+
 add_executable(sentrium-media-tests tests/media/main.cpp)
 target_link_libraries(sentrium-media-tests PRIVATE sentrium-media)
 
@@ -125,7 +128,7 @@ target_include_directories(sentrium-media-lab SYSTEM PRIVATE
 target_compile_definitions(sentrium-media-lab PRIVATE UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX)
 target_link_libraries(sentrium-media-lab PRIVATE sentrium-core sentrium-device sentrium-intelbras sentrium-media kernel32)
 
-foreach(target sentrium-core sentrium-platform-win sentrium-device sentrium-intelbras sentrium-media sentrium-server sentrium-client sentrium-media-lab sentrium-unit-tests sentrium-integration-tests sentrium-device-tests sentrium-media-tests)
+foreach(target sentrium-core sentrium-platform-win sentrium-device sentrium-intelbras sentrium-media sentrium-server sentrium-client sentrium-media-lab sentrium-unit-tests sentrium-integration-tests sentrium-device-tests sentrium-cloud-network-tests sentrium-media-tests)
   target_compile_options(${target} PRIVATE /W4 /WX /permissive- /utf-8)
   if(SENTRIUM_ASAN)
     target_compile_options(${target} PRIVATE /fsanitize=address /Zi)
@@ -140,6 +143,9 @@ foreach(id RANGE 1 11)
 endforeach()
 foreach(id RANGE 1 40)
   add_test(NAME D-${id} COMMAND sentrium-device-tests ${id})
+endforeach()
+foreach(id RANGE 41 46)
+  add_test(NAME D-${id} COMMAND sentrium-cloud-network-tests ${id})
 endforeach()
 foreach(id RANGE 1 6)
   add_test(NAME M-${id} COMMAND sentrium-media-tests ${id})

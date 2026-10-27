@@ -1,11 +1,11 @@
 <#
 .SYNOPSIS
-  Validate Foundation-005 R9 real Windows UDP pinned transport (focused build).
+  Validate Foundation-005 R10 full localhost TCP/PTCP/UDP network integration.
 .DESCRIPTION
   One command: check branch/worktree, fast-forward and reload script
   automatically if Git updated it, then PRE-FLIGHT, targeted build and
-  D-35 to D-40.
-  D-27 through D-34 passed on the operator's R8 Windows checkpoint.
+  D-41 to D-46.
+  D-35 through D-40 passed on the operator's R9 Windows checkpoint.
   Other earlier component tests are not repeated.
 #>
 [CmdletBinding()]
@@ -95,8 +95,9 @@ try {
     }
 
     $buildLog = Join-Path $logDir 'f005-cloud-build-latest.log'
-    # Build the device library and Cloud tests, not unrelated Qt/media/UI.
-    & $env:SENTRIUM_CMAKE --build --preset sentrium-debug --target sentrium-device-tests > $buildLog 2>&1
+    # Build BOTH native Cloud test executables and shared device library.
+    # No Qt client/media/server rebuild unless a later full product gate.
+    & $env:SENTRIUM_CMAKE --build --preset sentrium-debug --target sentrium-cloud-network-tests > $buildLog 2>&1
     $buildCode = $LASTEXITCODE
     if ($buildCode -ne 0) {
         Get-Content -LiteralPath $buildLog -Tail 65
@@ -109,9 +110,9 @@ try {
         throw "CTest executable not found: $ctest"
     }
 
-    & $ctest --preset sentrium-debug -R '^D-(35|36|37|38|39|40)$' --output-on-failure
+    & $ctest --preset sentrium-debug -R '^D-(41|42|43|44|45|46)$' --output-on-failure
     if ($LASTEXITCODE -ne 0) {
-        throw 'D-35 to D-40 pinned UDP socket tests failed.'
+        throw 'D-41 to D-46 end-to-end network laboratory tests failed.'
     }
 
     $commit = (& git rev-parse HEAD).Trim()
@@ -119,7 +120,7 @@ try {
         throw 'Cannot read Git commit.'
     }
 
-    Write-Host 'F005 DEVICE-TESTS DEBUG BUILD + D-35 to D-40: PASS' -ForegroundColor Green
+    Write-Host 'F005 CLOUD-NETWORK DEBUG BUILD + D-41 to D-46: PASS' -ForegroundColor Green
     Write-Host "Commit: $commit"
     Write-Host 'Cloud bootstrap, Direct/Relay and real P2P login: NOT VERIFIED.'
 }
