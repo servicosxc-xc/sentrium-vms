@@ -90,3 +90,10 @@ F005 runner now builds only sentrium-device-tests plus transitive sentrium-devic
 ## R8 runner self-reload fix (26/10/2026)
 
 Real operator log: starting old R7 runner on commit 2757ab6, git pull advanced to 881085a, full Debug build [44/44] PASS, but old in-memory script ran D-19..D-26 8/8 PASS (0.12s). R8 D-27..D-34 NOT RUN. Cause: PowerShell loads script before its internal pull. Updated Git runner compares own HEAD blob before/after pull and automatically enters new disk copy with internal SkipPull once if changed. Next operator command is just .\scripts\windows\sentrium-validate-f005-cloud.ps1; local disk copy already selects D-27..D-34. See handoff sec 24.
+
+
+## Checkpoint 26/10/2026 — R8 Windows PASS, R9 rede UDP nativa pendente
+
+R8 no commit 1294f5c482071e41cb6c0adb3676ef2c7c8ed94b: PRE-FLIGHT PASS, Debug build do sentrium-device-tests PASS e D-27..D-34 8/8 PASS (0,09 s). Nao repetir esse gate.
+
+R9 implementa PinnedUdpSocket nativo Windows com IPv4/porta fornecidos por futuro provedor autorizado, bind efemero, connected-UDP peer pinning, deadlines, limite de datagrama e close concorrente, D-35..D-40 com sockets UDP REAIS localhost. Nao e Cloud Intelbras operacional, nao autentica peers nem implementa VerifiedPtcpDatagramLink. CMake e runner agora D-35..D-40; R9 WINDOWS NOT RUN. Documento docs/foundation-005/F005-CLOUD-UDP-SOCKET-R9.md, handoff secao 25. Main e Human Review intactos, PR #4 draft.

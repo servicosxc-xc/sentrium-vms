@@ -46,3 +46,8 @@ R8 runner now targets CMake sentrium-device-tests and the dependent native sentr
 ## Operator checkpoint: build completed, R8 tests still unrun
 
 Checkout started using R7 runner at 2757ab6; internal pull moved to 881085a and the full Debug build [44/44] PASS. However the already-loaded runner executed old D-19..D-26 (8/8 PASS) rather than D-27..D-34. This is not R8 test evidence. Future runner updates now self-reload once using Git blob checks. Run the script again from the already-updated workspace to validate D-27..D-34.
+
+
+## Evidencia real posterior do R8 (26/10/2026)
+
+Operador comprovou PRE-FLIGHT PASS, Debug device-tests build PASS e D-27 ate D-34 8/8 PASS (0,09s) em 1294f5c482071e41cb6c0adb3676ef2c7c8ed94b. Substitui o NOT RUN historico dos testes R8. Nao demonstra bootstrap, peer ou NetSDK real no Cloud Intelbras.
