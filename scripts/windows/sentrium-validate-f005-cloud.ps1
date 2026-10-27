@@ -1,10 +1,11 @@
 <#
 .SYNOPSIS
-  Validate Foundation-005 R6 PTCP inbound ordering.
+  Validate Foundation-005 R7 integrated PTCP post-auth data plane.
 .DESCRIPTION
   One command after updating local checkout: check branch and worktree,
-  fast-forward, PRE-FLIGHT, configure/build Debug and run D-19/D-20.
-  Previous component tests D-8 and D-9 through D-18 already passed.
+  fast-forward, PRE-FLIGHT, configure/build Debug and run D-19 to D-26.
+  D-19/D-20 were blocked by the C4456 compiler warning in the R6 build.
+  Prior R5 and earlier component tests already passed on Windows.
 #>
 [CmdletBinding()]
 param()
@@ -69,9 +70,9 @@ try {
         throw "CTest executable not found: $ctest"
     }
 
-    & $ctest --preset sentrium-debug -R '^D-(19|20)$' --output-on-failure
+    & $ctest --preset sentrium-debug -R '^D-(19|20|21|22|23|24|25|26)$' --output-on-failure
     if ($LASTEXITCODE -ne 0) {
-        throw 'D-19/D-20 PTCP ordering tests failed.'
+        throw 'D-19 to D-26 PTCP integration tests failed.'
     }
 
     $commit = (& git rev-parse HEAD).Trim()
@@ -79,7 +80,7 @@ try {
         throw 'Cannot read Git commit.'
     }
 
-    Write-Host 'F005 DEBUG BUILD + D-19/D-20: PASS' -ForegroundColor Green
+    Write-Host 'F005 DEBUG BUILD + D-19 to D-26: PASS' -ForegroundColor Green
     Write-Host "Commit: $commit"
     Write-Host 'Cloud bootstrap, Direct/Relay and real P2P login: NOT VERIFIED.'
 }

@@ -11,6 +11,7 @@
 #include <sentrium/cloud_ptcp.hpp>
 #include <sentrium/cloud_ptcp_session.hpp>
 #include <sentrium/cloud_ptcp_receive_window.hpp>
+#include <sentrium/cloud_ptcp_channel.hpp>
 #include <sentrium/cloud_loopback_bridge.hpp>
 #include <sentrium/cloud_stream_tunnel.hpp>
 #include <sentrium/cloud_auth.hpp>
@@ -786,14 +787,176 @@ int main(int argc, char** argv) {
 
             PtcpReceiveWindow memory(1);
             p.body.assign(65000, 'x');
-            for (std::uint32_t id = 2; id <= 5; ++id) {
-                p.local_message_id = id;
+            for (std::uint32_t messageIndex = 2; messageIndex <= 5; ++messageIndex) {
+                p.local_message_id = messageIndex;
                 require(memory.ingest(p).accepted(), "bounded memory fixture");
             }
             p.local_message_id = 6;
             require(memory.ingest(p).error == PtcpOrderError::WindowFull &&
                     memory.closed() && memory.pendingBytes() == 0,
                     "memory limit fails closed");
+            break;
+        }
+
+        case 21: {
+            // Complete post-auth outbound PTCP segmentation. No Cloud I/O.
+            PtcpPostAuthChannel channel(77, 100);
+            const std::string data(3000, 'a');
+            const auto outbound = channel.sendBytes(data, 1000);
+            require(outbound.ok() && outbound.datagrams.size() == 3,
+                    "multi-packet send is admitted together");
+            for (std::size_t index = 0; index < outbound.datagrams.size(); ++index) {
+                const auto parsed = parsePtcpPacket(outbound.datagrams[index]);
+                require(parsed.ok() && parsed.packet.kind == PtcpKind::Payload &&
+                        parsed.packet.realm == 77 &&
+                        parsed.packet.local_message_id == index,
+                        "correct outbound header and sequence");
+                const std::size_t size = index == 2 ? 440u : 1280u;
+                require(parsed.packet.body.size() == size, "bounded UDP payload");
+            }
+            require(channel.stats().session.sent_bytes == 3036 &&
+                    channel.stats().session.in_flight_packets == 3,
+                    "byte accounting across three PTCP payloads");
+            require(!channel.sendBytes({}, 1000).ok() &&
+                    !channel.sendBytes(std::string(16385, 'x'), 1000).ok(),
+                    "reject empty or oversized write");
+            break;
+        }
+
+        case 22: {
+            PtcpPostAuthChannel channel(55, 700);
+            PtcpPacket peer{};
+            peer.kind = PtcpKind::Payload;
+            peer.realm = 55;
+            peer.local_message_id = 702;
+            peer.body = "third";
+            std::string wire;
+            require(encodePtcpPacket(peer, wire) == PtcpError::None &&
+                    channel.receiveVerified(wire).ordered_bytes.empty(),
+                    "hold higher LMID payload");
+            peer.kind = PtcpKind::Heartbeat;
+            peer.local_message_id = 701;
+            peer.body.clear();
+            require(encodePtcpPacket(peer, wire) == PtcpError::None &&
+                    channel.receiveVerified(wire).ordered_bytes.empty(),
+                    "heartbeat must also be reordered");
+            peer.kind = PtcpKind::Payload;
+            peer.realm = 55;
+            peer.local_message_id = 700;
+            peer.body = "first";
+            require(encodePtcpPacket(peer, wire) == PtcpError::None,
+                    "encode final missing packet");
+            const auto ordered = channel.receiveVerified(wire);
+            require(ordered.ok() && ordered.ordered_bytes.size() == 2 &&
+                    ordered.ordered_bytes[0] == "first" &&
+                    ordered.ordered_bytes[1] == "third" &&
+                    channel.stats().reorder_packets == 0,
+                    "release ordered NetSDK bytes only");
+            require(channel.receiveVerified(wire).error ==
+                        PtcpChannelError::Duplicate,
+                    "no replay of committed payload");
+            break;
+        }
+
+        case 23: {
+            PtcpPostAuthChannel channel(1, 0);
+            const auto original = channel.sendBytes("abc", 1000);
+            require(original.ok() && original.datagrams.size() == 1,
+                    "send one packet");
+            require(channel.retransmissions(1399).datagrams.empty(),
+                    "no early retry");
+            const auto firstRetry = channel.retransmissions(1400);
+            require(firstRetry.ok() && firstRetry.datagrams.size() == 1 &&
+                    firstRetry.datagrams.front() == original.datagrams.front(),
+                    "retry exact datagram and message id");
+            require(channel.retransmissions(1800).datagrams.size() == 1 &&
+                    channel.retransmissions(2200).datagrams.size() == 1,
+                    "bounded further retries");
+            const auto expired = channel.retransmissions(2600);
+            require(expired.error == PtcpChannelError::Expired &&
+                    channel.closed() &&
+                    channel.sendBytes("later", 2700).error ==
+                        PtcpChannelError::Closed,
+                    "retry exhaustion fails closed");
+            break;
+        }
+
+        case 24: {
+            PtcpPacket peer{};
+            peer.kind = PtcpKind::Payload;
+            peer.realm = 99;
+            peer.local_message_id = 50;
+            peer.body = "untrusted";
+            std::string wire;
+            require(encodePtcpPacket(peer, wire) == PtcpError::None,
+                    "wrong realm fixture");
+            PtcpPostAuthChannel wrongRealm(1, 50);
+            require(wrongRealm.receiveVerified(wire).error ==
+                        PtcpChannelError::WrongRealm && wrongRealm.closed(),
+                    "isolation by negotiated realm");
+            PtcpPostAuthChannel malformed(1, 0);
+            require(malformed.receiveVerified("garbage").error ==
+                        PtcpChannelError::InvalidDatagram &&
+                    malformed.closed(), "malformed framing closes session");
+
+            PtcpPostAuthChannel shutdownChannel(99, 50);
+            peer.kind = PtcpKind::Status;
+            peer.body.clear();
+            peer.status = "DISC";
+            require(encodePtcpPacket(peer, wire) == PtcpError::None &&
+                    shutdownChannel.receiveVerified(wire).error ==
+                        PtcpChannelError::RemoteClosed &&
+                    shutdownChannel.closed(), "remote DISC ends channel");
+            break;
+        }
+
+        case 25: {
+            PtcpPostAuthChannel channel(44, 1);
+            for (int messageIndex = 0; messageIndex < 32; ++messageIndex) {
+                require(channel.sendBytes("x", 1000).ok(), "inflight fixture");
+            }
+            require(channel.stats().session.in_flight_packets == 32 &&
+                    channel.sendBytes("z", 1000).error ==
+                        PtcpChannelError::Backpressure &&
+                    channel.stats().session.in_flight_packets == 32,
+                    "whole-write backpressure without partial commit");
+            PtcpPacket ack{};
+            ack.kind = PtcpKind::Heartbeat;
+            ack.local_message_id = 1;
+            ack.received = channel.stats().session.sent_bytes;
+            std::string wire;
+            require(encodePtcpPacket(ack, wire) == PtcpError::None &&
+                    channel.receiveVerified(wire).ok() &&
+                    channel.stats().session.in_flight_packets == 0,
+                    "valid peer ACK frees outgoing window");
+            require(channel.sendBytes("resumed", 1001).ok(),
+                    "sending resumes after ACK");
+            break;
+        }
+
+        case 26: {
+            PtcpPostAuthChannel channel(17, 10);
+            require(channel.sendBytes("abc", 1000).ok(), "valid initial send");
+            PtcpPacket peer{};
+            peer.kind = PtcpKind::Heartbeat;
+            peer.local_message_id = 10;
+            peer.received = 1000;
+            std::string forged;
+            require(encodePtcpPacket(peer, forged) == PtcpError::None &&
+                    channel.receiveVerified(forged).error ==
+                        PtcpChannelError::AccountingFailed &&
+                    channel.closed(), "forged future ACK rejected");
+            PtcpPostAuthChannel fresh(17, 10);
+            const auto heartbeat = fresh.heartbeat(1000);
+            require(heartbeat.ok() && heartbeat.datagrams.size() == 1 &&
+                    parsePtcpPacket(heartbeat.datagrams[0]).packet.kind ==
+                        PtcpKind::Heartbeat &&
+                    fresh.stats().session.sent_bytes == 12,
+                    "explicit idle heartbeat is encoded and accounted");
+            peer.received = 12;
+            require(encodePtcpPacket(peer, forged) == PtcpError::None &&
+                    fresh.receiveVerified(forged).ok(),
+                    "peer cumulative ACK for heartbeat is accepted");
             break;
         }
 
