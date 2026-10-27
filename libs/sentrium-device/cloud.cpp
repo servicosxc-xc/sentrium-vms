@@ -104,18 +104,21 @@ void CloudDeviceSession::closeTunnel() noexcept {
 }
 
 DisconnectResult CloudDeviceSession::disconnect() noexcept {
-    DisconnectResult outcome{true, {}};
     if (session_) {
         try {
-            // Required order: NetSDK logout, then native tunnel teardown.
-            outcome = net_sdk_.disconnect(session_);
-        } catch (const std::exception&) {
-            outcome = {false, "NetSDK logout failed"};
+            // Never destroy a live remote transport after NetSDK reports
+            // failed logout. Retain handle + tunnel so caller can retry.
+            const DisconnectResult outcome = net_sdk_.disconnect(session_);
+            if (!outcome.success) {
+                return {false, "NetSDK logout failed; Cloud tunnel retained for retry"};
+            }
+        } catch (...) {
+            return {false, "NetSDK logout threw; Cloud tunnel retained for retry"};
         }
         session_ = {};
     }
     closeTunnel();
-    return outcome;
+    return {true, {}};
 }
 
 bool CloudDeviceSession::connected() const noexcept {
