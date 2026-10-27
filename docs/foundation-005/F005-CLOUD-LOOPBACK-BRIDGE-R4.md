@@ -16,3 +16,8 @@ CMake adds bridge source and D-15/D-16; D-15 tests null stream rejection, dynami
 
 ## Remaining blockers
 Cloud application/bootstrap contract must be legitimately authorized and validated; device handshake/nonce proof is not equivalent to infrastructure authorization. Add peer-pinned Direct/Relay rendezvous with observed route telemetry, PTCP stream reordering/recovery, then supply an authenticated CloudByteStream to this loopback primitive, connect NetSDK and enumerate 16/32 channels with recorder under operator control. Security hold remains for Defender-quarantined dh-fwd; no SIM Next dependencies.
+
+
+## Windows evidence updated 26/10/2026
+
+Operator confirmed R4 build [44/44] PASS and D-15/D-16 both PASS on commit c30d25c65b0331dac0006c000712453e83edc84b. The heading above saying NOT RUN is the historical pre-validation record; this newer section supersedes it. Current R5 work is separate, awaiting validation.

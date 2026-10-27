@@ -284,3 +284,20 @@ ATENCAO: o script local do operador esta invalido e nao consegue executar o pull
 **LIMITACAO:** esta ponte isolada nao implementa provider CloudTransport, autentica aplicativo, faz rendezvous/NAT, estabelece Direct/Relay, ou abre canais NetSDK de gravador real. Nenhum numero de canais remotos 16/32 comprovado. Manter Cloud UI bloqueado e rota Unknown. Nao chamar teste echo de tunel Cloud. PR #4 segue draft, main e Human Review intactos.
 
 **Proximo gate focal (apos fechar SENTRIUM):** na pasta local Windows executar um unico script .\scripts\windows\sentrium-validate-f005-cloud.ps1. Script faz pull --ff-only, preflight, build e roda somente D-15/D-16. Este novo lote R4 esta NOT RUN ate evidencia do operador. Sem necessidade de refazer tests 9 a 14.
+
+
+## 18. R4 Windows PASS e R5 bridge CloudTunnel ao NetSDK (26/10/2026)
+
+EVIDENCIA REAL DO OPERADOR — commit c30d25c65b0331dac0006c000712453e83edc84b: git pull ff-only, PRE-FLIGHT PASS, CMake configure/generate PASS, DEBUG build [44/44] PASS; D-15 PASS 0,03 s; D-16 PASS 0,01 s; 2/2 PASS em 0,08 s. WrapVulkanHeaders nao bloqueou. D-9 a D-14 passaram nos checkpoints anteriores. D-15/16 medem ponte TCP loopback e eco de memoria, NAO Cloud remoto.
+
+R5 IMPLEMENTADO NO GITHUB, WINDOWS NOT RUN: novo CloudStreamTunnel (cloud_stream_tunnel.hpp e .cpp) implementa o contrato CloudTunnel e entrega ao CloudDeviceSession uma porta TCP local efemera da CloudLoopbackBridge para um CloudByteStream fornecido por provider autenticado independente. Trata-se de encaixe de componentes, NAO implementacao de CloudTransport de producao ou prova de bootstrap. A rota reportada permanece Unknown; nenhum endpoint ou segredo de fabricante foi adicionado.
+
+Correção de ciclo de vida em cloud.cpp: quando o NetSDK reporta falha ou excecao durante logout, a sessao e o tunel continuam ativos para tentativa posterior. O recurso so se encerra apos logout bem-sucedido; diagnosticos nao contem credenciais. D-17 usa FixtureStreamTransport e FixtureNetSdkSocket (SOCKET WinSock REAL para echo local), devolvendo artificialmente 16 e 32 canais apenas para testar a orquestracao, NAO evidencia de NVR real. D-18 exercita falha de logout, retentativa, proibicao de sessao duplicada, rota Unknown e invalidacao de porta apos close.
+
+Script unico scripts/windows/sentrium-validate-f005-cloud.ps1 agora realiza build Debug + SOMENTE D-8, D-17 e D-18. D-8 foi incluído por mudanca em CloudDeviceSession::disconnect(), nao por repeticao de Foundations; nao repetir D-9..D-16 PASS sem necessidade. Documento R5 em docs/foundation-005/F005-CLOUD-STREAM-TUNNEL-R5.md. R5 BUILD/TESTES Windows ainda NOT RUN, sem reivindicacao PASS.
+
+BLOQUEIOS REAIS CLOUD: identidade/autorizacao de aplicacao Cloud para bootstrap, resposta autenticada de rendezvous, negotiation Direct/Relay, reliable PTCP stream/reordering, camada CloudByteStream real e teste com NVR remoto 16/32 canais. Sem SDK Cloud do fabricante autorizado nao inventar hosts/tokens, copiar SIM Next ou usar dh-fwd retido pelo Defender. A Cloud UI permanece bloqueada. main inalterada, PR #4 draft e Human Review nao aprovado.
+
+PRÓXIMO GATE: no PowerShell Developer, cliente SENTRIUM fechado, a partir do diretorio do repo, executar um unico comando:
+.\scripts\windows\sentrium-validate-f005-cloud.ps1
+Este script faz git pull --ff-only, PRE-FLIGHT, build e somente D-8/D-17/D-18. Informar log final ou trecho de erro. Nenhum dado sensivel no chat.
