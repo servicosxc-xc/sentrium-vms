@@ -7,6 +7,7 @@
 #include <sentrium/cloud.hpp>
 #include <sentrium/cloud_wire.hpp>
 #include <sentrium/cloud_udp.hpp>
+#include <sentrium/cloud_udp_socket.hpp>
 #include <sentrium/cloud_signaling.hpp>
 #include <sentrium/cloud_ptcp.hpp>
 #include <sentrium/cloud_ptcp_session.hpp>
@@ -19,6 +20,9 @@
 
 #include <array>
 #include <atomic>
+#include <chrono>
+#include <thread>
+#include <string_view>
 #include <cstring>
 #include <deque>
 #include <mutex>
@@ -268,6 +272,79 @@ private:
     bool auto_echo_ = false;
     std::uint32_t next_peer_id_ = 50;
     std::atomic_bool closed_{false};
+};
+
+// Only a controlled Windows UDP test peer. This does not implement the
+// Intelbras Cloud service or authenticate a remote NVR.
+class LocalUdpTestPeer final {
+public:
+    LocalUdpTestPeer() {
+        if (WSAStartup(MAKEWORD(2, 2), &wsa_) != 0)
+            throw std::runtime_error("UDP test fixture Winsock failed");
+        started_ = true;
+        socket_ = ::socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+        if (socket_ == INVALID_SOCKET)
+            throw std::runtime_error("UDP test socket unavailable");
+        sockaddr_in local{};
+        local.sin_family = AF_INET;
+        local.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+        local.sin_port = htons(0);
+        require(::bind(socket_, reinterpret_cast<sockaddr*>(&local),
+                    static_cast<int>(sizeof(local))) == 0,
+                "fixture local UDP bind");
+        sockaddr_in actual{};
+        int size = static_cast<int>(sizeof(actual));
+        require(::getsockname(socket_, reinterpret_cast<sockaddr*>(&actual),
+                    &size) == 0, "fixture local UDP port");
+        port_ = ntohs(actual.sin_port);
+        const DWORD deadline = 1000;
+        require(::setsockopt(socket_, SOL_SOCKET, SO_RCVTIMEO,
+                    reinterpret_cast<const char*>(&deadline),
+                    static_cast<int>(sizeof(deadline))) == 0,
+                "fixture UDP recv deadline");
+    }
+    ~LocalUdpTestPeer() noexcept {
+        if (socket_ != INVALID_SOCKET) ::closesocket(socket_);
+        if (started_) WSACleanup();
+    }
+    LocalUdpTestPeer(const LocalUdpTestPeer&) = delete;
+    LocalUdpTestPeer& operator=(const LocalUdpTestPeer&) = delete;
+
+    [[nodiscard]] std::uint16_t port() const noexcept { return port_; }
+    std::string receiveOne() {
+        std::array<char, 8192> buffer{};
+        last_sender_size_ = static_cast<int>(sizeof(last_sender_));
+        const int received = ::recvfrom(socket_, buffer.data(),
+            static_cast<int>(buffer.size()), 0,
+            reinterpret_cast<sockaddr*>(&last_sender_), &last_sender_size_);
+        require(received > 0, "fixture UDP inbound datagram");
+        return std::string(buffer.data(), static_cast<std::size_t>(received));
+    }
+    void replyToLast(std::string_view bytes) {
+        require(last_sender_size_ == static_cast<int>(sizeof(last_sender_)),
+                "test peer must receive first");
+        require(::sendto(socket_, bytes.data(), static_cast<int>(bytes.size()),
+                    0, reinterpret_cast<const sockaddr*>(&last_sender_),
+                    last_sender_size_) == static_cast<int>(bytes.size()),
+                "fixture UDP reply to client");
+    }
+    void sendToLocalPort(std::uint16_t port, std::string_view bytes) {
+        sockaddr_in dest{};
+        dest.sin_family = AF_INET;
+        dest.sin_port = htons(port);
+        dest.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+        require(::sendto(socket_, bytes.data(), static_cast<int>(bytes.size()),
+                    0, reinterpret_cast<const sockaddr*>(&dest),
+                    static_cast<int>(sizeof(dest))) ==
+                static_cast<int>(bytes.size()), "fixture raw UDP send");
+    }
+private:
+    WSADATA wsa_{};
+    SOCKET socket_ = INVALID_SOCKET;
+    bool started_ = false;
+    std::uint16_t port_ = 0;
+    sockaddr_in last_sender_{};
+    int last_sender_size_ = 0;
 };
 } // namespace
 
@@ -1202,6 +1279,120 @@ int main(int argc, char** argv) {
                     link->closes == 1, "oversized incoming datagram fails closed");
             require(!stream->write("invalid-after-overflow"),
                     "no further data accepted after upstream error");
+            break;
+        }
+
+        case 35: {
+            // Real OS UDP socket, no host discovery or proprietary Cloud.
+            rejects([] { static_cast<void>(PinnedUdpSocket::open("", 554)); });
+            rejects([] { static_cast<void>(PinnedUdpSocket::open("127.0.0.1", 0)); });
+            rejects([] { static_cast<void>(PinnedUdpSocket::open("example.com", 554)); });
+            rejects([] { static_cast<void>(PinnedUdpSocket::open("0.0.0.0", 554)); });
+            rejects([] { static_cast<void>(PinnedUdpSocket::open("255.255.255.255", 554)); });
+            rejects([] { static_cast<void>(PinnedUdpSocket::open("239.1.2.3", 554)); });
+            LocalUdpTestPeer remote;
+            auto socket = PinnedUdpSocket::open("127.0.0.1", remote.port());
+            require(socket && socket->localPort() != 0 && !socket->closed(),
+                    "configured local UDP source port");
+            socket->close();
+            require(socket->closed() && socket->localPort() == 0,
+                    "closing releases UDP source port");
+            socket->close();
+            break;
+        }
+        case 36: {
+            // Actual Windows UDP localhost datagram exchange (not P2P).
+            LocalUdpTestPeer remote;
+            auto socket = PinnedUdpSocket::open("127.0.0.1", remote.port());
+            require(socket->sendDatagram("R9-wire-ping"), "UDP payload sent");
+            require(remote.receiveOne() == "R9-wire-ping",
+                    "remote UDP socket receives exact datagram");
+            remote.replyToLast("R9-wire-pong");
+            std::array<char, 256> response{};
+            const int length = socket->receiveDatagram(
+                response.data(), static_cast<int>(response.size()), 500);
+            require(length == 12 &&
+                    std::string_view(response.data(),
+                        static_cast<std::size_t>(length)) == "R9-wire-pong",
+                    "UDP reply received as a whole datagram");
+            break;
+        }
+        case 37: {
+            LocalUdpTestPeer expectedPeer;
+            LocalUdpTestPeer unknownPeer;
+            auto socket = PinnedUdpSocket::open("127.0.0.1", expectedPeer.port());
+            unknownPeer.sendToLocalPort(socket->localPort(), "wrong-source");
+            std::array<char, 200> output{};
+            require(socket->receiveDatagram(
+                        output.data(), static_cast<int>(output.size()), 60) == 0,
+                    "kernel-connected UDP filters nonpinned source endpoint");
+            require(socket->sendDatagram("legitimate"), "send to pinned peer");
+            require(expectedPeer.receiveOne() == "legitimate",
+                    "pinned peer receives data");
+            expectedPeer.replyToLast("accepted");
+            const int count = socket->receiveDatagram(
+                output.data(), static_cast<int>(output.size()), 500);
+            require(count == 8 &&
+                    std::string_view(output.data(),
+                        static_cast<std::size_t>(count)) == "accepted",
+                    "pinned peer reply still works");
+            break;
+        }
+        case 38: {
+            LocalUdpTestPeer expectedPeer;
+            auto socket = PinnedUdpSocket::open("127.0.0.1", expectedPeer.port());
+            expectedPeer.sendToLocalPort(socket->localPort(),
+                                         std::string(1600, 'x'));
+            std::array<char, 32> output{};
+            require(socket->receiveDatagram(
+                        output.data(), static_cast<int>(output.size()), 500) == -1 &&
+                    socket->closed() && socket->localPort() == 0,
+                    "truncated UDP datagram fails closed");
+            require(!socket->sendDatagram("must-not-send"),
+                    "no transmissions after malformed datagram");
+            break;
+        }
+        case 39: {
+            LocalUdpTestPeer idlePeer;
+            auto socket = PinnedUdpSocket::open("127.0.0.1", idlePeer.port());
+            std::atomic<int> observed{999};
+            std::thread reader([&] {
+                std::array<char, 20> output{};
+                observed.store(socket->receiveDatagram(
+                    output.data(), static_cast<int>(output.size()), 1000));
+            });
+            std::this_thread::sleep_for(std::chrono::milliseconds(40));
+            socket->close();
+            reader.join();
+            require(observed.load() == -1 && socket->localPort() == 0,
+                    "concurrent close interrupts polling without thread kill");
+            break;
+        }
+        case 40: {
+            LocalUdpTestPeer remote;
+            auto first = PinnedUdpSocket::open("127.0.0.1", remote.port());
+            auto second = PinnedUdpSocket::open("127.0.0.1", remote.port());
+            require(first->localPort() != 0 && second->localPort() != 0 &&
+                    first->localPort() != second->localPort(),
+                    "two sessions have separate OS ports");
+            require(first->receiveDatagram(nullptr, 1, 0) == -1 &&
+                    first->receiveDatagram(nullptr, 0, 0) == -1 &&
+                    !first->sendDatagram({}) &&
+                    !first->sendDatagram(std::string(2049, 'x')),
+                    "invalid API inputs refused without truncation");
+            require(first->sendDatagram("one"), "first session sends");
+            require(remote.receiveOne() == "one", "first session received by peer");
+            remote.replyToLast("alpha");
+            std::array<char, 20> data{};
+            const int a = first->receiveDatagram(data.data(), 20, 500);
+            require(a == 5 && std::string_view(data.data(),5) == "alpha",
+                    "first session receives reply");
+            require(second->sendDatagram("two"), "second session sends");
+            require(remote.receiveOne() == "two", "second session received");
+            remote.replyToLast("beta");
+            const int c = second->receiveDatagram(data.data(), 20, 500);
+            require(c == 4 && std::string_view(data.data(),4) == "beta",
+                    "second session independent reply");
             break;
         }
 

@@ -1,11 +1,11 @@
 <#
 .SYNOPSIS
-  Validate Foundation-005 R8 verified datagram stream (focused build).
+  Validate Foundation-005 R9 real Windows UDP pinned transport (focused build).
 .DESCRIPTION
   One command: check branch/worktree, fast-forward and reload script
   automatically if Git updated it, then PRE-FLIGHT, targeted build and
-  D-27 to D-34.
-  D-19 through D-26 passed on the operator's R7 Windows checkpoint.
+  D-35 to D-40.
+  D-27 through D-34 passed on the operator's R8 Windows checkpoint.
   Other earlier component tests are not repeated.
 #>
 [CmdletBinding()]
@@ -109,9 +109,9 @@ try {
         throw "CTest executable not found: $ctest"
     }
 
-    & $ctest --preset sentrium-debug -R '^D-(27|28|29|30|31|32|33|34)$' --output-on-failure
+    & $ctest --preset sentrium-debug -R '^D-(35|36|37|38|39|40)$' --output-on-failure
     if ($LASTEXITCODE -ne 0) {
-        throw 'D-27 to D-34 verified datagram stream tests failed.'
+        throw 'D-35 to D-40 pinned UDP socket tests failed.'
     }
 
     $commit = (& git rev-parse HEAD).Trim()
@@ -119,7 +119,7 @@ try {
         throw 'Cannot read Git commit.'
     }
 
-    Write-Host 'F005 DEVICE-TESTS DEBUG BUILD + D-27 to D-34: PASS' -ForegroundColor Green
+    Write-Host 'F005 DEVICE-TESTS DEBUG BUILD + D-35 to D-40: PASS' -ForegroundColor Green
     Write-Host "Commit: $commit"
     Write-Host 'Cloud bootstrap, Direct/Relay and real P2P login: NOT VERIFIED.'
 }
