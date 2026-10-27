@@ -1,11 +1,11 @@
 <#
 .SYNOPSIS
-  Validate Foundation-005 R7 integrated PTCP post-auth data plane.
+  Validate Foundation-005 R8 verified datagram-to-TCP byte stream.
 .DESCRIPTION
   One command after updating local checkout: check branch and worktree,
-  fast-forward, PRE-FLIGHT, configure/build Debug and run D-19 to D-26.
-  D-19/D-20 were blocked by the C4456 compiler warning in the R6 build.
-  Prior R5 and earlier component tests already passed on Windows.
+  fast-forward, PRE-FLIGHT, configure/build Debug and run D-27 to D-32.
+  D-19 through D-26 passed on the operator's R7 Windows checkpoint.
+  Other earlier component tests are not repeated.
 #>
 [CmdletBinding()]
 param()
@@ -86,9 +86,9 @@ try {
         throw "CTest executable not found: $ctest"
     }
 
-    & $ctest --preset sentrium-debug -R '^D-(19|20|21|22|23|24|25|26)$' --output-on-failure
+    & $ctest --preset sentrium-debug -R '^D-(27|28|29|30|31|32)$' --output-on-failure
     if ($LASTEXITCODE -ne 0) {
-        throw 'D-19 to D-26 PTCP integration tests failed.'
+        throw 'D-27 to D-32 verified datagram stream tests failed.'
     }
 
     $commit = (& git rev-parse HEAD).Trim()
@@ -96,7 +96,7 @@ try {
         throw 'Cannot read Git commit.'
     }
 
-    Write-Host 'F005 DEBUG BUILD + D-19 to D-26: PASS' -ForegroundColor Green
+    Write-Host 'F005 DEBUG BUILD + D-27 to D-32: PASS' -ForegroundColor Green
     Write-Host "Commit: $commit"
     Write-Host 'Cloud bootstrap, Direct/Relay and real P2P login: NOT VERIFIED.'
 }

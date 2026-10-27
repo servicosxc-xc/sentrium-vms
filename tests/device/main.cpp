@@ -12,12 +12,15 @@
 #include <sentrium/cloud_ptcp_session.hpp>
 #include <sentrium/cloud_ptcp_receive_window.hpp>
 #include <sentrium/cloud_ptcp_channel.hpp>
+#include <sentrium/cloud_ptcp_stream.hpp>
 #include <sentrium/cloud_loopback_bridge.hpp>
 #include <sentrium/cloud_stream_tunnel.hpp>
 #include <sentrium/cloud_auth.hpp>
 
 #include <array>
+#include <atomic>
 #include <cstring>
+#include <deque>
 #include <mutex>
 #include <iostream>
 #include <memory>
@@ -209,6 +212,62 @@ private:
     int count_;
     bool fail_first_;
     SOCKET client_ = INVALID_SOCKET;
+};
+
+class ScriptedVerifiedPtcpLink final : public VerifiedPtcpDatagramLink {
+public:
+    explicit ScriptedVerifiedPtcpLink(
+        bool autoEcho = false, std::uint32_t firstPeerId = 50)
+        : auto_echo_(autoEcho), next_peer_id_(firstPeerId) {}
+
+    int receive(char* buffer, int capacity, int) noexcept override {
+        if (closed_.load()) return -1;
+        if (inbound.empty()) return 0;
+        const auto& next = inbound.front();
+        if (static_cast<int>(next.size()) > capacity) return -1;
+        std::memcpy(buffer, next.data(), next.size());
+        const int count = static_cast<int>(next.size());
+        inbound.pop_front();
+        return count;
+    }
+
+    bool transmit(std::string_view wire) noexcept override {
+        if (closed_.load() || outbound.size() == fail_at_write) return false;
+        outbound.emplace_back(wire);
+        if (auto_echo_) {
+            const auto frame = parsePtcpPacket(wire);
+            if (!frame.ok()) return false;
+            if (frame.packet.kind == PtcpKind::Payload) {
+                PtcpPacket peer{};
+                peer.kind = PtcpKind::Payload;
+                peer.local_message_id = next_peer_id_++;
+                peer.realm = frame.packet.realm;
+                peer.received = frame.packet.sent +
+                    static_cast<std::uint32_t>(wire.size() - 24u);
+                peer.body = frame.packet.body;
+                std::string reply;
+                if (encodePtcpPacket(peer, reply) != PtcpError::None)
+                    return false;
+                inbound.push_back(std::move(reply));
+            }
+        }
+        return true;
+    }
+
+    void close() noexcept override {
+        closed_.store(true);
+        ++closes;
+    }
+
+    std::vector<std::string> outbound;
+    std::deque<std::string> inbound;
+    std::size_t fail_at_write = static_cast<std::size_t>(-1);
+    int closes = 0;
+
+private:
+    bool auto_echo_ = false;
+    std::uint32_t next_peer_id_ = 50;
+    std::atomic_bool closed_{false};
 };
 } // namespace
 
@@ -957,6 +1016,162 @@ int main(int argc, char** argv) {
             require(encodePtcpPacket(peer, forged) == PtcpError::None &&
                     fresh.receiveVerified(forged).ok(),
                     "peer cumulative ACK for heartbeat is accepted");
+            break;
+        }
+
+        case 27: {
+            // In-memory datagrams, realistic PTCP framing, no Cloud contact.
+            auto mock = std::make_unique<ScriptedVerifiedPtcpLink>(true, 50);
+            auto* link = mock.get();
+            auto stream = PtcpVerifiedByteStream::create(std::move(mock), 77, 50);
+            const std::string sent(3000, 'S');
+            require(stream->write(sent) && link->outbound.size() == 3,
+                    "R8 fragmented byte-stream uplink");
+            std::string echoed;
+            std::array<char, 1600> buffer{};
+            for (int tries = 0; tries < 6 && echoed.size() < sent.size(); ++tries) {
+                const int amount = stream->read(
+                    buffer.data(), static_cast<int>(buffer.size()), 0);
+                require(amount >= 0, "mock PTCP downstream remains alive");
+                echoed.append(buffer.data(), static_cast<std::size_t>(amount));
+            }
+            require(echoed == sent, "R8 ordered full-duplex PTCP byte stream");
+            stream->close();
+            require(link->closes == 1 &&
+                    stream->read(buffer.data(), 1, 0) == -1,
+                    "link closed exactly once, read refuses further data");
+            stream->close();
+            require(link->closes == 1, "idempotent remote close");
+            break;
+        }
+        case 28: {
+            auto mock = std::make_unique<ScriptedVerifiedPtcpLink>();
+            auto* link = mock.get();
+            auto stream = PtcpVerifiedByteStream::create(std::move(mock), 7, 40);
+            PtcpPacket peer{};
+            peer.kind = PtcpKind::Payload;
+            peer.realm = 7;
+            for (std::uint32_t peerId : {42u, 41u, 40u}) {
+                peer.local_message_id = peerId;
+                peer.body = std::to_string(peerId) + ",";
+                std::string encoded;
+                require(encodePtcpPacket(peer, encoded) == PtcpError::None,
+                        "create reverse-order fixture");
+                link->inbound.push_back(std::move(encoded));
+            }
+            std::string output;
+            std::array<char, 64> buffer{};
+            for (int step = 0; step < 3; ++step) {
+                const int n = stream->read(
+                    buffer.data(), static_cast<int>(buffer.size()), 0);
+                require(n >= 0, "out-of-order buffer is nonfatal");
+                output.append(buffer.data(), static_cast<std::size_t>(n));
+            }
+            require(output == "40,41,42,", "NetSDK bytes never reordered");
+            // Old packet is ignored; no duplicated bytes delivered.
+            peer.local_message_id = 40;
+            peer.body = "40,";
+            std::string repeated;
+            require(encodePtcpPacket(peer, repeated) == PtcpError::None,
+                    "encode old packet");
+            link->inbound.push_back(repeated);
+            require(stream->read(buffer.data(), 64, 0) == 0,
+                    "old packet not replayed into NetSDK stream");
+            break;
+        }
+        case 29: {
+            rejects([] {
+                static_cast<void>(PtcpVerifiedByteStream::create(nullptr, 1, 0));
+            });
+            auto mock = std::make_unique<ScriptedVerifiedPtcpLink>();
+            auto* link = mock.get();
+            mock->fail_at_write = 1;
+            auto stream = PtcpVerifiedByteStream::create(std::move(mock), 6, 9);
+            require(!stream->write(std::string(3000, 'x')) &&
+                    link->outbound.size() == 1 &&
+                    link->closes == 1, "partial datagram transmission fails closed");
+            std::array<char, 20> buffer{};
+            require(stream->read(buffer.data(), 20, 0) == -1 &&
+                    !stream->write("more"), "no silent continuation after loss");
+            break;
+        }
+        case 30: {
+            auto mock = std::make_unique<ScriptedVerifiedPtcpLink>();
+            auto* link = mock.get();
+            auto stream = PtcpVerifiedByteStream::create(std::move(mock), 11, 8);
+            require(stream->write("hello"), "send first datagram");
+            PtcpPacket peer{};
+            peer.kind = PtcpKind::Heartbeat;
+            peer.local_message_id = 8;
+            peer.received = 9999; // ACK for bytes never sent.
+            std::string forged;
+            require(encodePtcpPacket(peer, forged) == PtcpError::None,
+                    "construct forged ACK");
+            link->inbound.push_back(forged);
+            char data[32]{};
+            require(stream->read(data, 32, 0) == -1 &&
+                    link->closes == 1, "invalid ACK closes verified link");
+            break;
+        }
+        case 31: {
+            auto mock = std::make_unique<ScriptedVerifiedPtcpLink>();
+            auto* link = mock.get();
+            auto stream = PtcpVerifiedByteStream::create(std::move(mock), 2, 90);
+            for (int messageIndex = 0; messageIndex < 32; ++messageIndex)
+                require(stream->write("x"), "fill pending window");
+            require(link->outbound.size() == 32, "window full");
+            PtcpPacket ack{};
+            ack.kind = PtcpKind::Heartbeat;
+            ack.local_message_id = 90;
+            ack.received = 32u * 13u;
+            std::string wire;
+            require(encodePtcpPacket(ack, wire) == PtcpError::None,
+                    "ACK for entire cumulative payload window");
+            link->inbound.push_back(wire);
+            require(stream->write("unblocked") &&
+                    link->outbound.size() == 33 &&
+                    link->closes == 0, "backpressure pumps ACK and resumes writes");
+            break;
+        }
+        case 32: {
+            // Real loopback TCP crossing the R4 bridge + new R8 adapter.
+            // Underlying datagrams remain a scripted LOCAL fixture.
+            auto mock = std::make_unique<ScriptedVerifiedPtcpLink>(true, 100);
+            auto stream = PtcpVerifiedByteStream::create(std::move(mock), 33, 100);
+            auto bridge = CloudLoopbackBridge::start(std::move(stream));
+            const auto port = bridge->localPort();
+            require(port != 0, "ephemeral Cloud bridge port");
+            SOCKET client = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+            require(client != INVALID_SOCKET, "make local-only test socket");
+            const DWORD deadline = 3000;
+            require(::setsockopt(client, SOL_SOCKET, SO_RCVTIMEO,
+                     reinterpret_cast<const char*>(&deadline),
+                     static_cast<int>(sizeof(deadline))) == 0,
+                    "bound socket receive deadline");
+            sockaddr_in localhost{};
+            localhost.sin_family = AF_INET;
+            localhost.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+            localhost.sin_port = htons(port);
+            require(::connect(client,
+                    reinterpret_cast<const sockaddr*>(&localhost),
+                    static_cast<int>(sizeof(localhost))) == 0,
+                    "bridge accepts loopback client");
+            const std::string probe = "R8-local-bridge-datagram-byte-flow";
+            require(::send(client, probe.data(),
+                    static_cast<int>(probe.size()), 0) ==
+                    static_cast<int>(probe.size()), "send NetSDK-shaped bytes");
+            std::array<char, 256> output{};
+            std::string response;
+            while (response.size() < probe.size()) {
+                const int count = ::recv(client, output.data(),
+                    static_cast<int>(output.size()), 0);
+                require(count > 0, "receive through R8 bridged mock datagrams");
+                response.append(output.data(), static_cast<std::size_t>(count));
+            }
+            require(response == probe, "end-to-end deterministic byte ordering");
+            ::closesocket(client);
+            bridge->close();
+            require(bridge->localPort() == 0, "bridge torn down");
             break;
         }
 
