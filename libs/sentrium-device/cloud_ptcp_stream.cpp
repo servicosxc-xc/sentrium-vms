@@ -70,6 +70,7 @@ int PtcpVerifiedByteStream::drain(char* out, int capacity) noexcept {
 }
 
 bool PtcpVerifiedByteStream::retryDue() noexcept {
+    try {
     if (closed_.load(std::memory_order_acquire)) return false;
     const auto due = channel_.retransmissions(monotonicMilliseconds());
     if (!due.ok()) return fail();
@@ -78,9 +79,13 @@ bool PtcpVerifiedByteStream::retryDue() noexcept {
             !link_->transmit(datagram)) return fail();
     }
     return true;
+    } catch (...) {
+        return fail(); // noexcept callback must never terminate on allocation.
+    }
 }
 
 bool PtcpVerifiedByteStream::progress(int timeout_ms) noexcept {
+    try {
     if (!retryDue()) return false;
     std::array<char, kMaxDatagram> raw{};
     const int received = link_->receive(
@@ -106,6 +111,9 @@ bool PtcpVerifiedByteStream::progress(int timeout_ms) noexcept {
         buffered_bytes_ += additional;
     }
     return retryDue();
+    } catch (...) {
+        return fail(); // Reject oversized/unrecoverable memory pressure.
+    }
 }
 
 int PtcpVerifiedByteStream::read(
@@ -122,6 +130,7 @@ int PtcpVerifiedByteStream::read(
 }
 
 bool PtcpVerifiedByteStream::write(std::string_view bytes) noexcept {
+    try {
     if (closed_.load(std::memory_order_acquire)) return false;
     if (bytes.empty() || bytes.size() > kMaxLocalWrite) return false;
 
@@ -141,6 +150,9 @@ bool PtcpVerifiedByteStream::write(std::string_view bytes) noexcept {
             !link_->transmit(frame)) return fail();
     }
     return true;
+    } catch (...) {
+        return fail(); // Protect the NetSDK-facing noexcept ABI.
+    }
 }
 
 } // namespace sentrium::device

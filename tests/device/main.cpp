@@ -1175,6 +1175,36 @@ int main(int argc, char** argv) {
             break;
         }
 
+        case 33: {
+            // Invalid arguments do not silently truncate or authorize a link.
+            auto mock = std::make_unique<ScriptedVerifiedPtcpLink>();
+            auto* link = mock.get();
+            auto stream = PtcpVerifiedByteStream::create(std::move(mock), 3, 1);
+            std::array<char, 10> output{};
+            require(stream->read(nullptr, 10, 0) == -1 &&
+                    stream->read(output.data(), 0, 0) == -1 &&
+                    stream->read(output.data(), 10, 1001) == -1,
+                    "invalid pointer, capacity and wait deadline rejected");
+            require(!stream->write({}) &&
+                    !stream->write(std::string(16385, 'x')) &&
+                    link->outbound.empty(), "oversized TCP write not truncated");
+            require(stream->write("valid-after-rejection") &&
+                    link->outbound.size() == 1, "valid link not contaminated");
+            break;
+        }
+        case 34: {
+            auto mock = std::make_unique<ScriptedVerifiedPtcpLink>();
+            auto* link = mock.get();
+            mock->inbound.emplace_back(2049, 'X');
+            auto stream = PtcpVerifiedByteStream::create(std::move(mock), 4, 10);
+            std::array<char, 50> output{};
+            require(stream->read(output.data(), 50, 0) == -1 &&
+                    link->closes == 1, "oversized incoming datagram fails closed");
+            require(!stream->write("invalid-after-overflow"),
+                    "no further data accepted after upstream error");
+            break;
+        }
+
         default:
             throw std::runtime_error("unknown test");
         }
