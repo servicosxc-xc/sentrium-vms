@@ -70,3 +70,8 @@ R6 adiciona PtcpReceiveWindow para buffer PTCP LMID fora de ordem (incluindo con
 User requests bigger coherent implementation batches and ONE Windows build at the end, not one test cycle per small class. R6 build on c52f2e9 FAILED with C4456/C2220 in tests/device/main.cpp line 789 (local id hides main id; /WX); D-19/20 did NOT run. Fixed to messageIndex.
 
 R7 integrated post-auth PTCP data plane joins packet fragmentation, LMID ordering, PID/cumulative ACK, heartbeat, retries, backpressure and fail-closed errors. New D-21..D-26 and previously unrun D-19/20 in a single script gate; no re-run of approved D-8..D-18. The script auto detects pinned Qt/NetSDK/PlaySDK roots when missing but PRE-FLIGHT still verifies. R7 build and D-19..D-26 NOT RUN. Handoff section 20, document docs/foundation-005/F005-CLOUD-DATAPLANE-R7.md. Vendor Cloud still blocked by independent bootstrap authorization and live peer/Direct/Relay negotiation. No actual remote NVR 16/32 session.
+
+
+## Novo checkpoint R7 PASS, R8 aguardando Windows (26/10/2026)
+
+R7 commit 2757ab6eab944b2c1953ad152532b0244e94c057: PRE-FLIGHT PASS, Debug build [44/44] PASS, D-19 ate D-26 8/8 PASS 0,13 s. R8 acrescenta PtcpVerifiedByteStream e interface VerifiedPtcpDatagramLink para encaminhamento PTCP bidirecional ao CloudLoopbackBridge/NetSDK endpoint local, com controle de memoria, backpressure, retries e erros. Testes simulados D-27 a D-32, incluindo loopback SOCKET real mas sem qualquer conexao Intelbras Cloud. Runner unico executa somente D-27..D-32. R8 BUILD/TESTES Windows NOT RUN. Ver handoff secao 21 e docs/foundation-005/F005-CLOUD-DATAGRAM-STREAM-R8.md. Continuam ausentes bootstrap autorizado, peer/Direct/Relay e NVR 16/32 real. PR #4 draft, main e Human Review intactos, sem SIM Next/dh-fwd.

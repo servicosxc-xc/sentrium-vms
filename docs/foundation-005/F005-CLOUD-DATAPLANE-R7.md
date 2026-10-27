@@ -31,3 +31,8 @@ Git governance: PR #4 draft, no main merge, F004 Human Review remains pending, b
 
 Single next command in repository Developer PowerShell, SENTRIUM closed:
 .\scripts\windows\sentrium-validate-f005-cloud.ps1
+
+
+## Evidencia Windows superveniente (26/10/2026)
+
+Operador confirmou em 2757ab6eab944b2c1953ad152532b0244e94c057: PRE-FLIGHT PASS, Debug build [44/44] PASS, D-19 ate D-26 8/8 PASS (0.13s). Esta informacao substitui o NOT RUN historico indicado antes. Os testes sao offline, nao Cloud remoto.

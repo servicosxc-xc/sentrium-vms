@@ -327,3 +327,16 @@ ENV QUALITY: the focal runner detects known fixed Qt/Intelbras NetSDK/PlaySDK pa
 R7 is NOT a working vendor P2P Cloud service. No legitimately authorized Cloud bootstrap application identity, rendezvous/peer authentication, verified Direct/Relay, live CloudByteStream or real 16/32 NVR has been supplied or field-tested. Do not invent endpoints or embed SIM Next or dh-fwd. Alternative under customer control: an independently secured site gateway/relay, which requires deployment and is not implemented.
 
 Single Windows gate, with SENTRIUM closed and developer shell in repo: .\scripts\windows\sentrium-validate-f005-cloud.ps1. It performs pull ff-only, PRE-FLIGHT, Debug build, D-19..D-26. R5 remains the latest actual PASS. PR #4 draft, main intact. Details in docs/foundation-005/F005-CLOUD-DATAPLANE-R7.md.
+
+
+## 21. R7 Windows PASS confirmado e R8 ponte PTCP byte stream (26/10/2026)
+
+EVIDENCIA REAL DO OPERADOR: commit 2757ab6eab944b2c1953ad152532b0244e94c057; git pull ff-only OK, PRE-FLIGHT PASS, CMake configure/generate PASS, Debug build [44/44] PASS; testes D-19 ate D-26 **8/8 PASS**, 0,13 s. O warning de WrapVulkanHeaders nao impediu build. Nao repetir sem mudanca relacionada. Essa evidencia confirma dados PTCP sinteticos, NAO autenticacao Cloud real.
+
+R8 IMPLEMENTADO DIRETAMENTE NO GITHUB, BUILD WINDOWS NOT RUN: nova API C++ PtcpVerifiedByteStream (cloud_ptcp_stream.hpp/.cpp) implementa CloudByteStream existente sobre VerifiedPtcpDatagramLink injetado por futuro provider autorizado. Integra R7 PtCPPostAuthChannel com fragmentacao, LMID ordenado, fila inbound de 128 KiB, relogio monotonic para retries, espera limitada por ACK com backpressure, deteccao de falha de envio parcial e encerramento cooperativo. Read/write em uma thread de worker, close pode ser acionado de outra; a implementacao do link externo precisa interromper receive/transmit ao fechar. A API chamada Verified nao garante por si propria autenticacao: requisito contratual a verificar por conexao real.
+
+Novos D-27..D-32 incluem fixture de datagramas bidirecionais, reordenacao/replay, perda/partial transmit, ACK falso, desbloqueio da janela apos ACK e caminho REAL de socket TCP local (127.0.0.1) pela CloudLoopbackBridge ate datagramas de rede SIMULADOS e retorno. CMake inclui modulo R8, runner unico compila e executa APENAS D-27..D-32. Log de Windows ainda nao recebido deste novo lote. Documento tecnico: docs/foundation-005/F005-CLOUD-DATAGRAM-STREAM-R8.md.
+
+BLOQUEIO PRINCIPAL PARA CLOUD POR SERIAL: identidade/SDK/bootstrap autorizado do provedor Intelbras; rendezvous validado, peer pinning, NAT Direct/Relay com telemetria, implementacao concreta de VerifiedPtcpDatagramLink e teste NetSDK com gravador remoto fisico 16/32 canais. Nao inserir endpoints inventados, segredos de app, DLLs SIM Next ou executar dh-fwd bloqueado pelo Defender. Se a operadora Cloud nao disponibilizar contrato/licenca, opcao de gateway remoto proprio exige novo escopo, infraestrutura e consentimento. Cloud UI nao deve ser apresentada como funcionando.
+
+Main intacta, PR #4 draft e Human Review nao aprovado. Proximo gate unico: no Developer PowerShell no diretorio do repo, cliente SENTRIUM fechado, executar .\scripts\windows\sentrium-validate-f005-cloud.ps1; script faz pull ff-only, preflight e Debug build + D-27..D-32. R8 NOT RUN ate prova.
