@@ -34,3 +34,8 @@ No SIM Next artifacts, no Defender-quarantined dh-fwd, no embedded endpoints or 
 
 Single Windows command with client closed at repository root:
 `\.\scripts\windows\sentrium-validate-f005-cloud.ps1`
+
+
+## Operator Windows checkpoint 27/10/2026
+
+Actual log on commit c211b964eefea6caa9f74c88bba9095ef9984e6d: PRE-FLIGHT, CMake and Debug sentrium-cloud-network-tests build [8/8] PASS; D-41 through D-46 6/6 PASS in 1.38 s. This supersedes earlier NOT RUN, proves local OS TCP and UDP with synthetic responder only, not authenticated vendor Cloud. Next action is supplier authorization and supported Cloud API contract, not more synthetic protocol simulations. See F005-INTELBRAS-CLOUD-APP-ACCESS-GATE.md.

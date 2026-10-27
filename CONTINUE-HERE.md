@@ -105,3 +105,8 @@ Operador comprovou R9 no commit 0f639c3e9638dcbd17850c0b118869032945fc2b: PRE-FL
 R10 cria somente o executável de testes `tests/device/cloud_network_lab.cpp` e alvo `sentrium-cloud-network-tests`, usando sockets Windows **TCP e UDP reais em 127.0.0.1**, PTCP R7/R8, PinnedUdpSocket R9 e CloudLoopbackBridge R4 com um respondedor de laboratório **sem autenticação**. Testes D-41..D-46 cobrem eco fragmentado, TCP→UDP→TCP, fonte externa filtrada, ACK/realm inválidos, retransmissão de UDP perdido e fechamento simultâneo. Runner focal passa a D-41..D-46. **R10 NOT RUN Windows** até log. Ver handoff seção 26 e docs/foundation-005/F005-CLOUD-NETWORK-LAB-R10.md.
 
 Continua BLOQUEADO o provedor Cloud Intelbras por serial: falta app identity/bootstrap/peer auth/Direct/Relay autorizado e ensaio NVR 16/32 real. O adaptador inseguro UnverifiedLabLink é SOMENTE fixture no executável de teste, NUNCA componente de produção. Main intacta, PR #4 draft, Human Review pendente. NÃO usar SIM Next nem dh-fwd.
+
+
+## 27/10/2026 — R10 6/6 PASS Windows; fornecedor Cloud gate
+
+R10 comprovado no commit c211b964eefea6caa9f74c88bba9095ef9984e6d: PRE-FLIGHT PASS, build Debug sentrium-cloud-network-tests [8/8] PASS, D-41..D-46 6/6 PASS em 1,38s. Integração UDP/PTCP/TCP loopback sem autenticação externa. Novo documento docs/foundation-005/F005-INTELBRAS-CLOUD-APP-ACCESS-GATE.md pesquisa Intelbras e contém solicitação pronta SDK Cloud P2P por serial. Até fornecedor autorizar aplicação/peer/Direct/Relay ou usuário optar por gateway remoto seguro, Cloud por serial bloqueado. Não iniciar novas simulações. Main intacta, PR draft, Human Review não aprovado.

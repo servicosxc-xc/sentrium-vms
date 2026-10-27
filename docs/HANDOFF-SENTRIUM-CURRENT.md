@@ -391,3 +391,10 @@ CMake adiciona apenas o alvo `sentrium-cloud-network-tests` ligado a `sentrium-d
 **Próxima dependência de produção**: obter SDK/contrato de aplicativo Cloud oficialmente autorizado (bootstrap, rendezvous, prova criptográfica de peer e Direct/Relay) OU autorizar um gateway remoto gerenciado próprio. Antes disso, `VerifiedPtcpDatagramLink` NÃO deve ser concretizado com simples `PinnedUdpSocket` e exposto aos clientes. Cloud por serial e NVR remoto 16/32 permanecem BLOQUEADOS. Sem copiar SIM Next, sem dh-fwd bloqueado pelo Defender, sem endpoints/segredos inventados. PR #4 permanece draft, main intacta, Human Review não aprovado.
 
 **PRÓXIMO ÚNICO GATE**: no Developer PowerShell, na pasta do projeto e com SENTRIUM fechado, executar `\.\scripts\windows\sentrium-validate-f005-cloud.ps1`. O autocarregamento do script cuida do pull; D-41..D-46 ficam NOT RUN até receber evidência Windows. Após esse teste, evitar novos lotes de simulação e priorizar autorização real do provider.
+
+
+## 27. R10 Windows PASS e dependência externa Cloud confirmada — 27/10/2026
+
+Log real no commit c211b964eefea6caa9f74c88bba9095ef9984e6d: PRE-FLIGHT PASS, CMake configure/generate PASS, build sentrium-cloud-network-tests [8/8] PASS, D-41..D-46 6/6 PASS em 1,38s. Runner auto-reload OK. Testes TCP+PTCP+UDP reais SOMENTE localhost com peer sintético; não Cloud Intelbras remoto. Não repetir tests aprovados.
+
+Pesquisa pública de documentação Intelbras identificou procedimento de SDK/API para DVR/NVR, mas resposta de 2018 distingue SDK IP/DDNS de Cloud P2P serial e dizia não disponível naquela época; estado 2026 INDETERMINADO. Portal Moovsec Developers existe mas equivalência com Cloud serial NVR NÃO COMPROVADA. Documento novo docs/foundation-005/F005-INTELBRAS-CLOUD-APP-ACCESS-GATE.md contém solicitação ao fabricante, referências e critérios de habilitação. Próxima etapa de desenvolvimento depende de SDK/contrato autorizado ou escolha explícita de arquitetura de gateway remoto seguro. Não implementar Cloud provider fictício, não usar SIM Next/dh-fwd, não declarar conectado. PR #4 draft, main e Human Review intocados.
