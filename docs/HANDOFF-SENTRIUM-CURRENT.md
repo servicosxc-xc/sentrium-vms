@@ -312,3 +312,18 @@ Este script faz git pull --ff-only, PRE-FLIGHT, build e somente D-8/D-17/D-18. I
 **Limites reais, ainda BLOQUEADO:** infraestrutura Cloud nao disponibilizou identidade/contrato bootstrap autorizado, nem rendezvous, autenticacao de peer, Direct/Relay medidos ou remontagem PTCP totalmente ligada ao CloudByteStream de producao. A janela nao envia ACK/retransmit e nao autentica; integrar sessao de rede e stream so apos obter protocolo/credenciais legitimamente autorizados. NVRs remotos 16/32 canais seguem NOT TESTED. Foco continua Cloud real, nao estetica. Sem SIM Next, dh-fwd em security hold. PR #4 draft, main preservada, sem Human Review.
 
 **Proxima validacao focal (R6):** com SENTRIUM fechado, a partir do repo, executar um unico comando de pull ff-only e scripts/windows/sentrium-validate-f005-cloud.ps1 (agora somente D-19/D-20). Em nova janela Developer PowerShell, configurar novamente variaveis de ambiente Qt e SDK se nao existirem. R6 nao deve receber PASS ate evidencias Windows.
+
+
+## 20. R6 MSVC fail and consolidated R7 post-auth data plane (26/10/2026)
+
+OPERATOR REQUEST: increase size of coherent implementation batches. Complete offline C++ integration and coverage before requesting a single Windows build/debug; stop tiny compile cycles. Do not restart Foundations, approve Human Review or merge main.
+
+R6 ACTUAL WINDOWS FAILURE at c52f2e98db6754d3258bb9697bd93c76406c2dad: PRE-FLIGHT PASS, CMake configure/generate PASS, Debug build FAIL with MSVC C4456 at tests/device/main.cpp line 789: for-loop variable id hides the id declared in main (line 217). With /WX warning promoted to C2220, build exit 2. D-19 and D-20 did NOT execute. The repeated showIncludes lines are build noise, not root cause. Fixed by renaming variable to messageIndex in the same file.
+
+R7 IMPLEMENTED but NOT BUILT ON WINDOWS: cloud_ptcp_channel.hpp/.cpp implements a single post-auth PTCP data plane joining outgoing PID/LMID and cumulative ACK bookkeeping, <=1280-byte segmentation up to 16 KiB/write with atomic capacity precheck, LMID receive reorder across control and payload, explicit heartbeat, bounded original-wire retry and fail-closed on malformed frame, realm mismatch, future ACK, DISC or timeout. D-21..D-26 offline fixtures cover segmentation, reordering, replay, retry, remote disconnect, backpressure, ACK release and forged ACK. R6 D-19/D-20 are included in the SAME Windows build/test gate. CMake and one script updated to run ONLY D-19 through D-26, no repeat of historical D-8 to D-18.
+
+ENV QUALITY: the focal runner detects known fixed Qt/Intelbras NetSDK/PlaySDK paths when unset in a fresh developer shell. It does not override explicit values, install software, change security settings or bypass the exact preflight.
+
+R7 is NOT a working vendor P2P Cloud service. No legitimately authorized Cloud bootstrap application identity, rendezvous/peer authentication, verified Direct/Relay, live CloudByteStream or real 16/32 NVR has been supplied or field-tested. Do not invent endpoints or embed SIM Next or dh-fwd. Alternative under customer control: an independently secured site gateway/relay, which requires deployment and is not implemented.
+
+Single Windows gate, with SENTRIUM closed and developer shell in repo: .\scripts\windows\sentrium-validate-f005-cloud.ps1. It performs pull ff-only, PRE-FLIGHT, Debug build, D-19..D-26. R5 remains the latest actual PASS. PR #4 draft, main intact. Details in docs/foundation-005/F005-CLOUD-DATAPLANE-R7.md.

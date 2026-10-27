@@ -22,3 +22,8 @@ CMake now includes R6 and declares D-19/D-20. The sole Windows validation script
 ## Real Cloud blocker
 
 Permissioned identity/credentials of the remote infrastructure remain unavailable, so we cannot claim or test Cloud authentication, remote peer negotiation, direct/relay routing, PTCP over a real network, NetSDK through an authorized tunnel or remote NVR with 16/32 channels. No SIM Next DLL, vendor bootstrap secret, fixed address or defender-quarantined executable is part of this implementation. Next permitted step after R6 is an authorized provider and live hardware validation, NOT an invented endpoint.
+
+
+## R6 Windows result and corrective continuation (26/10/2026)
+
+R6 operator log: MSVC compilation FAIL before CTest. Warning C4456 shadowed id loop variable in tests/device/main.cpp line 789; /WX promoted to C2220, exit 2. The loop variable was renamed messageIndex in consolidated R7. D-19 and D-20 remain NOT RUN pending the combined R7 single gate.

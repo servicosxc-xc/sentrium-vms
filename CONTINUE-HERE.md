@@ -63,3 +63,10 @@ NOVO R5: codigo C++ de CloudStreamTunnel liga a ponte TCP local ao contrato Clou
 R5 (commit 97159ea2c0e0a274f68f5e7f4066c194a4462a6a) comprovado no Windows: PRE-FLIGHT, CMake/Debug build PASS e D-8/D-17/D-18 3/3 PASS (0,10 s). O log exibe build resumido sem contador [N/N] final. Todos D-9 ate D-16 foram aprovados antes. Nenhum Cloud real foi autenticado.
 
 R6 adiciona PtcpReceiveWindow para buffer PTCP LMID fora de ordem (incluindo controles), rollover de contador, replay e limites de 32 pacotes/256KiB; D-19/D-20 com testes offline; runner passa a executar somente D-19/D-20. R6 codigo COMMITADO, build/testes Windows NOT RUN. Ver handoff secao 19 e docs/foundation-005/F005-CLOUD-PTCP-REORDER-R6.md. Continuam sem autorizacao bootstrap do Cloud, Direct/Relay, stream confiavel ou NVR 16/32 real via Cloud; manter UI Cloud bloqueada, PR draft, main intacta, sem SIM Next/dh-fwd.
+
+
+## New workflow + R7 checkpoint — 26/10/2026
+
+User requests bigger coherent implementation batches and ONE Windows build at the end, not one test cycle per small class. R6 build on c52f2e9 FAILED with C4456/C2220 in tests/device/main.cpp line 789 (local id hides main id; /WX); D-19/20 did NOT run. Fixed to messageIndex.
+
+R7 integrated post-auth PTCP data plane joins packet fragmentation, LMID ordering, PID/cumulative ACK, heartbeat, retries, backpressure and fail-closed errors. New D-21..D-26 and previously unrun D-19/20 in a single script gate; no re-run of approved D-8..D-18. The script auto detects pinned Qt/NetSDK/PlaySDK roots when missing but PRE-FLIGHT still verifies. R7 build and D-19..D-26 NOT RUN. Handoff section 20, document docs/foundation-005/F005-CLOUD-DATAPLANE-R7.md. Vendor Cloud still blocked by independent bootstrap authorization and live peer/Direct/Relay negotiation. No actual remote NVR 16/32 session.

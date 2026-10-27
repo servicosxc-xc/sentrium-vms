@@ -37,6 +37,22 @@ try {
         throw 'Git fast-forward failed.'
     }
 
+    # Pinned roots for fresh Developer PowerShell sessions; exact PRE-FLIGHT
+    # still validates each SDK binary. Never overwrite explicitly set paths.
+    $knownRoots = [ordered]@{
+        'SENTRIUM_QT_ROOT' = 'C:\Qt\6.12.0\msvc2022_64'
+        'SENTRIUM_INTELBRAS_SDK_ROOT' = 'C:\Temp\IntelbrasSDK\NetSDK64'
+        'SENTRIUM_PLAYSDK_ROOT' = 'C:\Temp\IntelbrasSDK\PlaySDK64'
+    }
+    foreach ($setting in $knownRoots.GetEnumerator()) {
+        if ([string]::IsNullOrWhiteSpace(
+                [Environment]::GetEnvironmentVariable($setting.Key,'Process')) -and
+            (Test-Path -LiteralPath $setting.Value -PathType Container)) {
+            [Environment]::SetEnvironmentVariable(
+                $setting.Key, $setting.Value, 'Process')
+        }
+    }
+
     # PRE-FLIGHT registry checks run before StrictMode Latest.
     & (Join-Path $PSScriptRoot 'sentrium-preflight.ps1') -VerifyOnly
     Set-StrictMode -Version Latest
