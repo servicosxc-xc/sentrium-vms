@@ -80,3 +80,8 @@ R7 commit 2757ab6eab944b2c1953ad152532b0244e94c057: PRE-FLIGHT PASS, Debug build
 ## R8 gate final ampliado (26/10/2026)
 
 R8 foi reforcado para impedir std::terminate em callbacks noexcept se houver excecao durante fila/ACK/retry; retorna falha e fecha o link. Testes D-33/34 cobrem limites e erro de datagrama, alem de D-27..32 ja escritos. Script unico valida D-27..D-34 em Debug. NAO houve build Windows de R8. Handoff secao 22 prevalece para o gate mais recente. PR #4 draft, main nao alterada.
+
+
+## R8 focused Windows performance change
+
+F005 runner now builds only sentrium-device-tests plus transitive sentrium-device C++ library instead of Qt UI/media/server each round. CTest D-27..D-34. This is a native module gate, not a complete application build; PRE-FLIGHT remains mandatory. See handoff section 23. R8 Windows NOT RUN.

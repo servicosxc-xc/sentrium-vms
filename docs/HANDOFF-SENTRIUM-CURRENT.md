@@ -345,3 +345,8 @@ Main intacta, PR #4 draft e Human Review nao aprovado. Proximo gate unico: no De
 ## 22. R8 hardening e gate consolidado (26/10/2026)
 
 Antes do primeiro build Windows de R8, auditoria do novo PtcpVerifiedByteStream detectou risco de std::bad_alloc/excecao atravessando callbacks read/write noexcept e causando std::terminate. Foram acrescentadas barreiras catch-all fail-closed nos caminhos de retryDue(), progress() e write() para evitar derrubar todo o processo VMS em caso de falha inesperada de alocacao/estado. Os testes D-33/D-34 cobrem entradas invalidas (prazo, ponteiro, tamanho), escrita de tamanho excessivo e datagrama recebido acima da capacidade, sem leak ou continuação depois da falha. CMake e runner focal agora abrangem D-27 ate D-34 em um unico build. Nenhum teste R8 foi executado no Windows ate retorno do operador; log aprovado mais recente segue R7 [44/44] e 8/8 PASS. Os documentos anteriores com D-27..D-32 descrevem o escopo original; este checkpoint supersede. Cloud externo segue BLOCKED.
+
+
+## 23. R8 single gate optimized to build only Cloud target (26/10/2026)
+
+To reduce unnecessary Windows rebuild work, the single runner uses cmake --build --preset sentrium-debug --target sentrium-device-tests instead of rebuilding the entire SENTRIUM client/server/media lab. The sentrium-device-tests target transitively rebuilds and links all changed sentrium-device C++ sources, including R8, plus focused fixtures; CTest remains D-27..D-34. A PASS proves the native device/Cloud module, not fresh compilation of the entire Qt VMS client. Complete product integration remains a separate later gate. Exact PRE-FLIGHT and CMake configure are preserved; R8 NOT RUN until real Windows evidence.

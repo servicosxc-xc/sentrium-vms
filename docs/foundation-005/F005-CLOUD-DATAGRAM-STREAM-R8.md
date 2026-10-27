@@ -36,3 +36,8 @@ Windows command, SENTRIUM closed, at the repository root:
 ## Final R8 pre-build hardening
 
 Callbacks CloudByteStream are noexcept, so exceptions from allocations in queues/counters cannot propagate to NetSDK or call std::terminate. Internal retry, input pump and write now catch unexpected exceptions, tear the stream down and report failure. Additional tests D-33 and D-34 cover invalid arguments, overlong TCP writes and an oversized incoming datagram. One Windows runner now selects D-27 through D-34. All R8 tests remain NOT RUN until actual Windows evidence; do not inherit the R7 PASS.
+
+
+## Focused build gate
+
+R8 runner now targets CMake sentrium-device-tests and the dependent native sentrium-device library only, rather than unrelated Qt client/media/server. It still configures the same debug preset, verifies exact toolchain and runs D-27..D-34. It does NOT certify a full-client build, which will occur at a later integration gate. R8 Windows NOT RUN at this writing.

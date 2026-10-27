@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Validate Foundation-005 R8 verified datagram-to-TCP byte stream.
+  Validate Foundation-005 R8 verified datagram stream (focused build).
 .DESCRIPTION
   One command after updating local checkout: check branch and worktree,
   fast-forward, PRE-FLIGHT, configure/build Debug and run D-27 to D-34.
@@ -73,7 +73,8 @@ try {
     }
 
     $buildLog = Join-Path $logDir 'f005-cloud-build-latest.log'
-    & $env:SENTRIUM_CMAKE --build --preset sentrium-debug > $buildLog 2>&1
+    # Build the device library and Cloud tests, not unrelated Qt/media/UI.
+    & $env:SENTRIUM_CMAKE --build --preset sentrium-debug --target sentrium-device-tests > $buildLog 2>&1
     $buildCode = $LASTEXITCODE
     if ($buildCode -ne 0) {
         Get-Content -LiteralPath $buildLog -Tail 65
@@ -96,7 +97,7 @@ try {
         throw 'Cannot read Git commit.'
     }
 
-    Write-Host 'F005 DEBUG BUILD + D-27 to D-34: PASS' -ForegroundColor Green
+    Write-Host 'F005 DEVICE-TESTS DEBUG BUILD + D-27 to D-34: PASS' -ForegroundColor Green
     Write-Host "Commit: $commit"
     Write-Host 'Cloud bootstrap, Direct/Relay and real P2P login: NOT VERIFIED.'
 }
