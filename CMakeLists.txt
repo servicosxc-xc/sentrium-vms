@@ -157,5 +157,6 @@ add_test(
           -Executable "$<TARGET_FILE:sentrium-client>"
           -Cycles 10
 )
+set_tests_properties(D-41 D-42 D-43 D-44 D-45 D-46 PROPERTIES TIMEOUT 15)
 set_tests_properties(I-1 I-2 I-3 I-4 I-5 I-6 I-7 I-8 I-9 I-10 I-11 PROPERTIES TIMEOUT 30)
 set_tests_properties(F002-CLIENT-SMOKE PROPERTIES TIMEOUT 120)
