@@ -82,3 +82,7 @@ cd 'C:\Projetos\SENTRIUM VMS\sentrium-vms'; git pull --ff-only origin foundation
 ```
 
 Validacao Python 4/4 sinteticos anterior nao valida a resolucao do Python no Windows do operador. O wrapper atualizado **ainda precisa de confirmacao de execucao Windows**. C++ R10 Windows 6/6 PASS continua intocado, PR draft e main/Human Review preservados.
+
+## TShark fallback Windows (28/10/2026)
+
+O operador validou diretamente com TShark no Windows: 3964 pacotes e 3586029 bytes UDP (porta 1131) na RE-003, concordantes com o analisador Python. Python 3.9+ nao existe no PC e o launcher py -3 esta obsoleto. O script windows principal agora tenta TShark automaticamente quando nenhum Python funcional for encontrado. Ele processa conversas UDP IPv4 por enderecos/portas SOMENTE em memoria e salva JSON sanitizado com contagens, bytes e portas (nenhum IP ou payload). Schema distinto sentrium.f005.pcap.tshark-transport.v1 e status PASS_PARTIAL_TRANSPORT_ONLY. E uma validacao PARCIAL de transporte: NAO executa DNS/HTTPS, envelope 16B, autenticao Cloud nem demonstracao de acesso independente. Portas sao especificas da sessao. Essa rotina nova ainda precisa de validacao no PowerShell do operador; o TShark em si ja foi comprovado. Sem alteracoes C++/CTest, R10 anterior continua 6/6 PASS, PR draft e main/F004 Human Review intactos.

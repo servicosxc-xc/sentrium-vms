@@ -160,3 +160,8 @@ Added reproducible metadata-only PCAPNG analyzer at scripts/research/sentrium-p2
 ## RE-004 Windows R1 hotfix runtime Python — 28/10/2026
 
 Real operator test failed on Windows: `py -3` launcher attempted deleted `%LOCALAPPDATA%\Programs\Python\Python313\python.exe`; analyzer never ran, no PASS. PCAP path valid. `scripts/windows/sentrium-audit-f005-pcap.ps1` updated to probe Python executable/version/exit-code, fallback to python/python3, py explicit 3.x and LOCALAPPDATA versions, optional -PythonPath. If none works fail safely with diagnostics. Last valid R10 C++ 6/6 PASS unaffected. Next test operator exact PCAP path `C:\Users\ericx\Downloads\wireshaark 2.pcapng`, run git pull + wrapper. No new PCAP or C++ build. RE004 doc appended. PR draft/main/F004 Human Review preserved.
+
+
+## RE-004 TShark fallback Windows (28/10/2026)
+
+Operador validou TShark diretamente no Windows: 3964 pacotes 3586029 bytes na captura RE-003. Sem Python funcional; wrapper RE-004 agora cai automaticamente para modo TShark UDP IPv4, grava JSON sanitizado somente em out/simnext-interop, nao grava IP/payload, declara PASS PARCIAL DE TRANSPORTE (nao autenticao Cloud, DNS ou parsing de envelope). Novo wrapper TShark precisa de uma unica validacao Windows usando exatamente mesmo comando. Sem nova captura, sem instalar Python, sem novo build C++.
