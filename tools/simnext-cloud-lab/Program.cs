@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Loader;
 using System.Security.Cryptography;
+using System.Text;
 
 internal static class Program
 {
@@ -82,8 +83,8 @@ internal static class Program
                 Console.WriteLine("CANCELLED: nenhuma conexao foi iniciada.");
                 return 0;
             }
-            Console.Write("Cloud ID/UUID do SEU gravador (nao sera gravado): ");
-            var cloudId = Console.ReadLine()?.Trim();
+            Console.Write("Cloud ID/UUID do SEU gravador (entrada oculta, nao sera gravado): ");
+            var cloudId = ReadSensitiveLine()?.Trim();
             if (string.IsNullOrWhiteSpace(cloudId) || cloudId.Length > 128 ||
                 cloudId.Any(char.IsWhiteSpace))
             {
@@ -154,6 +155,17 @@ internal static class Program
             bool loopbackOnly = listeners.Length > 0 &&
                 listeners.All(ep => IPAddress.IsLoopback(ep.Address));
             Console.WriteLine("LOCAL TCP LISTENER: " + (listeners.Length > 0 ? "OBSERVED" : "NOT_OBSERVED"));
+            // Never print any listener IP or interface name. Classify bind intent only.
+            // Windows GetActiveTcpListeners() does not expose process identity or firewall reachability.
+            var scopes = listeners.Select(ep =>
+                IPAddress.IsLoopback(ep.Address) ? "LOOPBACK" :
+                ep.Address.Equals(IPAddress.Any) ? "WILDCARD_IPV4" :
+                ep.Address.Equals(IPAddress.IPv6Any) ? "WILDCARD_IPV6" :
+                ep.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork
+                    ? "SPECIFIC_NON_LOOPBACK_IPV4" : "SPECIFIC_NON_LOOPBACK_IPV6")
+                .Distinct().OrderBy(s => s, StringComparer.Ordinal).ToArray();
+            Console.WriteLine("BIND CATEGORIES (no IP): " +
+                (scopes.Length > 0 ? string.Join(",", scopes) : "NO_LISTENER"));
             Console.WriteLine("BIND SCOPE: " + (loopbackOnly ? "LOOPBACK_ONLY" : "NOT_PROVEN_LOOPBACK"));
             if (!loopbackOnly)
             {
@@ -187,6 +199,34 @@ internal static class Program
                 catch { Console.Error.WriteLine("CLEANUP WARNING: Cleanup falhou."); }
                 if (_instance is IDisposable d)
                     try { d.Dispose(); } catch { }
+            }
+        }
+    }
+
+    // Prevent accidentally publishing a Cloud ID via console copy/paste.
+    // Do not persist to files, logs, process arguments or terminal scrollback.
+    private static string ReadSensitiveLine()
+    {
+        if (Console.IsInputRedirected)
+            throw new InvalidOperationException("Private Cloud ID requires interactive terminal.");
+        var buffer = new StringBuilder();
+        while (true)
+        {
+            var key = Console.ReadKey(intercept: true);
+            if (key.Key == ConsoleKey.Enter)
+            {
+                Console.WriteLine();
+                var value = buffer.ToString();
+                buffer.Clear();
+                return value;
+            }
+            if (key.Key == ConsoleKey.Backspace)
+            {
+                if (buffer.Length > 0) buffer.Length--;
+            }
+            else if (!char.IsControl(key.KeyChar) && buffer.Length < 128)
+            {
+                buffer.Append(key.KeyChar);
             }
         }
     }
