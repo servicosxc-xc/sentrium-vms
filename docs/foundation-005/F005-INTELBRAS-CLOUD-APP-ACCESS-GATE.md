@@ -47,3 +47,8 @@ A pesquisa publica mais recente nao apresentou confirmacao de SDK Cloud Intelbra
 - Resposta oficial anterior no forum indica possibilidade de envio de termo de confidencialidade ao obter SDK ordinario, mas nao resolve a disponibilidade da integracao do serviço Cloud P2P: https://forum.intelbras.com.br/viewtopic.php?t=16383 .
 
 **Decisao atual:** a solicitacao estruturada ja presente neste documento e o proximo gate externo adequado. Exigir resposta atual especifica para **SDK P2P por numero de serie, credenciais de aplicativo terceirizado, suporte a C++ Windows, conformidade/licenca comercial e caminho Direct/Relay**; o SDK NetSDK IP/DDNS nao deve ser apresentado como prova de Cloud. Nao enviar credenciais nem PCAPNG ao contato oficial. Nenhum pedido foi enviado pela automacao/assistente; depende de envio aprovado pelo operador.
+
+
+## Atualizacao de decisao pelo operador — 28/10/2026
+
+O operador informa que nao obtera SDK Cloud por chatbot Intelbras; o fluxo acessivel entrega somente SDK DVR/NVR convencional que ja foi disponibilizado ao projeto. **Nao insistir em solicitar novamente ao chatbot nem tratar resposta oficial como proximo passo obrigatorio da F005.** A possibilidade de uso licenciado de Cloud por serial continua tecnicamente NAO VERIFICADA para terceiros e **BLOCKED** (nao significa impossibilidade permanente). A continuidade executavel e AutoRegistration NetSDK (ja um NVR 8ch conectado), com transporte remoto seguro e infraestrutura controlada, e rede VPN/NetSDK como alternativa. A trilha de engenharia reversa Cloud continua passiva e independente, sem uso de segredos de SIM Next. Ver decisao `docs/foundation-005/F005-NO-VENDOR-CLOUD-SDK-PLAN.md`.
