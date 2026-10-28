@@ -1,0 +1,70 @@
+# F005 RE-004 — Auditoria reproduzível do início de sessão Cloud P2P
+
+Data de pesquisa: 28/10/2026. Fonte: duas capturas de uma instalação legítima do SIM Next conectada a gravador autorizado, previamente analisadas em RE-002 e RE-003. Conclusões abaixo derivam exclusivamente de metadados observáveis; **não temos especificação oficial do Cloud nem autenticação de terceiro aprovada**.
+
+## Resultado técnico novo
+
+A segunda captura começou com o SIM Next fechado e foi gravada durante inicialização, conexão P2P, abertura de um canal e fechamento da visualização. O usuário confirmou o rótulo **P2P** na interface. O IP WAN público do local do DVR coincidiu com o destino de grande volume em ambas as capturas RE-002/RE-003 (e é omitido nesta documentação por privacidade).
+
+Analisamos novamente o arquivo PCAPNG RE-003, com um **novo analisador reprodutível que não depende de Wireshark, TShark, Scapy ou rede**. A leitura direta dos blocos Enhanced Packet Block calcula **5.135 quadros em 73,689 segundos**; a nota anterior estimava 73,320 s. Para futuros relatórios, usar a duração recalculada e reprodutível, sem alterar as conclusões sobre os eventos relativos a t≈41–70s.
+
+### DNS e HTTPS observados, sem decifrar o TLS
+
+| Momento relativo | Evidência de rede |
+|---|---|
+| 11,252 s | Consulta DNS do nome público `api-cronos.intelbras.com.br` |
+| 11,260 s | TCP SYN porta 443 a um endereço retornado na resposta DNS desse nome |
+| 11,260 s | Consulta DNS do nome público `intelbrasp2p.com.br` |
+| 12,641 s | Consulta DNS `api.simnext.isec.intelbras.com.br` |
+| 12,662 s | TCP SYN porta 443 a um endereço retornado na resposta desse nome |
+| 14,118 s | Consulta DNS `cronos-simnext.intelbras.com.br` |
+| 14,423 s | Consulta DNS `logs.isec.intelbras.com.br` |
+| 14,429 s | TCP SYN porta 443 a um endereço retornado na resposta desse nome |
+
+A correspondência DNS→TCP confirma contato com alguns serviços da Intelbras durante a inicialização. **Não afirma que esses servidores autenticaram P2P**. DNS e HTTPS também podem servir à configuração, telemetria e funções não relacionadas ao Cloud. O DNS `intelbrasp2p.com.br` foi observado, mas isso **não** equivale a confirmar um handshake de autenticação dessa plataforma ou uma API pública utilizável pelo SENTRIUM.
+
+### Tentativas e estados UDP na rede autorizada do DVR
+
+| t aproximado | Direção observada e marcador inicial do datagrama |
+|---|---|
+| 40,818 s | Local → rede DVR, porta remota UDP 1132, `12 20 D0 07` (184 bytes de UDP) |
+| 41,420 s | Local → rede DVR, porta remota UDP 1131, `12 20 D0 07` (184 bytes) |
+| 41,494 s | DVR → local, UDP 1131, `12 20 D0 07` (184 bytes); local → DVR, `12 20 D1 07` |
+| 41,520 s | DVR → local, `12 20 D2 07` (24 bytes) |
+| 42,055–42,078 s | Nova troca `D0`/`D1`/`D2` em UDP 1131; pode ser segunda negociação, sem interpretação definida |
+| 42,084–42,110 s | Local `12 01 10 00` → resposta `12 01 10 01` |
+| 42,125–42,155 s | Local `12 01 10 05` (1.400 bytes) → resposta `12 01 10 06` (16 bytes) |
+| 42,175–42,203 s | Local envia `12 01 10 02`; rede remota responde `12 01 10 03` |
+| 56–70 s | Tráfego volumoso compatível com vídeo do canal aberto; redução após o fechamento |
+
+**Achado importante:** o primeiro contato usou porta UDP remota 1132; o fluxo bidirecional que persistiu usou a porta remota **1131**, com porta local 51699. Em capturas diferentes, as portas remotas mudaram (RE-002 usou 1639). Isso é compatível com seleção/negociação de candidatos de transporte, **não é comprovação suficiente de UDP hole punching, mapeamento NAT específico ou mecanismo criptográfico**.
+
+Na RE-003, o candidato principal apresentou 3.964 quadros e 3.586.029 bytes Ethernet. O marcador de dados `12 01 10 02` foi observado em 3.254 datagramas, todos com o campo de comprimento (bytes 8–9) consistente com um cabeçalho externo de 16 bytes. O mesmo teste aplicado à RE-002 passou em **6.481/6.481** datagramas. É um formato observável, não um protocolo autorizado de login. O parser C++ experimental PTCP existente no SENTRIUM espera `PTCP`/24 bytes, portanto não equivale a esse envelope.
+
+## Nova ferramenta de análise — reprodutível e sanitizada
+
+Arquivos:
+
+- `scripts/research/sentrium-p2p-pcap-audit.py`: leitura local PCAPNG/Ethernet/IPv4/IPv6/TCP/UDP, DNS público de nomes previamente aprovados, associação de endereços DNS em memória a TCP SYN 443, identificação de conversa UDP dominante, prefixos conhecidos, durações, períodos de bytes/segundo e precursores no mesmo host remoto; **sem gravar IPs, MACs ou payloads**.
+- `tests/research/test_re004_pcap_audit.py`: 4 testes com PCAPNG **inteiramente sintéticos**, verificação de integridade, vazamento de IP, regras de DNS, framing e reconhecimento de portas.
+- `scripts/windows/sentrium-audit-f005-pcap.ps1`: invocação de uma linha a partir do repositório, com Python 3 (biblioteca padrão), escrita do JSON sanitizado somente em `out/simnext-interop/` (ignorado no Git).
+
+Comando Windows para eventual auditoria de **uma captura local que já exista**, sem nova coleta:
+
+```powershell
+.\scripts\windows\sentrium-audit-f005-pcap.ps1 -PcapPath "C:\CAMINHO\captura.pcapng"
+```
+
+**Validação executada no ambiente de desenvolvimento:** Python `unittest` **4/4 PASS**; RE-002 PCAPNG real **15.087 frames/48,957 s**, conversa dominante 4.508 frames/5.484.597 bytes, UDP remoto 1639/local 64220; RE-003 PCAPNG real **5.135 frames/73,689 s**, conversa dominante 3.964 frames/3.586.029 bytes, remoto 1131/local 51699 e precursor remoto 1132. Campos de comprimento dos type02 foram 6.481/6.481 em RE-002 e 3.254/3.254 em RE-003. Verificou-se que os JSONs sanitizados **não contêm o IP público do DVR nem o IP local do operador**.
+
+**Não executado em Windows ainda:** o wrapper PowerShell recém-criado e a execução Python no Windows do operador. Isso não altera código C++ nem exige repetir R10. Os dados PCAPNG privados originais jamais são versionados.
+
+## Decisão técnica e próximo gate
+
+**Confirmado:** tráfego UDP de vídeo até o WAN real do local do DVR durante sessão que o SIM Next rotula P2P; troca de datagramas de negociação antes de transmitir vídeo; contatos com serviços DNS/HTTPS Intelbras no startup; framing UDP de 16 bytes com marcadores recorrentes.
+
+**Não confirmado:** função/credenciais das APIs HTTPS, associação do pedido de Cloud a um serial, identidade do aplicativo, autenticação/consentimento do gravador, algoritmo de descoberta oficial, garantia de conexão direta sem auxiliares, suporte a um programa de terceiros. **Jamais enviar os datagramas observados como se isso concedesse direito de autenticar o SENTRIUM.** A próxima implementação de um provider de produção depende de documentação/autorização própria ou de uma arquitetura independente explicitamente aprovada; o pedido ao fornecedor permanece em `F005-INTELBRAS-CLOUD-APP-ACCESS-GATE.md`.
+
+RE-004 não requer que o operador repita capturas. O foco posterior deve ser uma avaliação de interfaces públicas de sessão/autorização oficialmente disponíveis, distinguindo autenticação da infraestrutura e transporte já observável. Não copiar arquivos SIM Next, extrair tokens/chaves, desabilitar Defender ou executar `dh-fwd_win_x64.exe` bloqueado.
+
+Governança: PR #4 draft, `main` e F004 Human Review intactos. R10 C++ 6/6 Windows PASS permanece a última validação do código nativo.
