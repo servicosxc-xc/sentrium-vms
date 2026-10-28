@@ -86,3 +86,15 @@ Validacao Python 4/4 sinteticos anterior nao valida a resolucao do Python no Win
 ## TShark fallback Windows (28/10/2026)
 
 O operador validou diretamente com TShark no Windows: 3964 pacotes e 3586029 bytes UDP (porta 1131) na RE-003, concordantes com o analisador Python. Python 3.9+ nao existe no PC e o launcher py -3 esta obsoleto. O script windows principal agora tenta TShark automaticamente quando nenhum Python funcional for encontrado. Ele processa conversas UDP IPv4 por enderecos/portas SOMENTE em memoria e salva JSON sanitizado com contagens, bytes e portas (nenhum IP ou payload). Schema distinto sentrium.f005.pcap.tshark-transport.v1 e status PASS_PARTIAL_TRANSPORT_ONLY. E uma validacao PARCIAL de transporte: NAO executa DNS/HTTPS, envelope 16B, autenticao Cloud nem demonstracao de acesso independente. Portas sao especificas da sessao. Essa rotina nova ainda precisa de validacao no PowerShell do operador; o TShark em si ja foi comprovado. Sem alteracoes C++/CTest, R10 anterior continua 6/6 PASS, PR draft e main/F004 Human Review intactos.
+
+## RE-004 TShark fallback — PASS parcial no Windows do operador (28/10/2026)
+
+O operador executou o wrapper PowerShell em Windows Visual Studio Developer PowerShell apos `git pull --ff-only` do commit `ed67873f` e forneceu o log integral. O wrapper retornou:
+
+- `RE-004 TSHARK PASS PARCIAL: 3964 pacotes / 3586029 bytes na maior conversa UDP.`
+- Relatorio local gerado em `out/simnext-interop/re004-tshark-transport-20261028-041303-716.json` (nao versionado, nao recebido nem inspecionado integralmente).
+- Mensagem de limite emitida: `AVISO: a auditoria Python de DNS, framing e Cloud NAO foi executada.`
+
+**Status comprovado:** RE-004 TShark UDP IPv4 fallback PASS PARCIAL no Windows real, com contagem de pacotes e bytes iguais aos resultados de referencia RE-003. A existencia do JSON esta confirmada pelo script, mas o conteudo do JSON nao foi fornecido ao assistente para verificacao de privacidade adicional. A auditoria Python RE-004 COMPLETA permanece nao executada no Windows porque nao ha interpretador Python funcional. Este PASS nao representa autenticao Cloud, discovery, login do VMS ou streaming independente.
+
+Nao foi necessaria instalacao de Python, recaptura de rede ou compilacao do produto. O codigo nativo R10 Windows D-41..D-46 6/6 PASS continua ultima evidência validada. PR #4 permanece draft, main e F004 Human Review intactos.

@@ -37,3 +37,13 @@ Exigir documentação atual/licença de uso, identidade de app e endpoints emiti
 Se a autorização não existir, alternativas separadas: NetSDK por IP/DDNS/VPN, AutoRegistration com implantação permitida, ou gateway remoto gerenciado com autenticação mútua, criptografia e instalação consentida. Nenhuma alternativa é equivalente a Cloud por serial sem infraestrutura. Requer decisão de produto antes de desenvolver.
 
 Próximo gate não é novo teste simulado. É resposta oficial de fornecedor ou decisão expressa sobre gateway seguro. PR draft, main e Human Review intactos.
+## Revisao das fontes publicas e rota oficial de autorizacao (28/10/2026)
+
+A pesquisa publica mais recente nao apresentou confirmacao de SDK Cloud Intelbras P2P por serial licenciado a aplicativos C++ de terceiros em 2026. As fontes abaixo sao factos publicados, nao evidencias de que o SENTRIUM esteja autorizado:
+
+- Resposta oficial do suporte Intelbras no forum de **03/07/2018**: acesso pelo numero de serie Cloud necessitaria SDK especifico Cloud, diferente do SDK IP/DDNS, que **naquela data** nao era disponibilizado. https://forum.intelbras.com.br/viewtopic.php?p=231915 . **Nao presumir que politica de 2018 continue em vigor em 2026; consultar fornecedor.**
+- Orientacao oficial de **16/10/2024**: para obter SDK/API convencional de gravador, contatar chat/WhatsApp no fluxo Ajuda com produtos > Seguranca > Cameras, gravadores e acessorios > Obter API/SDK. https://forum.intelbras.com.br/viewtopic.php?p=272216 . Esta orientacao nao afirma acesso Cloud por serial.
+- Manual Intelbras Guardian Parceiro v1.6.0 consultado em 2026 explica metodos Cloud P2P, DDNS e IP, e que em alguns NAT/CGNAT o Relay pode ser usado. Confirma que existem aplicacoes oficiais de conexao por serial, mas nao implica SDK publico de terceiros. https://assets.guardian-partner.isec.intelbras.com.br/manual/html/pt-br/manual.html .
+- Resposta oficial anterior no forum indica possibilidade de envio de termo de confidencialidade ao obter SDK ordinario, mas nao resolve a disponibilidade da integracao do serviço Cloud P2P: https://forum.intelbras.com.br/viewtopic.php?t=16383 .
+
+**Decisao atual:** a solicitacao estruturada ja presente neste documento e o proximo gate externo adequado. Exigir resposta atual especifica para **SDK P2P por numero de serie, credenciais de aplicativo terceirizado, suporte a C++ Windows, conformidade/licenca comercial e caminho Direct/Relay**; o SDK NetSDK IP/DDNS nao deve ser apresentado como prova de Cloud. Nao enviar credenciais nem PCAPNG ao contato oficial. Nenhum pedido foi enviado pela automacao/assistente; depende de envio aprovado pelo operador.

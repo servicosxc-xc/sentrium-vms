@@ -165,3 +165,7 @@ Real operator test failed on Windows: `py -3` launcher attempted deleted `%LOCAL
 ## RE-004 TShark fallback Windows (28/10/2026)
 
 Operador validou TShark diretamente no Windows: 3964 pacotes 3586029 bytes na captura RE-003. Sem Python funcional; wrapper RE-004 agora cai automaticamente para modo TShark UDP IPv4, grava JSON sanitizado somente em out/simnext-interop, nao grava IP/payload, declara PASS PARCIAL DE TRANSPORTE (nao autenticao Cloud, DNS ou parsing de envelope). Novo wrapper TShark precisa de uma unica validacao Windows usando exatamente mesmo comando. Sem nova captura, sem instalar Python, sem novo build C++.
+
+## RE-004 TShark Windows validado (28/10/2026)
+
+Log do operador apos pull do commit ed67873f: RE-004 TSHARK PASS PARCIAL com 3964 pacotes / 3586029 bytes, correspondentes a referencia RE-003. JSON sanitizado criado localmente em out/simnext-interop/re004-tshark-transport-20261028-041303-716.json (arquivo nao recebido/inspecionado); Python auditor completo NAO executado. Nao repetir captura nem exigir Python. Fontes oficiais Intelbras revisitadas: forum 2018 SDK Cloud por serial distinto do IP/DDNS e nao oferecido naquele ano; orientação 2024 SDK/API convencionais via canal suporte; manual Guardian Parceiro v1.6.0 documenta Cloud P2P/Relay como aplicativo oficial mas nao oferece SDK publico terceiro. Gate ainda resposta da Intelbras a consulta de autorização por serial em docs/foundation-005/F005-INTELBRAS-CLOUD-APP-ACCESS-GATE.md. R10 Windows C++ 6/6 PASS permanece, main/F004 Human Review intactos e PR4 draft.
