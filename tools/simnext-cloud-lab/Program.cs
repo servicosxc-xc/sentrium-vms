@@ -2,6 +2,7 @@
 // NOT an approved cloud provider. Do not ship or copy vendor binaries into SENTRIUM.
 // No vendor secrets, endpoints or hardcoded identifiers; no code interception.
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -91,6 +92,18 @@ internal static class Program
                 Console.Error.WriteLine("FAIL INVALID_CLOUD_ID");
                 return 5;
             }
+            // The previous attempt returned a working port; the next failed while
+            // the Cloud ID was no longer echoed. Verify user input privately,
+            // without recording the identifier in logs, arguments or files.
+            Console.Write("Repita Cloud ID/UUID para confirmar (entrada oculta): ");
+            var confirmation = ReadSensitiveLine()?.Trim();
+            if (!string.Equals(cloudId, confirmation, StringComparison.Ordinal))
+            {
+                Console.Error.WriteLine("CLOUD_ID_INPUT: MISMATCH. Nenhuma chamada Cloud foi feita.");
+                return 11;
+            }
+            Console.WriteLine("CLOUD_ID_INPUT: MATCH (valor nao exibido).");
+            confirmation = null;
             Console.Write("Porta de servico deste gravador (1-65535, NAO assumir 37777): ");
             if (!ushort.TryParse(Console.ReadLine(), out ushort remotePort) || remotePort == 0)
             {
@@ -132,8 +145,28 @@ internal static class Program
             Console.WriteLine("ADAPTER_READY: interface local carregada; autenticacao Cloud ainda nao comprovada.");
 
             _stage = "add-port";
-            var raw = addPort.Invoke(_instance, new object[] { _deviceId, cloudId, remotePort, (ushort)0 });
+            var watch = Stopwatch.StartNew();
+            object? raw;
+            try
+            {
+                // Single deliberate attempt, no retries, no unapproved changes to
+                // the vendor's Cloud service or local Windows firewall.
+                raw = addPort.Invoke(_instance, new object[] { _deviceId, cloudId, remotePort, (ushort)0 });
+            }
+            catch (TargetInvocationException ex)
+            {
+                watch.Stop();
+                var kind = ex.InnerException?.GetType().Name ?? "UNKNOWN";
+                Console.Error.WriteLine("ADD_PORT: INVOCATION_EXCEPTION; category=" +
+                    SafeExceptionCategory(kind) + "; elapsed_ms=" + watch.ElapsedMilliseconds);
+                return 12;
+            }
+            watch.Stop();
             int result = Convert.ToInt32(raw);
+            Console.WriteLine("ADD_PORT: elapsed_ms=" + watch.ElapsedMilliseconds +
+                "; returned=" + (result == 0 ? "ZERO" :
+                    result < 0 ? "NEGATIVE" :
+                    result > ushort.MaxValue ? "OUT_OF_RANGE" : "VALID_PORT"));
             if (result <= 0 || result > ushort.MaxValue)
             {
                 Console.WriteLine("TUNNEL NOT_READY: AddSDKPort nao retornou porta valida.");
@@ -201,6 +234,22 @@ internal static class Program
                     try { d.Dispose(); } catch { }
             }
         }
+    }
+
+    // The exception type is reported as a closed category, never as vendor text.
+    private static string SafeExceptionCategory(string typeName)
+    {
+        return typeName switch
+        {
+            "DllNotFoundException" => "DLL_NOT_FOUND",
+            "EntryPointNotFoundException" => "ENTRY_POINT_NOT_FOUND",
+            "BadImageFormatException" => "BAD_IMAGE_FORMAT",
+            "TypeLoadException" => "TYPE_LOAD",
+            "InvalidOperationException" => "INVALID_OPERATION",
+            "TimeoutException" => "TIMEOUT",
+            "ExternalException" => "NATIVE_ERROR",
+            _ => "OTHER"
+        };
     }
 
     // Prevent accidentally publishing a Cloud ID via console copy/paste.
