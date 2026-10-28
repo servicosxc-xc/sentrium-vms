@@ -30,3 +30,20 @@ cd "C:\Projetos\SENTRIUM VMS\sentrium-vms"; git pull --ff-only origin foundation
 Selecionar `SIMNext.P2PSDK.dll` da instalacao local. Nenhum IP, Cloud UUID, credencial ou trecho de arquivo privado deve ser enviado ao GitHub/chat. Compartilhar apenas linhas BINARY/METADATA/INSPECT sem caminhos locais sensiveis.
 
 **Proximos gates:** (1) INSPECT Windows; (2) revisar assinatura/origem/licenca e compatibilidade sem copiar as DLLs; (3) CONNECT de laboratorio apenas com dispositivos do proprio operador e permissao aplicavel; (4) eventual login NetSDK no localhost via um adaptador **isolado e condicionado**; (5) licenca comercial e direito de redistribuicao antes de integrar a release. Main/F004 Human Review intactos, PR #4 draft.
+
+
+## INSPECT — Windows real PASS (28/10/2026)
+
+Recebido log de Visual Studio 2022 Developer PowerShell no PC do operador, apos `git pull --ff-only` de `0b0cdf1`. O script foi executado com `-Mode Inspect`, localizou os cinco componentes **no diretorio de instalacao** e completou a compilacao/execucao do harness .NET 10 x64 (se nao houvesse runtime .NET e compilacao suficientes, o comando dotnet run nao teria produzido `INSPECT PASS`). Saida observada:
+
+| Arquivo | Signature status | PE machine | Assembly kind |
+|---|---|---|---|
+| SIMNext.P2PSDK.dll | Valid | AMD64 | managed SIMNext.P2PSDK |
+| SIMNext.Core.dll | Valid | AMD64 | managed SIMNext.Core |
+| SIMNext.Model.dll | Valid | AMD64 | managed SIMNext.Model |
+| Libt2uWrapper.dll | NotSigned | I386 | managed Libt2uWrapper |
+| libt2u.dll | NotSigned | AMD64 | NATIVE |
+
+Inspecao retornou duas linhas `INSPECT PASS`; **nenhum binario vendor foi carregado no modo INSPECT** (somente metadados), nenhum pedido Cloud foi iniciado e nenhum Cloud UUID/senha foi solicitado. O nome PE I386 de um assembly gerenciado pode significar AnyCPU IL e NAO comprova sozinho necessidade de processo 32-bit; avaliar CLR CorFlags ou comportamento de carga antes de concluir incompatibilidade. `NotSigned` pode ser normal para determinados binarios, mas precisa avaliacao de procedencia e integridade e nao prova que redistribuicao seja permitida. Nunca commitar hash nem copiar as DLLs proprietarias.
+
+**Proximo gate: LAB-CONNECT-PENDING**, avaliado apenas no ambiente autorizado do operador e se permitido pelos termos de uso aplicaveis. Este teste executa codigo de bibliotecas proprietarias e pode contactar infraestrutura Cloud, diferente de INSPECT. Deve exigir confirmacao interativa explicita; nao solicitar UUID/serial/credencial na conversa. O usuario pode encerrar sem execucao antes de digitar CONFIRMO. No script, selecionar a mesma DLL da instalacao original, informar o Cloud ID/UUID do proprio gravador e a Porta de Servico correta (37000 foi apenas um exemplo historico de outro teste); nao assumir 37777. Relatar somente marcadores anonimizados `ADAPTER_READY`, `TUNNEL`, `LOCAL TCP LISTENER`, `LAB FAIL stage=` e eventuais linhas de erro, removendo qualquer dado sensivel. Mesmo PASS do tunel nao seria NetSDK login, vídeo ou autorizacao de redistribuicao. Produto SENTRIUM C++ permanece inalterado, PR draft, main/F004 intactos.
