@@ -200,6 +200,10 @@ internal static class Program
             Console.WriteLine("BIND CATEGORIES (no IP): " +
                 (scopes.Length > 0 ? string.Join(",", scopes) : "NO_LISTENER"));
             Console.WriteLine("BIND SCOPE: " + (loopbackOnly ? "LOOPBACK_ONLY" : "NOT_PROVEN_LOOPBACK"));
+            // Win32 read-only IP Helper table identifies the socket-owning process.
+            // The Windows global listener list above does NOT contain owner PID.
+            // Ownership by this lab still does NOT make a wildcard bind safe.
+            Console.WriteLine("LISTENER OWNER: " + ReadOwnerCategory(_localPort));
             if (!loopbackOnly)
             {
                 Console.WriteLine("SAFETY STOP: nao usar o endpoint no NetSDK se houver exposicao fora do loopback.");
@@ -233,6 +237,65 @@ internal static class Program
                 if (_instance is IDisposable d)
                     try { d.Dispose(); } catch { }
             }
+        }
+    }
+
+    // Verified against Microsoft's documented MIB_TCPROW_OWNER_PID layout:
+    // DWORD state, IPv4 local address, network-byte-order port, remote address,
+    // remote port, owning PID (6 x 4-byte DWORD); table header is a DWORD count.
+    // This is read-only metadata: no sockets opened, no firewall changes.
+    private enum TcpTableClass
+    {
+        OwnerPidListener = 3
+    }
+
+    [DllImport("iphlpapi.dll", SetLastError = true)]
+    private static extern uint GetExtendedTcpTable(
+        IntPtr tcpTable, ref int size,
+        [MarshalAs(UnmanagedType.Bool)] bool order,
+        int addressFamily, TcpTableClass tableClass, uint reserved);
+
+    private static string ReadOwnerCategory(ushort port)
+    {
+        const uint errorInsufficientBuffer = 122;
+        const int afInet = 2;
+        const int rowBytes = 24;
+        try
+        {
+            int length = 0;
+            uint result = GetExtendedTcpTable(
+                IntPtr.Zero, ref length, true, afInet, TcpTableClass.OwnerPidListener, 0);
+            if (result != errorInsufficientBuffer || length < 4 || length > 16 * 1024 * 1024)
+                return "UNAVAILABLE";
+            IntPtr buffer = Marshal.AllocHGlobal(length);
+            try
+            {
+                result = GetExtendedTcpTable(
+                    buffer, ref length, true, afInet, TcpTableClass.OwnerPidListener, 0);
+                if (result != 0 || length < 4)
+                    return "UNAVAILABLE";
+                int count = Marshal.ReadInt32(buffer);
+                if (count < 0 || count > (length - 4) / rowBytes)
+                    return "UNAVAILABLE";
+                var owners = new System.Collections.Generic.HashSet<int>();
+                for (int index = 0; index < count; index++)
+                {
+                    var row = IntPtr.Add(buffer, 4 + index * rowBytes);
+                    var wirePort = unchecked((ushort)Marshal.ReadInt32(row, 8));
+                    var hostPort = unchecked((ushort)((wirePort << 8) | (wirePort >> 8)));
+                    if (hostPort != port) continue;
+                    owners.Add(Marshal.ReadInt32(row, 20));
+                }
+                if (owners.Count == 0) return "UNKNOWN_OR_RACE";
+                if (owners.Count > 1) return "MULTIPLE_PROCESSES";
+                return owners.First() == Environment.ProcessId
+                    ? "CURRENT_LAB_PROCESS" : "OTHER_PROCESS";
+            }
+            finally { Marshal.FreeHGlobal(buffer); }
+        }
+        catch
+        {
+            return "UNAVAILABLE";
         }
     }
 
