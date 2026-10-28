@@ -68,3 +68,17 @@ Comando Windows para eventual auditoria de **uma captura local que já exista**,
 RE-004 não requer que o operador repita capturas. O foco posterior deve ser uma avaliação de interfaces públicas de sessão/autorização oficialmente disponíveis, distinguindo autenticação da infraestrutura e transporte já observável. Não copiar arquivos SIM Next, extrair tokens/chaves, desabilitar Defender ou executar `dh-fwd_win_x64.exe` bloqueado.
 
 Governança: PR #4 draft, `main` e F004 Human Review intactos. R10 C++ 6/6 Windows PASS permanece a última validação do código nativo.
+
+## R1 hotfix Windows — launcher Python com registro obsoleto (28/10/2026)
+
+Teste real do operador falhou no wrapper: o comando py -3 apontava para um executavel que nao existe mais em uma instalacao Python 3.13 per-user. A captura PCAPNG foi localizada corretamente; a analise nao chegou a executar. Nenhum PASS foi declarado. **E um defeito de selecao do runtime Windows, nao uma falha de protocolo ou do gravador.**
+
+O wrapper PowerShell foi corrigido para testar efetivamente cada candidato com `-c` e verificar versao >=3.9 + exit-code antes de invocar. Em caso de launcher `py` obsoleto, tenta python/python3 no PATH, versoes especificas do launcher e caminhos existentes em `%LOCALAPPDATA%\Programs\Python\Python*\python.exe`. Permite `-PythonPath` para informar o executavel real. Ignora aliases WindowsApps para evitar abrir a Microsoft Store. Caso nao exista Python funcional, retorna erro com diagnostico e **nunca inventa resultado PASS**. O relatorio privado e escrito somente sob out/, preservando a politica de privacidade.
+
+Comando de reteste no PowerShell do operador:
+
+```powershell
+cd 'C:\Projetos\SENTRIUM VMS\sentrium-vms'; git pull --ff-only origin foundation/005-device-connectivity; if ($LASTEXITCODE -eq 0) { .\scripts\windows\sentrium-audit-f005-pcap.ps1 -PcapPath 'C:\Users\ericx\Downloads\wireshaark 2.pcapng' }
+```
+
+Validacao Python 4/4 sinteticos anterior nao valida a resolucao do Python no Windows do operador. O wrapper atualizado **ainda precisa de confirmacao de execucao Windows**. C++ R10 Windows 6/6 PASS continua intocado, PR draft e main/Human Review preservados.
