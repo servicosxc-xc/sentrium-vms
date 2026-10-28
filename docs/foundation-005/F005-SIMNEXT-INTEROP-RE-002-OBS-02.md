@@ -40,3 +40,16 @@ This aligns with a camera opened and closed during the intended test, but the op
 ## Security/engineering gates
 
 No PCAPNG, raw payload, sensitive IP, endpoint hash, local salt, serial, credential or SIM Next binary was committed. No C++ library/CTest modification here, and no Windows build needed. R10 Windows [8/8] build, D-41..D-46 6/6 PASS still valid as **LOCAL SYNTHETIC lab**. PR #4 draft, main and F004 Human Review untouched. No dh-fwd Defender-blocked or vendor bypass.
+## Operator confirmation received — P2P-labelled SIM Next connection, one camera open/close
+
+Operator confirmed after RE-002 PCAP: capture began with no camera open, then opened one channel, then closed it; the device connection in SIM Next UI was labelled **P2P**. This is direct operator observation, not data decoded from the PCAP. The actual rendered picture quality was not separately confirmed.
+
+This resolves the previous UI/sequence uncertainty: in the authorized P2P-labelled user session, UDP remote port 1639 ↔ local 64220 produced a high-volume inbound stream from approximately capture t=13.913s through t=36.482s, strongly correlated with the opening and closing sequence. Media-bearing UDP transport during a **P2P-labelled SIM Next session** is now supported by both network evidence and operator observation.
+
+CRITICAL LIMIT: P2P in the SIM Next UI does not prove UDP endpoint is the recorder itself or that no relay/intermediate vendor infrastructure is used. Does not show vendor app identity, bootstrap/authorization, NetSDK tunnel or third-party app permission. The observed 12 01 10 xx UDP envelope with 16-byte header remains distinct from the experimental C++ PTCP/24-byte ASCII PTCP parser on current evidence.
+
+### Next RE-003 research gate (planned; NOT RUN)
+
+Study the initial authorized SIM Next startup, not additional established video flows. Leave authorized recorder registrations untouched. Close SIM Next normally; start a local Wireshark capture on the actual network interface for ~5–10 seconds with the app absent; launch SIM Next and observe one test recorder coming online; open just one camera extra stream. Record relative times of app launch, device online, camera open, UI route P2P, and stop capture after a brief active period. A few other registered recorders may automatically connect; do not attribute destinations without independent evidence. This is passive observation, not removal/reset of devices/accounts or modification of security. Keep raw PCAP local; share redacted flow/timing statistics only. No copying/decoding vendor client credentials, SIM Next binaries, decryption keys, authentication bypass or Defender-blocked software.
+
+No C++/CTest modifications here; R10 Windows 6/6 PASS remains. PR #4 draft, main and F004 Human Review untouched.
