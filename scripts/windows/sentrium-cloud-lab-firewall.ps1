@@ -155,10 +155,10 @@ function Diagnose-Token {
     $builtinAdminMode='UNKNOWN'
     try {
         $values=Get-ItemProperty -LiteralPath 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -ErrorAction Stop
-        if ($null -ne $values.EnableLUA) {
+        if ($null -ne $values.PSObject.Properties['EnableLUA']) {
             $uac=if ([int]$values.EnableLUA -eq 1) { 'ENABLED' } else { 'DISABLED' }
         }
-        if ($null -ne $values.FilterAdministratorToken) {
+        if ($null -ne $values.PSObject.Properties['FilterAdministratorToken']) {
             $builtinAdminMode=if ([int]$values.FilterAdministratorToken -eq 1) { 'ENABLED' } else { 'DISABLED' }
         }
     } catch {
