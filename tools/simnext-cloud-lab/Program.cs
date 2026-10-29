@@ -7,6 +7,8 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
+using System.Net.Sockets;
+using System.Threading;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Loader;
@@ -28,10 +30,10 @@ internal static class Program
         try
         {
             if (args.Length != 4 || args[0] != "--mode" ||
-                (args[1] != "inspect" && args[1] != "connect") ||
+                (args[1] != "inspect" && args[1] != "connect" && args[1] != "isolation-probe") ||
                 args[2] != "--library-dir")
             {
-                Console.Error.WriteLine("Uso: --mode inspect|connect --library-dir <pasta SIM Next local>");
+                Console.Error.WriteLine("Uso: --mode inspect|connect|isolation-probe --library-dir <pasta SIM Next local>");
                 return 2;
             }
             _directory = Path.GetFullPath(args[3]);
@@ -203,7 +205,42 @@ internal static class Program
             // Win32 read-only IP Helper table identifies the socket-owning process.
             // The Windows global listener list above does NOT contain owner PID.
             // Ownership by this lab still does NOT make a wildcard bind safe.
-            Console.WriteLine("LISTENER OWNER: " + ReadOwnerCategory(_localPort));
+            var owner = ReadOwnerCategory(_localPort);
+            Console.WriteLine("LISTENER OWNER: " + owner);
+            if (args[1] == "isolation-probe")
+            {
+                // Trusted wrapper verifies temporary inbound BLOCK rule first.
+                // Do not collect NetSDK account names or passwords in this mode.
+                if (owner != "CURRENT_LAB_PROCESS")
+                {
+                    Console.Error.WriteLine("ISOLATION STOP: listener owner nao comprovado.");
+                    return 14;
+                }
+                bool localTcpOk = false;
+                try
+                {
+                    using var client = new TcpClient();
+                    using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+                    client.ConnectAsync(IPAddress.Loopback, _localPort, timeout.Token)
+                        .AsTask().GetAwaiter().GetResult();
+                    localTcpOk = client.Connected;
+                }
+                catch { }
+                Console.WriteLine("ISOLATION LOOPBACK TCP: " +
+                    (localTcpOk ? "CONNECTED" : "FAILED"));
+                if (!localTcpOk)
+                {
+                    Console.Error.WriteLine("ISOLATION STOP: loopback falhou. Nao usar NetSDK.");
+                    return 15;
+                }
+                Console.WriteLine("ISOLATION PORT (TEST ONLY): " + _localPort);
+                Console.WriteLine("FIREWALL RULE STATUS PASS ainda NAO prova bloqueio de LAN.");
+                Console.WriteLine("Teste a porta do LAB a partir de outro PC autorizado na LAN.");
+                Console.WriteLine("Nao informe credenciais do DVR neste experimento.");
+                Console.WriteLine("ENTER encerra tunel e inicia reversao da regra temporaria.");
+                Console.ReadLine();
+                return 0;
+            }
             if (!loopbackOnly)
             {
                 Console.WriteLine("SAFETY STOP: nao usar o endpoint no NetSDK se houver exposicao fora do loopback.");

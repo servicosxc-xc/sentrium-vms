@@ -2,7 +2,7 @@
 # Default Inspect is read-only (metadata only). Connect requires explicit typed consent.
 [CmdletBinding()]
 param(
-    [ValidateSet('Inspect','Connect')][string]$Mode = 'Inspect',
+    [ValidateSet('Inspect','Connect','IsolationProbe')][string]$Mode = 'Inspect',
     [string]$LibraryDirectory
 )
 Set-StrictMode -Version Latest
@@ -44,6 +44,32 @@ if ($LASTEXITCODE -ne 0 -or -not (@($sdks) -match '^10\.')) {
 }
 Write-Host ("SENTRIUM Cloud Library LAB: " + $Mode.ToUpperInvariant() + " / bibliotecas no local original.")
 Write-Host 'Nao copiar DLLs; nao remover ou alterar arquivos da Intelbras.'
+if ($Mode -eq 'IsolationProbe') {
+    $fw = Join-Path $PSScriptRoot 'sentrium-cloud-lab-firewall.ps1'
+    $app = Join-Path $root 'tools\simnext-cloud-lab\bin\Release\net10.0\Sentrium.CloudLibLab.exe'
+    $who = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+    if ($who.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+        throw 'ISOLATION PROBE: use PowerShell NORMAL, nao elevado.'
+    }
+    & $fw -Action Status
+    if (-not (Test-Path -LiteralPath $app -PathType Leaf)) {
+        throw 'ISOLATION PROBE: EXE apphost nao encontrado.'
+    }
+    try {
+        Write-Host 'ISOLATION PROBE: SEM login NetSDK ou credenciais do DVR.'
+        & $app --mode isolation-probe --library-dir $folder
+        $result = $LASTEXITCODE
+    } finally {
+        Write-Host 'ISOLATION PROBE: solicitando UAC para remover regra temporaria.'
+        try { & $fw -Action Remove }
+        catch {
+            Write-Warning 'Regra de BLOCK pode permanecer. Execute firewall.ps1 -Action Remove apos encerrar LAB.'
+        }
+    }
+    if ($result -ne 0) { throw ('ISOLATION PROBE: falhou (exit=' + $result + ').') }
+    Write-Host 'ISOLATION PROBE COMPLETE; falta considerar o teste LAN externo.'
+    return
+}
 & $cmd.Source run --project $project --configuration Release --no-launch-profile -- --mode $Mode.ToLowerInvariant() --library-dir $folder
 $exit = $LASTEXITCODE
 if ($exit -ne 0) { throw ("SENTRIUM Cloud Library LAB: NAO APROVADO (exit=" + $exit + ").") }
