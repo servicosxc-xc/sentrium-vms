@@ -38,3 +38,30 @@ Um proxy local na frente do listener NAO modifica o socket original em `0.0.0.0`
 Manter a biblioteca de laboratorio separada do C++ SENTRIUM VMS. Depois de comprovar controle NetSDK num ambiente seguro, projetar um adaptador com ciclo de vida: `CloudDeviceSession` → provedora T2U apenas no LAB com direito de uso → endpoint dinamico protegido → NetSDK → login/channels → teardown. O produto definitivo depende de direito de uso/distribuicao dos componentes, teste Windows limpo e suporte de bootstrap sem depender da instalacao de SIM Next. **F005 Cloud product** permanece `BLOCKED`, enquanto o `LAB-001` e `PARTIAL CONNECTIVITY OBSERVED`.
 
 **Controle de qualidade:** ultimo C++ R10 Windows D-41..D-46 6/6 PASS em tests sinteticos, **nao** login Cloud. PR #4 draft, `main` e F004 Human Review intactos.
+
+
+## Implementacao apos aprovacao do operador — firewall + modo IsolationProbe (28/10/2026)
+
+O usuario confirmou expressamente a criacao de uma regra **temporaria, especifica do executavel de laboratorio e exclusivamente de BLOQUEIO TCP de entrada**. Isso NAO autoriza desabilitar firewall, abrir portas, mudar regras de outros aplicativos ou executar o VMS como Administrador.
+
+Adicionado ao repositorio:
+
+- `scripts/windows/sentrium-cloud-lab-firewall.ps1`: `-Action Prepare` compila EXE apphost .NET10 x64 no perfil do usuario **nao elevado**, pede UAC em processo separado SOMENTE para `-Action Install`, cria `SENTRIUM-F005-LAB-TCP-IN-BLOCK` (`Inbound`, `TCP`, `Block`, `Profile Any`, programa absoluto `Sentrium.CloudLibLab.exe`, portas `Any`), confirma perfil ativo, politica de regras locais, `PersistentStore` e `ActiveStore`. Falha se regras nao se aplicarem. `-Action Status` e somente leitura; `-Action Remove` pede UAC e remove APENAS a regra propria, nunca mexe em firewall global.
+- `scripts/windows/sentrium-simnext-cloud-lab.ps1 -Mode IsolationProbe`: executa um teste SEM senha ou login NetSDK, somente quando `-Action Status` aprova e em sessao **nao elevada**; chama diretamente o `.exe` gerado (evita `dotnet.exe` como processo host inesperado). Ao sair tenta UAC de `-Action Remove`; se UAC for recusado a regra de BLOCK podera permanecer e devera ser removida pelo comando de recuperacao.
+- `tools/simnext-cloud-lab/Program.cs` modo `isolation-probe`: exige `CURRENT_LAB_PROCESS`, abre somente TCP em `127.0.0.1` sem credencial e reporta `ISOLATION LOOPBACK TCP`; caso conectado, imprime porta TCP dinamica e aguarda ENTER com o tunel vivo. O uso de DLLs do SIM Next permanece restrito a pasta local do operador, sem copia ou commit.
+
+### Execucao guiada: primeiro passo apenas
+
+No **Developer PowerShell normal, NAO Administrador**, executar:
+
+    cd "C:\Projetos\SENTRIUM VMS\sentrium-vms"; git pull --ff-only origin foundation/005-device-connectivity; if ($LASTEXITCODE -eq 0) { .\scripts\windows\sentrium-cloud-lab-firewall.ps1 -Action Prepare }
+
+Deve ocorrer: `dotnet build ... Release` e janela de UAC so para regra de Firewall, depois `F005 FIREWALL STATUS PASS` e `F005 PROTECT READY`. Neste passo **nenhuma DLL Cloud e executada nem ha rede Cloud**.
+
+Segundo passo SOMENTE apos receber log positivo do primeiro: `scripts/windows/sentrium-simnext-cloud-lab.ps1 -Mode IsolationProbe`; selecionar DLL da instalacao original, confirmar, digitar identificador duas vezes SEM eco e porta de servico localmente. Com `ISOLATION PORT`, o teste precisa ser feito a partir de **outro PC da LAN**: `Test-NetConnection <IP-LAN-DO-PC-DO-LAB> -Port <PORTA_TEMPORARIA> -InformationLevel Quiet` deve dar `False`; localhost deve estar `CONNECTED`. Se o segundo PC nao estiver disponivel, LAN e `NOT RUN`, nao ha liberacao para credenciais. Nao enviar IP, serial ou senha ao chat.
+
+Pressionar ENTER no laboratorio fecha o tunel e o wrapper solicita um segundo UAC para remover a regra. Verificar `F005 FIREWALL REMOVED`. Em caso de cancelamento ou falha no rollback, depois de encerrar o LAB rodar `.\scripts\windows\sentrium-cloud-lab-firewall.ps1 -Action Remove` na Developer PowerShell normal e aceitar UAC.
+
+**Gate:** somente apos bloqueio externo realmente confirmado, conta de teste autorizada e licenca aplicavel consideraremos um ensaio NetSDK separado. Regra ativa nao basta para provar firewall. Nenhuma credencial NetSDK e solicitada nesse fluxo. Os novos codigos ainda NAO foram compilados/testados no Windows; nao antecipar PASS. Produto C++/main/F004 e PR draft permanecem intactos.
+
+Refs Microsoft: https://learn.microsoft.com/en-us/powershell/module/netsecurity/new-netfirewallrule ; https://learn.microsoft.com/en-us/powershell/module/netsecurity/get-netfirewallapplicationfilter ; https://learn.microsoft.com/en-us/powershell/module/netsecurity/remove-netfirewallrule ; https://learn.microsoft.com/en-us/powershell/module/netsecurity/get-netfirewallprofile .

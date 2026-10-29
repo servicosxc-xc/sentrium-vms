@@ -204,3 +204,8 @@ User real log: CLOUD_ID_INPUT MATCH, AddSDKPort VALID_PORT after 1920ms, ACTIVE,
 ## LAB-001 R3 OWNER Windows PASS, bind WILDCARD_IPV4 ainda BLOCKED (28/10/26)
 
 Ultimo Windows log: CLOUD_ID_INPUT MATCH, AddSDKPort VALID_PORT 1921ms, TUNNEL ACTIVE, NOT_RELAY_REPORTED (nao prova Direct), listener WILDCARD_IPV4 e LISTENER OWNER CURRENT_LAB_PROCESS. Portanto a DLL em processo do laboratorio e dona do socket 0.0.0.0; exit9 continua correto. Nenhum NetSDK login realizado. Escrito plano de isolamento `docs/foundation-005/F005-SIMNEXT-CLOUD-LAB-FIREWALL-ISOLATION-PLAN.md`: proposta de regra temporaria de block inbound TCP por executavel somente com aprovacao explicita, execucao da DLL nao elevada e teste em segundo host na LAN, depois login NetSDK; plano NAO executa nada. Nao repetir Cloud ID vazado em conversa. Sem novos testes de Wireshark ou C++ R10. PR4 draft, main/F004 intactos.
+
+
+## Firewall TEMP lab aprovado e implementado (28/10/2026)
+
+Usuario autorizou regra BLOCK TCP INBOUND exclusiva do Sentrium.CloudLibLab.exe temporaria com rollback. Foi implementado scripts/windows/sentrium-cloud-lab-firewall.ps1 (Prepare, Install UAC, Status e Remove UAC) com Fail Closed se os perfis nao estiverem ativos/politica nao aplicar a regra. Novo -Mode IsolationProbe no lab (nao elevado) usa apphost C# e verifica regra antes de carregar DLL; nao solicita senha, apenas permite checar localhost e teste TCP de outro PC LAN enquanto aguarda ENTER, com tentativa de remover regra via UAC ao sair. Primeiro e UNICO comando necessario agora: git pull + `scripts/windows/sentrium-cloud-lab-firewall.ps1 -Action Prepare` em Developer PowerShell normal. Windows Build/Test desse lote NOT RUN. Main/F004 e C++ produto intactos, PR4 draft, login NetSDK nao validado.
