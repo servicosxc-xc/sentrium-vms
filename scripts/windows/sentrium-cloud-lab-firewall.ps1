@@ -1,5 +1,7 @@
 # F005 standalone lab: inbound TCP BLOCK for one exact .NET apphost. No vendor DLLs.
-# Prepare builds as ordinary user, requests UAC ONLY for firewall rule creation.
+# Prepare accepts elevated or standard PowerShell. It NEVER starts vendor DLLs.
+# An ordinary shell uses UAC only for the firewall rule; elevated shell applies it directly.
+# IsolationProbe remains strictly unprivileged and is a separate command.
 [CmdletBinding()]
 param([ValidateSet('Prepare','Install','Status','Remove')][string]$Action='Status')
 Set-StrictMode -Version Latest
@@ -71,17 +73,32 @@ function Call-Admin([string]$operation) {
 }
 switch($Action) {
     'Prepare' {
-        if (Is-Admin) { throw 'LAB FIREWALL: Prepare deve rodar SEM elevar a Developer PowerShell.' }
+        # Some Windows configurations start even a regular PowerShell with an
+        # elevated token. Preparation contains NO vendor DLL load or network
+        # probe; elevation is only required to install the scoped BLOCK rule.
+        $elevated = Is-Admin
+        Write-Host ('F005 PREPARE TOKEN: ' + $(if ($elevated) { 'ELEVATED' } else { 'STANDARD' }))
+        Write-Host 'F005 PREPARE: compilacao local e protecao BLOCK, sem executar DLL Cloud.'
         Assert-NotRunning
         $dotnet=Get-Command dotnet -ErrorAction Stop
         & $dotnet.Source build $project --configuration Release --nologo -p:UseAppHost=true
         if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $app -PathType Leaf)) {
             throw 'LAB FIREWALL: falha de build/apphost; regra nao solicitada.'
         }
-        Write-Host 'F005: build do LAB feito como usuario normal. UAC sera usado SO para regra BLOCK.'
-        Call-Admin 'Install'
+        if ($elevated) {
+            Write-Host 'F005: console ja elevado; instalacao da regra BLOCK sem novo UAC.'
+            # PowerShell's script invocation raises terminating errors on failure,
+            # unlike native executables (no reliance on stale LASTEXITCODE).
+            & $PSCommandPath -Action Install
+        } else {
+            Write-Host 'F005: solicitando UAC somente para instalar a regra BLOCK.'
+            Call-Admin 'Install'
+        }
         Assert-Active
-        Write-Host 'F005 PROTECT READY: regra criada. NENHUMA DLL Cloud foi executada.' -ForegroundColor Green
+        Write-Host 'F005 PROTECT READY: regra criada/validada; NENHUMA DLL Cloud executada.' -ForegroundColor Green
+        if ($elevated) {
+            Write-Host 'AVISO: o proximo IsolationProbe EXIGE console NAO elevado; nao executar DLL neste console.' -ForegroundColor Yellow
+        }
     }
     'Install' {
         if (-not (Is-Admin)) { throw 'LAB FIREWALL: Install requer Administrador.' }

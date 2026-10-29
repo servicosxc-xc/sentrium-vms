@@ -65,3 +65,12 @@ Pressionar ENTER no laboratorio fecha o tunel e o wrapper solicita um segundo UA
 **Gate:** somente apos bloqueio externo realmente confirmado, conta de teste autorizada e licenca aplicavel consideraremos um ensaio NetSDK separado. Regra ativa nao basta para provar firewall. Nenhuma credencial NetSDK e solicitada nesse fluxo. Os novos codigos ainda NAO foram compilados/testados no Windows; nao antecipar PASS. Produto C++/main/F004 e PR draft permanecem intactos.
 
 Refs Microsoft: https://learn.microsoft.com/en-us/powershell/module/netsecurity/new-netfirewallrule ; https://learn.microsoft.com/en-us/powershell/module/netsecurity/get-netfirewallapplicationfilter ; https://learn.microsoft.com/en-us/powershell/module/netsecurity/remove-netfirewallrule ; https://learn.microsoft.com/en-us/powershell/module/netsecurity/get-netfirewallprofile .
+
+
+## Ajuste de compatibilidade de permissao — 28/10/2026
+
+O operador tentou `-Action Prepare` na Developer PowerShell e depois num PowerShell aberto normalmente por Win+R; **AMBOS** foram reconhecidos como `Is-Admin=True` pelo Windows. O script anterior interrompeu antes de compilar, instalar regra ou carregar DLL Cloud. Isso nao demonstra configuracao UAC especifica; exige checagem posterior se o usuario precisa de token limitado para o passo de conexao.
+
+Foi ajustado apenas `scripts/windows/sentrium-cloud-lab-firewall.ps1` para permitir o `Prepare` em console elevado e nao elevado. Ele registra categoria `F005 PREPARE TOKEN: ELEVATED|STANDARD`. Em console elevado, executa a compilacao .NET e invoca `Install` da mesma regra BLOCK diretamente, sem outro prompt UAC; em console padrao, continua solicitando UAC para `Install`. `Install` continua validando nome, filtro do executavel, firewall por perfil, integridade da regra e estado ativo. **Nenhuma DLL SIM Next e executada no Prepare**, nenhum login NetSDK, nenhum listener Cloud ou captura. 
+
+O modo `-Mode IsolationProbe` continua exigindo token NAO elevado e um segundo host LAN para validar bloqueio antes de usuario/senha NetSDK. A permissao para criar regra NAO e permissao para executar a DLL proprietaria como admin. Se os shells comuns continuarem aparecendo elevados, diagnosticar conta/UAC ou usar uma conta de laboratorio padrao; **nao remover o gate do IsolationProbe**. **Nova versao ainda nao executada no Windows.** `-Action Remove` continua disponivel caso alguma regra precise ser revertida apos um Prepare bem-sucedido.
