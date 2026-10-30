@@ -93,3 +93,8 @@ Proxima decisao de engenharia apos proprietario confirmado: criar e verificar me
 ## LAB-001 R3 — propriedade confirmada; proxima barreira: isolamento (28/10/2026)
 
 Resultado real do operador: `CLOUD_ID_INPUT: MATCH`, `ADD_PORT: elapsed_ms=1921; returned=VALID_PORT`, `TUNNEL STATE: ACTIVE`, `TUNNEL ROUTE: NOT_RELAY_REPORTED`, `LOCAL TCP LISTENER: OBSERVED`, `BIND CATEGORIES: WILDCARD_IPV4`, `LISTENER OWNER: CURRENT_LAB_PROCESS`. `SAFETY STOP` exit9 por listener 0.0.0.0, **nao** por falha de inicializacao da DLL. A verificacao de ownership via `GetExtendedTcpTable` agora foi CONFIRMADA em Windows. Ainda nenhum login NetSDK nem verificação externa de exposicao LAN. Plano detalhado, sem executar alteracao de firewall: `docs/foundation-005/F005-SIMNEXT-CLOUD-LAB-FIREWALL-ISOLATION-PLAN.md`. Exigir aprovacao expressa antes de uma regra temporaria de bloqueio inbound ao `Sentrium.CloudLibLab.exe`; executar DLL como usuario nao elevado; verificar com segundo computador que a porta nao responde antes de digitar qualquer credencial. Nao tratar NOT_RELAY_REPORTED como Direct validado.
+
+
+## ISOLATION-PROBE Windows 29/10/2026 — progresso real
+
+Teste com firewall BLOCK ativo e processo nao elevado: ADD_PORT VALID_PORT em 1947ms, TUNNEL STATE ACTIVE, LISTENER OWNER CURRENT_LAB_PROCESS, WILDCARD_IPV4, ISOLATION LOOPBACK TCP CONNECTED. Operador finalizou e o wrapper registrou F005 FIREWALL REMOVED (rollback concluido). Nao ha teste de segundo host LAN no log, entao a regra foi aplicada mas seu bloqueio externo ainda NAO foi demonstrado. Nenhum NetSDK login ou video, e NOT_RELAY_REPORTED nao prova Direct. Antes de repetir IsolationProbe e NECESSARIO reinstalar a regra via Prepare, pois foi removida. Ver runbook firewall.

@@ -234,3 +234,8 @@ Operator confirmed: Parser PASS, TOKEN DIAG CURRENT_TOKEN ELEVATED, UAC DISABLED
 ## UAC habilitado e token STANDARD REAL PASS; Git dubious ownership (29/10/2026)
 
 Operador executou DiagnoseToken localmente (sem git pull por dubious ownership): CURRENT_TOKEN STANDARD, UAC ENABLED, builtin_admin NO, builtin approval DISABLED (irrelevante para conta atual). Pronto para rodar Cloud Lab nao elevado. Firewall regra BLOCK previamente instalada; ainda nao reverificado apos reinicio. Git pull falhou por dono do diretorio BUILTIN/Administradores diferente da identidade atual. Sem necessitar mudar safe.directory agora: wrapper IsolationProbe ja esta no checkout desde fc409df6. Proximo passo SEM git pull `scripts/windows/sentrium-simnext-cloud-lab.ps1 -Mode IsolationProbe`: ele verifica firewall Status PASS antes de rodar EXE, sem login NetSDK; mostrar porta temporaria e testar de outro PC da mesma LAN (deve False), ENTER tenta rollback UAC. Regras existentes nao alteradas no diagnostico. PR4 draft, main/F004 intactos.
+
+
+## ISOLATION-PROBE Windows local PASS, LAN pendente, regra removida (29/10/2026)
+
+Usuario confirmou em token STANDARD e UAC ENABLED: regra inbound BLOCK ativa, AddSDKPort VALID_PORT 1947ms, ACTIVE, listener WILDCARD_IPV4 owner CURRENT_LAB_PROCESS, localhost TCP CONNECTED. Ao pressionar ENTER, F005 FIREWALL REMOVED confirma rollback. Nao houve Test-NetConnection de outro PC LAN, portanto nenhum isolamento externo aprovado e nenhum login NetSDK. Para repetir teste de LAN, sem git pull por dubious ownership: executar -Action Prepare para reinstalar a regra, depois -Mode IsolationProbe com outro PC autorizado testando porta temporaria antes do ENTER; so depois avaliar gate NetSDK. PR4 draft, main/F004 intocados.
