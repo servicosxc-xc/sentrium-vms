@@ -44,6 +44,7 @@ ApplicationWindow {
         const n = Math.min(16, deviceData.channels.length)
         const capacity = n > 9 ? 16 : n > 4 ? 9 : n > 1 ? 4 : 1
         deviceController.setMosaicCapacity(capacity)
+        mosaicWorkspace.capacity = capacity
         deviceController.clearAllLive()
         for (let i = 0; i < n; ++i)
             deviceController.openLiveInSlot(
