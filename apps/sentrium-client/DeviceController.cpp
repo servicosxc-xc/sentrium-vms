@@ -159,7 +159,6 @@ QWindow* DeviceController::liveSurface(int slot) {
     if (!surface) {
         auto* window = new QWindow;
         window->setFlags(Qt::FramelessWindowHint);
-        window->setColor(Qt::black);
         window->create();
         QQmlEngine::setObjectOwnership(window, QQmlEngine::CppOwnership);
         surface = window;

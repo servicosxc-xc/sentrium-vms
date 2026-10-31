@@ -87,11 +87,11 @@ void DeviceWorker::stopLive(int slot) {
 }
 
 void DeviceWorker::stopLiveForDevice(const QString& id) {
-    std::vector<int> slots;
+    std::vector<int> slot_ids;
     for (const auto& [slot, entry] : live_sessions_) {
-        if (entry.deviceId == id) slots.push_back(slot);
+        if (entry.deviceId == id) slot_ids.push_back(slot);
     }
-    for (const int slot : slots) stopLive(slot);
+    for (const int slot : slot_ids) stopLive(slot);
 }
 
 void DeviceWorker::stopAllLive() {
