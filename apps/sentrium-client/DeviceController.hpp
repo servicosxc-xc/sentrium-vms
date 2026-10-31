@@ -141,7 +141,7 @@ private:
     static constexpr int max_mosaic_slots_ = 16;
     std::array<QPointer<QWindow>, 16> surfaces_{};
     std::array<MosaicTile, 16> tiles_{};
-    int mosaic_capacity_ = 4;
+    int mosaic_capacity_ = 16;
     int next_slot_ = 0;
     quint64 preview_token_ = 0;
     DeviceWorker* worker_ = nullptr;

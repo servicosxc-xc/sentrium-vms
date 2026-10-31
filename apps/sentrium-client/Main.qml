@@ -43,6 +43,7 @@ ApplicationWindow {
             return
         const n = Math.min(16, deviceData.channels.length)
         const capacity = n > 9 ? 16 : n > 4 ? 9 : n > 1 ? 4 : 1
+        mosaicWorkspace.capacity = capacity
         deviceController.setMosaicCapacity(capacity)
         mosaicWorkspace.capacity = capacity
         deviceController.clearAllLive()
@@ -77,6 +78,9 @@ ApplicationWindow {
         openModules = items
         if (activeModule === name)
             activeModule = items[Math.max(0, Math.min(index - 1, items.length - 1))]
+        if (name.indexOf("Visualização") === 0
+            && !items.some(function(item) { return item.indexOf("Visualização") === 0 }))
+            deviceController.clearAllLive()
     }
 
     function connectedCount() {
@@ -604,6 +608,11 @@ ApplicationWindow {
                     height: 38
                     onClicked: window.openModule("Visualização")
                 }
+                ToolButton {
+                    text: "Reprodução"
+                    height: 38
+                    onClicked: window.openModule("Reprodução")
+                }
             }
         }
 
@@ -653,6 +662,7 @@ ApplicationWindow {
                         Repeater {
                             model: [
                                 { title: "Visualização", glyph: "◉", module: "Visualização" },
+                                { title: "Reprodução", glyph: "▶", module: "Reprodução" },
                                 { title: "Dispositivos", glyph: "▦", module: "Dispositivos" },
                                 { title: "Eventos", glyph: "ϟ", module: "Eventos" },
                                 { title: "Regras IA", glyph: "◇", module: "Regras IA" },
@@ -1091,6 +1101,73 @@ ApplicationWindow {
                 }
             }
 
+            Rectangle {
+                anchors.fill: parent
+                visible: window.activeModule === "Reprodução"
+                color: "#0f1319"
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 16
+                    spacing: 12
+                    Label {
+                        text: "Reprodução"
+                        color: window.textPrimary
+                        font.pixelSize: 23
+                        font.bold: true
+                    }
+                    Label {
+                        text: "Pesquisa e reprodução de gravações — módulo independente"
+                        color: window.textSecondary
+                        font.pixelSize: 12
+                    }
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 45
+                        color: window.panelColor
+                        border.color: window.borderColor
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 12
+                            spacing: 10
+                            Label { text: "Dispositivo"; color: window.textSecondary }
+                            ComboBox {
+                                enabled: false
+                                model: ["Consulta de gravações pendente"]
+                                Layout.preferredWidth: 245
+                            }
+                            Label { text: "Data / horário"; color: window.textSecondary }
+                            TextField {
+                                enabled: false
+                                placeholderText: "Pesquisar gravação"
+                                Layout.fillWidth: true
+                            }
+                        }
+                    }
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        color: "#090f16"
+                        border.color: window.borderColor
+                        Column {
+                            anchors.centerIn: parent
+                            spacing: 9
+                            Label {
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                text: "Player de gravações"
+                                color: window.textPrimary
+                                font.pixelSize: 20
+                            }
+                            Label {
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                text: "Timeline e consulta NetSDK ainda não implementadas"
+                                color: window.textSecondary
+                                font.pixelSize: 12
+                            }
+                        }
+                    }
+                }
+            }
+
             SplitView {
                 visible: window.activeModule.indexOf("Visualização") === 0
                 anchors.fill: parent
@@ -1405,27 +1482,11 @@ ApplicationWindow {
                 anchors.fill: parent
                 spacing: 0
 
-                TabBar {
-                    id: workspaceTabs
-                    Layout.fillWidth: true
-
-                    background: Rectangle {
-                        color: window.panelColor
-                        border.color: window.borderColor
-                    }
-
-                    TabButton { text: "Visualizar" }
-                    TabButton { text: "Reproduzir" }
-                }
-
-                StackLayout {
-                    currentIndex: workspaceTabs.currentIndex
+                Rectangle {
+                    id: mosaicWorkspace
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-
-                    Rectangle {
-                        id: mosaicWorkspace
-                        color: "#0f1319"
+                    color: "#0f1319"
                         property var slots: deviceController.mosaicSlots
                         property int capacity: 16
                         property int columns: capacity === 1 ? 1 : capacity === 4 ? 2 : capacity === 9 ? 3 : 4
@@ -1608,30 +1669,7 @@ ApplicationWindow {
                         }
                     }
 
-                    Rectangle {
-                        color: "#0f1319"
 
-                        Column {
-                            anchors.centerIn: parent
-                            spacing: 10
-
-                            Label {
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                text: "Reproduzir"
-                                color: window.textPrimary
-                                font.pixelSize: 22
-                                font.bold: true
-                            }
-
-                            Label {
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                text: "Reprodução ainda não disponível nesta Foundation."
-                                color: window.textSecondary
-                                font.pixelSize: 13
-                            }
-                        }
-                    }
-                }
             }
         }
 
