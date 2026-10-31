@@ -2,6 +2,7 @@
 
 #include <QByteArray>
 #include <algorithm>
+#include <vector>
 
 namespace {
 std::string utf8(const QString& value) {
@@ -51,39 +52,54 @@ void DeviceWorker::connectDevice(
         qstring(result.diagnostic));
 }
 
-void DeviceWorker::startLive(
-    const QString& id, int channel, quint64 nativeWindow, bool extra) {
-    // A single preview at a time is intentional for this first field gate.
-    // Reuse the established NetSDK session, including AutoRegistration.
-    stopLive(live_device_id_);
+void DeviceWorker::startLive(int slot, quint64 token, const QString& id,
+                             int channel, quint64 nativeWindow, bool extra) {
+    // One NetSDK RealPlay handle per independently embedded Qt tile.
+    // All NetSDK operations remain on the existing worker thread.
+    if (slot < 0 || slot >= 16) {
+        emit liveStarted(slot, token, id, false, QStringLiteral("Índice de mosaico inválido"));
+        return;
+    }
+    stopLive(slot);
     const auto it = sessions_.find(utf8(id));
     if (it == sessions_.end() || channel < 0 || channel >= 4096 || nativeWindow == 0) {
-        emit liveStarted(id, false, QStringLiteral("Sessão ou canal não disponível para vídeo"));
+        emit liveStarted(slot, token, id, false,
+                         QStringLiteral("Sessão, canal ou superfície de vídeo inválida"));
         return;
     }
     const auto result = adapter_.startLive(
         it->second, channel, static_cast<std::uintptr_t>(nativeWindow), extra);
     if (result.success) {
-        live_session_ = result.session;
-        live_device_id_ = id;
+        live_sessions_.emplace(slot, LiveEntry{id, result.session});
     }
-    emit liveStarted(id, result.success, qstring(result.diagnostic));
+    emit liveStarted(slot, token, id, result.success, qstring(result.diagnostic));
 }
 
-void DeviceWorker::stopLive(const QString& id) {
-    if (!live_session_ || id != live_device_id_) return;
-    // Always drop the live handle before NetSDK logout or listener teardown.
-    const auto result = adapter_.stopLive(live_session_);
+void DeviceWorker::stopLive(int slot) {
+    const auto it = live_sessions_.find(slot);
+    if (it == live_sessions_.end()) return;
+    const auto result = adapter_.stopLive(it->second.handle);
     if (!result.success) {
         emit registrationObservation(QStringLiteral(
-            "Prévia ao vivo: não foi possível confirmar StopRealPlayEx"));
+            "Mosaico: StopRealPlayEx não confirmou a liberação de um canal"));
     }
-    live_session_ = {};
-    live_device_id_.clear();
+    live_sessions_.erase(it);
+}
+
+void DeviceWorker::stopLiveForDevice(const QString& id) {
+    std::vector<int> slots;
+    for (const auto& [slot, entry] : live_sessions_) {
+        if (entry.deviceId == id) slots.push_back(slot);
+    }
+    for (const int slot : slots) stopLive(slot);
+}
+
+void DeviceWorker::stopAllLive() {
+    while (!live_sessions_.empty()) stopLive(live_sessions_.begin()->first);
 }
 
 void DeviceWorker::disconnectDevice(const QString& id) {
-    stopLive(id);
+    stopLiveForDevice(id);
     const std::string key = utf8(id);
     const auto found = sessions_.find(key);
     if (found == sessions_.end()) {
@@ -131,7 +147,7 @@ void DeviceWorker::stopRegistrationServer() {
         const auto session = sessions_.find(key);
         if (session == sessions_.end()) continue;
 
-        stopLive(qstring(key));
+        stopLiveForDevice(qstring(key));
         const auto result = adapter_.disconnect(session->second);
         if (result.success) {
             sessions_.erase(session);
@@ -183,7 +199,7 @@ void DeviceWorker::onRegistrationReceived(
         auto existing = sessions_.find(id);
         if (disconnected) {
             if (existing != sessions_.end()) {
-                stopLive(qstring(id));
+                stopLiveForDevice(qstring(id));
                 const auto logout = adapter_.disconnect(existing->second);
                 if (!logout.success) {
                     emit registrationObservation(QStringLiteral(
@@ -203,7 +219,7 @@ void DeviceWorker::onRegistrationReceived(
         }
         if (existing != sessions_.end()) {
             if (!stale_registration_sessions_.contains(id)) return;
-            stopLive(qstring(id));
+            stopLiveForDevice(qstring(id));
             const auto logout = adapter_.disconnect(existing->second);
             if (!logout.success) {
                 emit registrationObservation(QStringLiteral(
@@ -244,7 +260,7 @@ void DeviceWorker::onRegistrationReceived(
 }
 
 void DeviceWorker::shutdown() {
-    stopLive(live_device_id_);
+    stopAllLive();
     adapter_.stopRegistration();
     listening_ = false;
     registered_.clear();
