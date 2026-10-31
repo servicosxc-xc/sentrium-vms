@@ -1313,13 +1313,22 @@ ApplicationWindow {
                                             Layout.fillWidth: true
                                         }
                                         Button {
-                                            text: "▶ Ao vivo"
+                                            text: "▶ Extra"
                                             enabled: deviceDelegate.deviceData.state === "Connected"
                                             onClicked: deviceController.openLive(
                                                 deviceDelegate.deviceData.id,
                                                 modelData.index, true)
                                             ToolTip.visible: hovered
-                                            ToolTip.text: "Abre o fluxo Extra real em uma janela nativa. Um canal por vez nesta etapa."
+                                            ToolTip.text: "Prévia NetSDK com stream Extra, janela nativa."
+                                        }
+                                        Button {
+                                            text: "▶ Principal"
+                                            enabled: deviceDelegate.deviceData.state === "Connected"
+                                            onClicked: deviceController.openLive(
+                                                deviceDelegate.deviceData.id,
+                                                modelData.index, false)
+                                            ToolTip.visible: hovered
+                                            ToolTip.text: "Prévia NetSDK com stream Principal, janela nativa."
                                         }
                                     }
                                 }
