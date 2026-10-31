@@ -27,6 +27,29 @@ ApplicationWindow {
     property string activeModule: "Home"
     property string selectedDeviceId: ""
     property int visualizationSequence: 0
+    property int activeMosaicSlot: -1
+
+    function openCamera(deviceId, channel, extra) {
+        if (activeMosaicSlot >= 0) {
+            deviceController.openLiveInSlot(deviceId, channel, activeMosaicSlot, extra)
+            activeMosaicSlot = -1
+        } else {
+            deviceController.openLive(deviceId, channel, extra)
+        }
+    }
+
+    function openRecorder(deviceData) {
+        if (deviceData.state !== "Connected" || !deviceData.channels.length)
+            return
+        const n = Math.min(16, deviceData.channels.length)
+        const capacity = n > 9 ? 16 : n > 4 ? 9 : n > 1 ? 4 : 1
+        deviceController.setMosaicCapacity(capacity)
+        deviceController.clearAllLive()
+        for (let i = 0; i < n; ++i)
+            deviceController.openLiveInSlot(
+                deviceData.id, deviceData.channels[i].index, i, true)
+        activeMosaicSlot = -1
+    }
 
     function newVisualization() {
         visualizationSequence++
@@ -1315,26 +1338,33 @@ ApplicationWindow {
                                         Button {
                                             text: "▶ Extra"
                                             enabled: deviceDelegate.deviceData.state === "Connected"
-                                            onClicked: deviceController.openLive(
-                                                deviceDelegate.deviceData.id,
-                                                modelData.index, true)
+                                            onClicked: window.openCamera(
+                                                deviceDelegate.deviceData.id, modelData.index, true)
                                             ToolTip.visible: hovered
-                                            ToolTip.text: "Prévia NetSDK com stream Extra, janela nativa."
+                                            ToolTip.text: "Abre o canal Extra dentro do mosaico."
                                         }
                                         Button {
                                             text: "▶ Principal"
                                             enabled: deviceDelegate.deviceData.state === "Connected"
-                                            onClicked: deviceController.openLive(
-                                                deviceDelegate.deviceData.id,
-                                                modelData.index, false)
+                                            onClicked: window.openCamera(
+                                                deviceDelegate.deviceData.id, modelData.index, false)
                                             ToolTip.visible: hovered
-                                            ToolTip.text: "Prévia NetSDK com stream Principal, janela nativa."
+                                            ToolTip.text: "Abre o canal Principal dentro do mosaico."
                                         }
                                     }
                                 }
 
                                 RowLayout {
                                     Layout.fillWidth: true
+
+                                    Button {
+                                        text: "Abrir canais"
+                                        visible: deviceDelegate.deviceData.state === "Connected"
+                                        enabled: deviceDelegate.deviceData.channels.length > 0
+                                        onClicked: window.openRecorder(deviceDelegate.deviceData)
+                                        ToolTip.visible: hovered
+                                        ToolTip.text: "Preenche o mosaico com os canais disponíveis (fluxo Extra)."
+                                    }
 
                                     Button {
                                         text: "Conectar"
@@ -1393,25 +1423,186 @@ ApplicationWindow {
                     Layout.fillHeight: true
 
                     Rectangle {
+                        id: mosaicWorkspace
                         color: "#0f1319"
+                        property var slots: deviceController.mosaicSlots
+                        property int capacity: 16
+                        property int columns: capacity === 1 ? 1 : capacity === 4 ? 2 : capacity === 9 ? 3 : 4
 
-                        Column {
-                            anchors.centerIn: parent
-                            spacing: 10
+                        ColumnLayout {
+                            anchors.fill: parent
+                            spacing: 3
 
-                            Label {
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                text: "Área de mosaico"
-                                color: window.textPrimary
-                                font.pixelSize: 22
-                                font.bold: true
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 38
+                                color: "#141b25"
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 9
+                                    anchors.rightMargin: 9
+                                    spacing: 4
+
+                                    Label {
+                                        text: "Layout"
+                                        color: window.textSecondary
+                                        font.pixelSize: 11
+                                        Layout.rightMargin: 4
+                                    }
+
+                                    Repeater {
+                                        model: [1, 4, 9, 16]
+                                        delegate: Button {
+                                            required property int modelData
+                                            text: String(modelData)
+                                            implicitWidth: 42
+                                            implicitHeight: 30
+                                            highlighted: mosaicWorkspace.capacity === modelData
+                                            onClicked: {
+                                                mosaicWorkspace.capacity = modelData
+                                                deviceController.setMosaicCapacity(modelData)
+                                                if (window.activeMosaicSlot >= modelData)
+                                                    window.activeMosaicSlot = -1
+                                            }
+                                        }
+                                    }
+                                    Item { Layout.fillWidth: true }
+                                    Label {
+                                        text: "Selecione um tile para direcionar a câmera"
+                                        color: window.textSecondary
+                                        font.pixelSize: 10
+                                        visible: mosaicWorkspace.capacity > 1
+                                    }
+                                    Button {
+                                        text: "Limpar"
+                                        onClicked: {
+                                            deviceController.clearAllLive()
+                                            window.activeMosaicSlot = -1
+                                        }
+                                    }
+                                }
                             }
 
-                            Label {
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                text: "Live View e mosaico ainda aguardam a integração de vídeo ao Qt."
-                                color: window.textSecondary
-                                font.pixelSize: 13
+                            Item {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                clip: true
+
+                                Grid {
+                                    id: videoMosaic
+                                    anchors.fill: parent
+                                    columns: mosaicWorkspace.columns
+                                    spacing: 2
+
+                                    Repeater {
+                                        model: mosaicWorkspace.capacity
+                                        delegate: Rectangle {
+                                            id: mosaicTile
+                                            required property int index
+                                            property var itemData: mosaicWorkspace.slots[index]
+                                            property bool isActiveTile: window.activeMosaicSlot === index
+                                            width: Math.max(0, (videoMosaic.width -
+                                                videoMosaic.spacing * (videoMosaic.columns - 1)) / videoMosaic.columns)
+                                            height: Math.max(0, (videoMosaic.height -
+                                                videoMosaic.spacing * (videoMosaic.columns - 1)) / videoMosaic.columns)
+                                            color: "#090e15"
+                                            border.color: isActiveTile ? window.accent : "#344354"
+                                            border.width: isActiveTile ? 2 : 1
+                                            clip: true
+
+                                            Rectangle {
+                                                id: tileHeader
+                                                height: 24
+                                                anchors.top: parent.top
+                                                anchors.left: parent.left
+                                                anchors.right: parent.right
+                                                color: "#101a27"
+                                                Label {
+                                                    anchors.left: parent.left
+                                                    anchors.leftMargin: 7
+                                                    anchors.verticalCenter: parent.verticalCenter
+                                                    width: parent.width - 90
+                                                    text: mosaicTile.itemData.occupied
+                                                        ? mosaicTile.itemData.channelName +
+                                                          " — " + mosaicTile.itemData.deviceName
+                                                        : "Canal " + String(index + 1).padStart(2, "0")
+                                                    elide: Text.ElideRight
+                                                    color: window.textPrimary
+                                                    font.pixelSize: 10
+                                                }
+                                                Label {
+                                                    anchors.right: parent.right
+                                                    anchors.rightMargin: 9
+                                                    anchors.verticalCenter: parent.verticalCenter
+                                                    text: mosaicTile.itemData.occupied
+                                                          ? (mosaicTile.itemData.extra ? "Extra" : "Principal")
+                                                          : ""
+                                                    color: "#9bc3ff"
+                                                    font.pixelSize: 9
+                                                }
+                                                MouseArea {
+                                                    anchors.fill: parent
+                                                    onClicked: window.activeMosaicSlot = index
+                                                }
+                                            }
+
+                                            Item {
+                                                id: videoViewport
+                                                anchors.top: tileHeader.bottom
+                                                anchors.bottom: tileFooter.top
+                                                anchors.left: parent.left
+                                                anchors.right: parent.right
+                                                clip: true
+
+                                                // Qt 6.12 WindowContainer owns QWindow position, clipping and
+                                                // visibility. NetSDK draws real frames in the child HWND.
+                                                WindowContainer {
+                                                    anchors.fill: parent
+                                                    window: deviceController.liveSurface(index)
+                                                    visible: mosaicTile.itemData.occupied
+                                                }
+
+                                                Label {
+                                                    anchors.centerIn: parent
+                                                    text: "Clique em um canal para abrir"
+                                                    color: window.textSecondary
+                                                    font.pixelSize: 10
+                                                    visible: !mosaicTile.itemData.occupied
+                                                }
+                                            }
+
+                                            Rectangle {
+                                                id: tileFooter
+                                                anchors.bottom: parent.bottom
+                                                anchors.left: parent.left
+                                                anchors.right: parent.right
+                                                height: 20
+                                                color: "#101a27"
+                                                Row {
+                                                    anchors.left: parent.left
+                                                    anchors.verticalCenter: parent.verticalCenter
+                                                    anchors.leftMargin: 6
+                                                    spacing: 7
+                                                    Label {
+                                                        text: mosaicTile.itemData.occupied
+                                                            ? mosaicTile.itemData.status : "Livre"
+                                                        color: window.textSecondary
+                                                        font.pixelSize: 9
+                                                    }
+                                                }
+                                                ToolButton {
+                                                    anchors.right: parent.right
+                                                    anchors.verticalCenter: parent.verticalCenter
+                                                    implicitWidth: 26
+                                                    implicitHeight: 19
+                                                    text: "×"
+                                                    enabled: mosaicTile.itemData.occupied
+                                                    onClicked: deviceController.clearLiveSlot(index)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
