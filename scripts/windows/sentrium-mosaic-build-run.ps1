@@ -38,7 +38,7 @@ try {
     $ErrorActionPreference = 'Continue'
     try {
         & $cmake --build --preset sentrium-release --target sentrium-client 2>&1 |
-            Out-File -LiteralPath $log -Encoding utf8
+            Out-File -FilePath $log -Encoding utf8
         $buildExit = $LASTEXITCODE
     } finally { $ErrorActionPreference = $oldPreference }
 } finally {
