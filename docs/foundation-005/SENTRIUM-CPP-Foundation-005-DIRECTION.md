@@ -1,7 +1,7 @@
 # SENTRIUM-CPP-Foundation-005 — DIRECTION NOTE
 
 **Produto:** SENTRIUM VMS — Intelligent Video Management System  
-**Estado:** **DIRECTION ONLY — NOT AUTHORIZED FOR IMPLEMENTATION**  
+**Estado original (histórico):** DIRECTION ONLY — NOT AUTHORIZED FOR IMPLEMENTATION. **Posteriormente supersedido por F005-AUTH-001 — AUTHORIZED / IN IMPLEMENTATION.**  
 **Data:** 25/10/2026
 
 ## Objetivo proposto
@@ -36,7 +36,7 @@ Campos atuais:
 
 ### Cloud / P2P
 Direção técnica:
-- reaproveitar somente o subset necessário do caminho legado `SIMNext.P2PSDK.dll → Libt2uWrapper.dll → libt2u.dll`, após nova auditoria do kit disponível;
+- usar o caminho histórico `SIMNext.P2PSDK.dll → Libt2uWrapper.dll → libt2u.dll` **apenas como evidência de protocolo/comportamento**. Cloud no SENTRIUM será nativo e autônomo, sem exigir instalação, binários ou configurações do SIM Next;
 - manter vida útil do túnel separada da vida útil do RealPlay;
 - expor o resultado de transporte sem confundir com estado da câmera;
 - preservar semântica visual futura: **azul = P2P direto**, **amarelo = Relay**.
@@ -101,3 +101,7 @@ Antes de qualquer código desta Foundation:
 3. escrever `SENTRIUM-CPP-Foundation-005-SCOPE`;
 4. escrever `F005-DECISION-GATE`;
 5. obter autorização explícita para implementação.
+
+## Atualização vinculante da direção (após autorização F005)
+
+Implementar Cloud/P2P standalone; jamais tratar os artefatos do SIM Next como dependência ou como fonte de credenciais de inicialização. Assinaturas/exportações citadas na auditoria ainda não constituem protocolo/ABI completa. Manter Cloud **BLOCKED** até bootstrap e caminho de controle próprios, de origem legítima e comprovada. A F005 agora está autorizada; critérios de qualidade e Human Review continuam vigentes.

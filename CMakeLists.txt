@@ -76,7 +76,22 @@ target_include_directories(sentrium-platform-win PUBLIC libs/sentrium-platform-w
 target_compile_definitions(sentrium-platform-win PUBLIC UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX)
 target_link_libraries(sentrium-platform-win PUBLIC sentrium-core PRIVATE shell32 ole32 advapi32)
 
-add_library(sentrium-device libs/sentrium-device/device.cpp)
+add_library(sentrium-device
+  libs/sentrium-device/device.cpp
+  libs/sentrium-device/cloud.cpp
+  libs/sentrium-device/cloud_wire.cpp
+  libs/sentrium-device/cloud_udp.cpp
+  libs/sentrium-device/cloud_udp_socket.cpp
+  libs/sentrium-device/cloud_signaling.cpp
+  libs/sentrium-device/cloud_ptcp.cpp
+  libs/sentrium-device/cloud_ptcp_session.cpp
+  libs/sentrium-device/cloud_ptcp_receive_window.cpp
+  libs/sentrium-device/cloud_ptcp_channel.cpp
+  libs/sentrium-device/cloud_ptcp_stream.cpp
+  libs/sentrium-device/cloud_loopback_bridge.cpp
+  libs/sentrium-device/cloud_stream_tunnel.cpp
+  libs/sentrium-device/cloud_auth.cpp)
+target_link_libraries(sentrium-device PRIVATE ws2_32 bcrypt)
 target_include_directories(sentrium-device PUBLIC libs/sentrium-device/include)
 
 add_library(sentrium-intelbras libs/sentrium-intelbras/intelbras.cpp)
@@ -98,7 +113,10 @@ add_executable(sentrium-integration-tests tests/integration/main.cpp)
 target_link_libraries(sentrium-integration-tests PRIVATE sentrium-platform-win)
 
 add_executable(sentrium-device-tests tests/device/main.cpp)
-target_link_libraries(sentrium-device-tests PRIVATE sentrium-device)
+target_link_libraries(sentrium-device-tests PRIVATE sentrium-device ws2_32)
+
+add_executable(sentrium-cloud-network-tests tests/device/cloud_network_lab.cpp)
+target_link_libraries(sentrium-cloud-network-tests PRIVATE sentrium-device ws2_32)
 
 add_executable(sentrium-media-tests tests/media/main.cpp)
 target_link_libraries(sentrium-media-tests PRIVATE sentrium-media)
@@ -110,7 +128,7 @@ target_include_directories(sentrium-media-lab SYSTEM PRIVATE
 target_compile_definitions(sentrium-media-lab PRIVATE UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX)
 target_link_libraries(sentrium-media-lab PRIVATE sentrium-core sentrium-device sentrium-intelbras sentrium-media kernel32)
 
-foreach(target sentrium-core sentrium-platform-win sentrium-device sentrium-intelbras sentrium-media sentrium-server sentrium-client sentrium-media-lab sentrium-unit-tests sentrium-integration-tests sentrium-device-tests sentrium-media-tests)
+foreach(target sentrium-core sentrium-platform-win sentrium-device sentrium-intelbras sentrium-media sentrium-server sentrium-client sentrium-media-lab sentrium-unit-tests sentrium-integration-tests sentrium-device-tests sentrium-cloud-network-tests sentrium-media-tests)
   target_compile_options(${target} PRIVATE /W4 /WX /permissive- /utf-8)
   if(SENTRIUM_ASAN)
     target_compile_options(${target} PRIVATE /fsanitize=address /Zi)
@@ -123,8 +141,11 @@ endforeach()
 foreach(id RANGE 1 11)
   add_test(NAME I-${id} COMMAND sentrium-integration-tests ${id} $<TARGET_FILE:sentrium-server>)
 endforeach()
-foreach(id RANGE 1 7)
+foreach(id RANGE 1 40)
   add_test(NAME D-${id} COMMAND sentrium-device-tests ${id})
+endforeach()
+foreach(id RANGE 41 46)
+  add_test(NAME D-${id} COMMAND sentrium-cloud-network-tests ${id})
 endforeach()
 foreach(id RANGE 1 6)
   add_test(NAME M-${id} COMMAND sentrium-media-tests ${id})
@@ -136,5 +157,6 @@ add_test(
           -Executable "$<TARGET_FILE:sentrium-client>"
           -Cycles 10
 )
+set_tests_properties(D-41 D-42 D-43 D-44 D-45 D-46 PROPERTIES TIMEOUT 15)
 set_tests_properties(I-1 I-2 I-3 I-4 I-5 I-6 I-7 I-8 I-9 I-10 I-11 PROPERTIES TIMEOUT 30)
 set_tests_properties(F002-CLIENT-SMOKE PROPERTIES TIMEOUT 120)

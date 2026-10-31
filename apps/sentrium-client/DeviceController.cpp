@@ -3,6 +3,9 @@
 
 #include <QByteArray>
 #include <QMetaObject>
+#include <QQmlEngine>
+#include <QColor>
+#include <QWindow>
 #include <QUuid>
 #include <QVariantMap>
 
@@ -41,6 +44,12 @@ DeviceController::DeviceController(QObject* parent) : QObject(parent) {
         worker_,
         &DeviceWorker::disconnectDevice,
         Qt::QueuedConnection);
+    connect(this, &DeviceController::requestStartLive,
+            worker_, &DeviceWorker::startLive, Qt::QueuedConnection);
+    connect(this, &DeviceController::requestStopLive,
+            worker_, &DeviceWorker::stopLive, Qt::QueuedConnection);
+    connect(worker_, &DeviceWorker::liveStarted,
+            this, &DeviceController::onLiveStarted, Qt::QueuedConnection);
     connect(
         worker_,
         &DeviceWorker::connectFinished,
@@ -54,12 +63,32 @@ DeviceController::DeviceController(QObject* parent) : QObject(parent) {
         &DeviceController::onDisconnectFinished,
         Qt::QueuedConnection);
 
+
+    connect(this, &DeviceController::requestStartRegistrationServer,
+            worker_, &DeviceWorker::startRegistrationServer, Qt::QueuedConnection);
+    connect(this, &DeviceController::requestStopRegistrationServer,
+            worker_, &DeviceWorker::stopRegistrationServer, Qt::QueuedConnection);
+    connect(this, &DeviceController::requestRegisterAutoDevice,
+            worker_, &DeviceWorker::registerAutoDevice, Qt::QueuedConnection);
+    connect(this, &DeviceController::requestUnregisterAutoDevice,
+            worker_, &DeviceWorker::unregisterAutoDevice, Qt::QueuedConnection);
+    connect(worker_, &DeviceWorker::registrationServerChanged,
+            this, &DeviceController::onRegistrationServerChanged, Qt::QueuedConnection);
+    connect(worker_, &DeviceWorker::registrationLost,
+            this, &DeviceController::onRegistrationLost, Qt::QueuedConnection);
+    connect(worker_, &DeviceWorker::registrationObservation,
+            this, &DeviceController::onRegistrationObservation, Qt::QueuedConnection);
+
     worker_thread_.setObjectName(QStringLiteral("sentrium-device-worker"));
     worker_thread_.start();
 }
 
 DeviceController::~DeviceController() {
     shutdown();
+    // Controller outlives the QQmlApplicationEngine in main.cpp.
+    for (auto& surface : surfaces_) {
+        if (surface) delete surface.data();
+    }
 }
 
 QVariantList DeviceController::devices() const {
@@ -79,6 +108,22 @@ QVariantList DeviceController::devices() const {
         QVariantMap item;
         item.insert(QStringLiteral("id"), qstring(record.device.id));
         item.insert(QStringLiteral("name"), qstring(record.device.display_name));
+
+        item.insert(QStringLiteral("method"),
+                    qstring(sentrium::device::name(record.device.access_method)));
+        item.insert(QStringLiteral("cloudRoute"),
+                    qstring(sentrium::device::name(record.device.cloud_route)));
+        item.insert(QStringLiteral("connectionLabel"), record.auto_registration
+                    ? QStringLiteral("Registro Automático • ID de registro · final ")
+                        + qstring(record.registration_id.substr(
+                            record.registration_id.size() > 4
+                            ? record.registration_id.size() - 4 : 0))
+                    : record.device.access_method == sentrium::device::AccessMethod::Cloud
+                      ? QStringLiteral("Túnel Cloud local • 127.0.0.1:")
+                          + QString::number(record.device.port)
+                          + QStringLiteral(" • rota não verificada")
+                      : qstring(record.device.host) + QStringLiteral(":")
+                          + QString::number(record.device.port));
         item.insert(QStringLiteral("host"), qstring(record.device.host));
         item.insert(QStringLiteral("port"), static_cast<int>(record.device.port));
         item.insert(QStringLiteral("manufacturer"), qstring(record.device.manufacturer));
@@ -89,6 +134,36 @@ QVariantList DeviceController::devices() const {
     }
 
     return result;
+}
+
+QVariantList DeviceController::mosaicSlots() const {
+    QVariantList result;
+    result.reserve(max_mosaic_slots_);
+    for (int slot = 0; slot < max_mosaic_slots_; ++slot) {
+        const auto& tile = tiles_[static_cast<std::size_t>(slot)];
+        QVariantMap item;
+        item.insert(QStringLiteral("slot"), slot);
+        item.insert(QStringLiteral("occupied"), !tile.deviceId.isEmpty());
+        item.insert(QStringLiteral("deviceName"), tile.deviceName);
+        item.insert(QStringLiteral("channelName"), tile.channelName);
+        item.insert(QStringLiteral("status"), tile.status);
+        item.insert(QStringLiteral("extra"), tile.extra);
+        result.push_back(item);
+    }
+    return result;
+}
+
+QWindow* DeviceController::liveSurface(int slot) {
+    if (slot < 0 || slot >= max_mosaic_slots_ || shutdown_) return nullptr;
+    auto& surface = surfaces_[static_cast<std::size_t>(slot)];
+    if (!surface) {
+        auto* window = new QWindow;
+        window->setFlags(Qt::FramelessWindowHint);
+        window->create();
+        QQmlEngine::setObjectOwnership(window, QQmlEngine::CppOwnership);
+        surface = window;
+    }
+    return surface.data();
 }
 
 void DeviceController::setError(const QString& error) {
@@ -167,6 +242,121 @@ void DeviceController::addAndConnect(
     }
 }
 
+
+void DeviceController::addCloudBridgeAndConnect(
+    const QString& displayName, int localPort,
+    const QString& username, const QString& password) {
+    // A Windows Defender detection suspended the external Cloud bridge.
+    // Enforce the same safety hold at the C++ boundary, not only in QML:
+    // an unknown loopback process must never receive NVR credentials.
+    Q_UNUSED(displayName)
+    Q_UNUSED(localPort)
+    Q_UNUSED(username)
+    Q_UNUSED(password)
+    if (shutdown_) return;
+    setError(QStringLiteral(
+        "Cloud/P2P bloqueado: não existe transporte independente verificado"));
+    emit auditEvent(QStringLiteral("cloud-blocked"),
+                    QStringLiteral("Túnel de terceiros bloqueado por segurança"));
+}
+
+bool DeviceController::addAutoRegistration(
+    const QString& displayName, const QString& registrationId,
+    const QString& username, const QString& password) {
+    if (shutdown_) return false;
+    const QString cleanRegistrationId = registrationId.trimmed();
+    if (displayName.trimmed().isEmpty() || displayName.size() > 128
+        || cleanRegistrationId.isEmpty() || cleanRegistrationId.size() >= 32
+        || username.isEmpty() || username.size() > 128 || password.size() > 256) {
+        setError(QStringLiteral("Dados de Registro Automático inválidos"));
+        return false;
+    }
+    for (const QChar c : cleanRegistrationId) {
+        if (!((c >= QLatin1Char('0') && c <= QLatin1Char('9'))
+              || (c >= QLatin1Char('A') && c <= QLatin1Char('Z'))
+              || (c >= QLatin1Char('a') && c <= QLatin1Char('z'))
+              || c == QLatin1Char('-') || c == QLatin1Char('_')
+              || c == QLatin1Char('.'))) {
+            setError(QStringLiteral("ID de Registro Automático contém caracteres inválidos"));
+            return false;
+        }
+    }
+    for (const auto& record : records_) {
+        if (record.auto_registration && qstring(record.registration_id) == cleanRegistrationId) {
+            setError(QStringLiteral("ID de Registro Automático já cadastrado"));
+            return false;
+        }
+    }
+
+    const QString id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    Record record;
+    record.auto_registration = true;
+    record.device.access_method = sentrium::device::AccessMethod::AutoRegistration;
+    record.device.id = utf8(id);
+    record.device.display_name = utf8(displayName.trimmed());
+    record.registration_id = utf8(cleanRegistrationId);
+    record.username = utf8(username);
+    record.password = utf8(password);
+    record.device.state = sentrium::device::ConnectionState::Connecting;
+    record.device.diagnostic = registration_listening_
+        ? "Aguardando registro do dispositivo" : "Aguardando ativação do servidor";
+    records_.push_back(std::move(record));
+    setError({});
+    emit devicesChanged();
+    emit requestRegisterAutoDevice(id, cleanRegistrationId, username, password);
+    emit auditEvent(QStringLiteral("auto-register-expected-device-added"),
+                    QStringLiteral("Dispositivo aguardando registro, sem sessão simulada"));
+    return true;
+}
+
+void DeviceController::startRegistrationServer(const QString& bindAddress, int port) {
+    if (shutdown_ || port < 1 || port > 65535) {
+        setError(QStringLiteral("Porta de Registro Automático inválida"));
+        return;
+    }
+    registration_status_ = QStringLiteral("Iniciando serviço de registro...");
+    emit registrationStatusChanged();
+    emit requestStartRegistrationServer(bindAddress.trimmed(), static_cast<quint16>(port));
+}
+
+void DeviceController::stopRegistrationServer() {
+    if (shutdown_) return;
+    emit requestStopRegistrationServer();
+}
+
+void DeviceController::onRegistrationServerChanged(
+    bool listening, const QString& diagnostic) {
+    registration_listening_ = listening;
+    registration_status_ = diagnostic;
+    emit registrationStatusChanged();
+    for (auto& record : records_) {
+        if (record.auto_registration && !record.pending_remove
+            && record.device.state == sentrium::device::ConnectionState::Connecting) {
+            record.device.diagnostic = listening
+                ? "Aguardando registro do dispositivo"
+                : "Serviço de registro desativado";
+        }
+    }
+    emit devicesChanged();
+}
+
+void DeviceController::onRegistrationObservation(const QString& message) {
+    if (shutdown_) return;
+    registration_last_event_ = message;
+    if (registration_event_count_ < 1000000000) ++registration_event_count_;
+    emit registrationEventsChanged();
+}
+
+void DeviceController::onRegistrationLost(const QString& id) {
+    clearLiveForDevice(id);
+    auto* record = find(id);
+    if (!record || !record->auto_registration || record->pending_remove) return;
+    record->device.state = sentrium::device::ConnectionState::Connecting;
+    record->device.channels.clear();
+    record->device.diagnostic = "Aguardando reconexão do gravador";
+    emit devicesChanged();
+}
+
 void DeviceController::connectDevice(const QString& id) {
     if (shutdown_) {
         return;
@@ -191,15 +381,131 @@ void DeviceController::connectDevice(const QString& id) {
     emit auditEvent(
         QStringLiteral("device-connect-requested"),
         QStringLiteral("Device connection requested"));
-    emit requestConnect(
-        id,
-        qstring(record->device.host),
-        record->device.port,
-        qstring(record->username),
-        qstring(record->password));
+    if (record->auto_registration) {
+        record->device.diagnostic = "Aguardando registro do dispositivo";
+        emit devicesChanged();
+        emit requestRegisterAutoDevice(
+            id, qstring(record->registration_id),
+            qstring(record->username), qstring(record->password));
+    } else {
+        emit requestConnect(
+            id,
+            qstring(record->device.host),
+            record->device.port,
+            qstring(record->username),
+            qstring(record->password));
+    }
+}
+
+void DeviceController::openLive(const QString& id, int channel, bool extra) {
+    // Fill the next free tile; when full, replace the selected round-robin tile.
+    int slot = -1;
+    for (int offset = 0; offset < mosaic_capacity_; ++offset) {
+        const int candidate = (next_slot_ + offset) % mosaic_capacity_;
+        if (tiles_[static_cast<std::size_t>(candidate)].deviceId.isEmpty()) {
+            slot = candidate;
+            break;
+        }
+    }
+    if (slot < 0) slot = next_slot_ % mosaic_capacity_;
+    next_slot_ = (slot + 1) % mosaic_capacity_;
+    openLiveInSlot(id, channel, slot, extra);
+}
+
+void DeviceController::openLiveInSlot(
+    const QString& id, int channel, int slot, bool extra) {
+    if (shutdown_ || slot < 0 || slot >= mosaic_capacity_) return;
+    const auto* record = find(id);
+    if (!record || record->pending_remove
+        || record->device.state != sentrium::device::ConnectionState::Connected
+        || channel < 0
+        || static_cast<std::size_t>(channel) >= record->device.channels.size()) {
+        setError(QStringLiteral("Canal não conectado; aguarde o Registro Automático"));
+        return;
+    }
+    QWindow* surface = liveSurface(slot);
+    if (!surface) {
+        setError(QStringLiteral("Falha ao criar a superfície nativa de vídeo"));
+        return;
+    }
+    // The tile QWindow persists during session changes, so StopRealPlayEx is
+    // always processed on the worker before the native HWND can be destroyed.
+    emit requestStopLive(slot);
+    auto& tile = tiles_[static_cast<std::size_t>(slot)];
+    tile.deviceId = id;
+    tile.deviceName = qstring(record->device.display_name);
+    tile.channelName =
+        qstring(record->device.channels[static_cast<std::size_t>(channel)].name);
+    tile.channel = channel;
+    tile.extra = extra;
+    tile.status = QStringLiteral("Conectando vídeo...");
+    tile.token = ++preview_token_;
+    setError({});
+    emit mosaicSlotsChanged();
+    emit requestStartLive(slot, tile.token, id, channel,
+                          static_cast<quint64>(surface->winId()), extra);
+    emit auditEvent(QStringLiteral("mosaic-preview-requested"),
+                    QStringLiteral("NetSDK RealPlay requested for an embedded tile"));
+}
+
+void DeviceController::clearLiveSlot(int slot) {
+    if (slot < 0 || slot >= max_mosaic_slots_) return;
+    auto& tile = tiles_[static_cast<std::size_t>(slot)];
+    emit requestStopLive(slot);
+    tile = {};
+    emit mosaicSlotsChanged();
+}
+
+void DeviceController::clearAllLive() {
+    for (int slot = 0; slot < max_mosaic_slots_; ++slot) {
+        emit requestStopLive(slot);
+        tiles_[static_cast<std::size_t>(slot)] = {};
+    }
+    emit mosaicSlotsChanged();
+}
+
+void DeviceController::clearLiveForDevice(const QString& id) {
+    for (int slot = 0; slot < max_mosaic_slots_; ++slot) {
+        if (tiles_[static_cast<std::size_t>(slot)].deviceId == id)
+            clearLiveSlot(slot);
+    }
+}
+
+void DeviceController::setMosaicCapacity(int capacity) {
+    if (capacity != 1 && capacity != 4 && capacity != 9 && capacity != 16) {
+        setError(QStringLiteral("Layout de mosaico inválido"));
+        return;
+    }
+    if (capacity == mosaic_capacity_) return;
+    for (int slot = capacity; slot < max_mosaic_slots_; ++slot)
+        clearLiveSlot(slot);
+    mosaic_capacity_ = capacity;
+    next_slot_ %= capacity;
+    emit mosaicSlotsChanged();
+}
+
+void DeviceController::onLiveStarted(
+    int slot, quint64 token, const QString& id,
+    bool success, const QString& diagnostic) {
+    if (shutdown_ || slot < 0 || slot >= max_mosaic_slots_) return;
+    auto& tile = tiles_[static_cast<std::size_t>(slot)];
+    if (tile.deviceId != id || tile.token != token) return;
+    if (!success) {
+        tile.status = QStringLiteral("Erro ao abrir vídeo");
+        setError(diagnostic);
+        emit auditEvent(QStringLiteral("mosaic-preview-failed"),
+                        QStringLiteral("NetSDK RealPlayEx failed"));
+    } else {
+        // An SDK handle is not proof of visible motion; validate in the GUI.
+        tile.status = QStringLiteral("Reprodução solicitada");
+        emit auditEvent(QStringLiteral("mosaic-preview-handle-started"),
+                        QStringLiteral("NetSDK RealPlayEx handle created"));
+    }
+    emit mosaicSlotsChanged();
 }
 
 void DeviceController::disconnectDevice(const QString& id) {
+    clearLiveForDevice(id);
     auto* record = find(id);
     if (!record) {
         setError(QStringLiteral("Device not found"));
@@ -207,7 +513,9 @@ void DeviceController::disconnectDevice(const QString& id) {
     }
 
     if (record->device.state != sentrium::device::ConnectionState::Connected
-        && record->device.state != sentrium::device::ConnectionState::Failed) {
+        && record->device.state != sentrium::device::ConnectionState::Failed
+        && !(record->auto_registration
+             && record->device.state == sentrium::device::ConnectionState::Connecting)) {
         return;
     }
 
@@ -217,7 +525,11 @@ void DeviceController::disconnectDevice(const QString& id) {
     emit auditEvent(
         QStringLiteral("device-disconnect-requested"),
         QStringLiteral("Device disconnect requested"));
-    emit requestDisconnect(id);
+    if (record->auto_registration) {
+        emit requestUnregisterAutoDevice(id);
+    } else {
+        emit requestDisconnect(id);
+    }
 }
 
 void DeviceController::removeDevice(const QString& id) {
@@ -237,6 +549,9 @@ void DeviceController::removeDevice(const QString& id) {
 
     if (record->device.state == sentrium::device::ConnectionState::Connecting) {
         record->pending_remove = true;
+        if (record->auto_registration) {
+            disconnectDevice(id);
+        }
         return;
     }
 
@@ -247,6 +562,7 @@ void DeviceController::removeDevice(const QString& id) {
 }
 
 void DeviceController::erase(const QString& id) {
+    clearLiveForDevice(id);
     const std::string key = utf8(id);
     const auto found = std::find_if(
         records_.begin(),
@@ -256,6 +572,11 @@ void DeviceController::erase(const QString& id) {
         return;
     }
 
+    if (found->auto_registration) {
+        emit requestUnregisterAutoDevice(id);
+    }
+    std::fill(found->registration_id.begin(), found->registration_id.end(), '\0');
+    found->registration_id.clear();
     std::fill(found->password.begin(), found->password.end(), '\0');
     found->password.clear();
     found->username.clear();
@@ -277,7 +598,10 @@ void DeviceController::onConnectFinished(
         return;
     }
 
-    record->device.diagnostic = utf8(diagnostic);
+    record->device.diagnostic = record->device.access_method
+        == sentrium::device::AccessMethod::Cloud && success
+        ? "NetSDK autenticado via TCP local; origem Cloud e rota P2P ainda nao verificadas"
+        : utf8(diagnostic);
     if (success) {
         try {
             record->device.channels = sentrium::device::make_channels(channelCount);
@@ -321,6 +645,7 @@ void DeviceController::onDisconnectFinished(
     }
 
     if (success) {
+        clearLiveForDevice(id);
         record->device.state = sentrium::device::ConnectionState::Disconnected;
         record->device.channels.clear();
         record->device.diagnostic.clear();
@@ -351,6 +676,7 @@ void DeviceController::shutdown() {
         return;
     }
     shutdown_ = true;
+    clearAllLive();
 
     if (worker_ && worker_thread_.isRunning()) {
         QMetaObject::invokeMethod(
@@ -363,6 +689,8 @@ void DeviceController::shutdown() {
 
     worker_ = nullptr;
     for (auto& record : records_) {
+        std::fill(record.registration_id.begin(), record.registration_id.end(), '\0');
+        record.registration_id.clear();
         std::fill(record.password.begin(), record.password.end(), '\0');
         record.password.clear();
         record.username.clear();

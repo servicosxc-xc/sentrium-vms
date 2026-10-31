@@ -39,3 +39,8 @@ vcpkg/packages/
 /docs/foundation-001/evidence/sentrium-reproduction/
 /docs/foundation-001/evidence/sentrium-validation/
 /docs/foundation-001/evidence/sentrium-rollback-*/
+
+# Lab-only .NET outputs. NEVER commit vendor DLLs or local cloud credentials.
+/tools/simnext-cloud-lab/bin/
+/tools/simnext-cloud-lab/obj/
+/tools/simnext-cloud-lab/*.user

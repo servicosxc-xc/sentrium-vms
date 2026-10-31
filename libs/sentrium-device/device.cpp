@@ -16,6 +16,24 @@ std::string_view name(ConnectionState state) noexcept {
     return "Unknown";
 }
 
+std::string_view name(AccessMethod method) noexcept {
+    switch (method) {
+    case AccessMethod::Lan: return "LAN";
+    case AccessMethod::Cloud: return "Cloud";
+    case AccessMethod::AutoRegistration: return "AutoRegistration";
+    }
+    return "Unknown";
+}
+
+std::string_view name(CloudRoute route) noexcept {
+    switch (route) {
+    case CloudRoute::Unknown: return "Unknown";
+    case CloudRoute::Direct: return "Direct";
+    case CloudRoute::Relay: return "Relay";
+    }
+    return "Unknown";
+}
+
 void LoginRequest::validate() const {
     if (host.empty() || host.size() > 253) {
         throw std::invalid_argument("Host must contain 1 to 253 characters");

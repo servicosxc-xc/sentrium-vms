@@ -17,6 +17,23 @@ enum class ConnectionState {
 
 std::string_view name(ConnectionState state) noexcept;
 
+// The device identity and NetSDK session are independent of how the connection
+// was established. CloudRoute is never inferred from the existence of a tunnel.
+enum class AccessMethod {
+    Lan,
+    Cloud,
+    AutoRegistration
+};
+
+enum class CloudRoute {
+    Unknown,
+    Direct,
+    Relay
+};
+
+std::string_view name(AccessMethod method) noexcept;
+std::string_view name(CloudRoute route) noexcept;
+
 struct LoginRequest {
     std::string host;
     std::uint16_t port = 37777;
@@ -67,6 +84,8 @@ struct Device {
     ConnectionState state = ConnectionState::Disconnected;
     std::vector<Channel> channels;
     std::string diagnostic;
+    AccessMethod access_method = AccessMethod::Lan;
+    CloudRoute cloud_route = CloudRoute::Unknown;
 };
 
 } // namespace sentrium::device
