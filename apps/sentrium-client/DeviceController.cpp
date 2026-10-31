@@ -3,6 +3,7 @@
 
 #include <QByteArray>
 #include <QMetaObject>
+#include <QWindow>
 #include <QUuid>
 #include <QVariantMap>
 
@@ -41,6 +42,12 @@ DeviceController::DeviceController(QObject* parent) : QObject(parent) {
         worker_,
         &DeviceWorker::disconnectDevice,
         Qt::QueuedConnection);
+    connect(this, &DeviceController::requestStartLive,
+            worker_, &DeviceWorker::startLive, Qt::QueuedConnection);
+    connect(this, &DeviceController::requestStopLive,
+            worker_, &DeviceWorker::stopLive, Qt::QueuedConnection);
+    connect(worker_, &DeviceWorker::liveStarted,
+            this, &DeviceController::onLiveStarted, Qt::QueuedConnection);
     connect(
         worker_,
         &DeviceWorker::connectFinished,
@@ -305,6 +312,7 @@ void DeviceController::onRegistrationObservation(const QString& message) {
 }
 
 void DeviceController::onRegistrationLost(const QString& id) {
+    if (live_window_ && live_device_id_ == id) live_window_->close();
     auto* record = find(id);
     if (!record || !record->auto_registration || record->pending_remove) return;
     record->device.state = sentrium::device::ConnectionState::Connecting;
@@ -353,7 +361,68 @@ void DeviceController::connectDevice(const QString& id) {
     }
 }
 
+void DeviceController::openLive(const QString& id, int channel, bool extra) {
+    if (shutdown_) return;
+    const auto* record = find(id);
+    if (!record || record->pending_remove
+        || record->device.state != sentrium::device::ConnectionState::Connected
+        || channel < 0
+        || static_cast<std::size_t>(channel) >= record->device.channels.size()) {
+        setError(QStringLiteral("Canal não conectado; aguarde o registro e o login NetSDK"));
+        return;
+    }
+
+    // First usable video gate: a normal Qt native top-level window.
+    // The vendor NetSDK renders into the HWND; no false QML/AI video tiles.
+    // A subsequent stage will move decoded frames into the Qt mosaics.
+    if (live_window_) live_window_->close();
+    auto* preview = new QWindow;
+    preview->setTitle(QStringLiteral("SENTRIUM VMS — Ao vivo — %1 / %2")
+        .arg(qstring(record->device.display_name),
+             qstring(record->device.channels[static_cast<std::size_t>(channel)].name)));
+    preview->resize(960, 540);
+    preview->setFlags(Qt::Window | Qt::WindowTitleHint
+                      | Qt::WindowCloseButtonHint | Qt::WindowMinMaxButtonsHint);
+
+    live_window_ = preview;
+    live_device_id_ = id;
+    connect(preview, &QWindow::visibilityChanged,
+            this, [this, preview, id](QWindow::Visibility visibility) {
+        if (visibility != QWindow::Hidden) return;
+        if (live_window_ == preview) {
+            live_window_.clear();
+            live_device_id_.clear();
+            emit requestStopLive(id);
+        }
+        preview->deleteLater();
+    });
+    preview->show();
+    const auto nativeWindow = static_cast<quint64>(preview->winId());
+    setError({});
+    emit requestStartLive(id, channel, nativeWindow, extra);
+    emit auditEvent(QStringLiteral("live-preview-requested"),
+                    QStringLiteral("Native NetSDK live preview requested"));
+}
+
+void DeviceController::onLiveStarted(
+    const QString& id, bool success, const QString& diagnostic) {
+    if (id != live_device_id_ || !live_window_) {
+        if (success) emit requestStopLive(id);
+        return;
+    }
+    if (!success) {
+        setError(diagnostic);
+        live_window_->close();
+        emit auditEvent(QStringLiteral("live-preview-failed"),
+                        QStringLiteral("NetSDK RealPlayEx failed for a channel"));
+    } else {
+        emit auditEvent(QStringLiteral("live-preview-handle-started"),
+                        QStringLiteral("RealPlayEx returned a handle; visual frames unverified"));
+    }
+}
+
 void DeviceController::disconnectDevice(const QString& id) {
+    if (live_window_ && live_device_id_ == id) live_window_->close();
     auto* record = find(id);
     if (!record) {
         setError(QStringLiteral("Device not found"));
@@ -492,6 +561,7 @@ void DeviceController::onDisconnectFinished(
     }
 
     if (success) {
+        if (live_window_ && live_device_id_ == id) live_window_->close();
         record->device.state = sentrium::device::ConnectionState::Disconnected;
         record->device.channels.clear();
         record->device.diagnostic.clear();
@@ -522,6 +592,7 @@ void DeviceController::shutdown() {
         return;
     }
     shutdown_ = true;
+    if (live_window_) live_window_->close();
 
     if (worker_ && worker_thread_.isRunning()) {
         QMetaObject::invokeMethod(

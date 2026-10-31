@@ -3,6 +3,7 @@
 #include <sentrium/device.hpp>
 
 #include <QObject>
+#include <QPointer>
 #include <QThread>
 #include <QVariantList>
 
@@ -10,6 +11,7 @@
 #include <vector>
 
 class DeviceWorker;
+class QWindow;
 
 class DeviceController final : public QObject {
     Q_OBJECT
@@ -53,6 +55,8 @@ public:
     Q_INVOKABLE void stopRegistrationServer();
     Q_INVOKABLE void connectDevice(const QString& id);
     Q_INVOKABLE void disconnectDevice(const QString& id);
+    // First native video proof: one preview in a separate OS window.
+    Q_INVOKABLE void openLive(const QString& id, int channel, bool extra = true);
     Q_INVOKABLE void removeDevice(const QString& id);
 
     void shutdown();
@@ -71,6 +75,8 @@ signals:
         const QString& username,
         const QString& password);
     void requestDisconnect(const QString& id);
+    void requestStartLive(const QString& id, int channel, quint64 nativeWindow, bool extra);
+    void requestStopLive(const QString& id);
     void requestStartRegistrationServer(const QString& bindAddress, quint16 port);
     void requestStopRegistrationServer();
     void requestRegisterAutoDevice(
@@ -91,6 +97,7 @@ private slots:
         const QString& id,
         bool success,
         const QString& diagnostic);
+    void onLiveStarted(const QString& id, bool success, const QString& diagnostic);
 
 private:
     struct Record {
@@ -108,6 +115,8 @@ private:
     void erase(const QString& id);
 
     QThread worker_thread_;
+    QPointer<QWindow> live_window_;
+    QString live_device_id_;
     DeviceWorker* worker_ = nullptr;
     std::vector<Record> records_;
     QString last_error_;
