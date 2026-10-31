@@ -3,6 +3,8 @@
 
 #include <QByteArray>
 #include <QMetaObject>
+#include <QQmlEngine>
+#include <QColor>
 #include <QWindow>
 #include <QUuid>
 #include <QVariantMap>
@@ -83,6 +85,10 @@ DeviceController::DeviceController(QObject* parent) : QObject(parent) {
 
 DeviceController::~DeviceController() {
     shutdown();
+    // Controller outlives the QQmlApplicationEngine in main.cpp.
+    for (auto& surface : surfaces_) {
+        if (surface) delete surface.data();
+    }
 }
 
 QVariantList DeviceController::devices() const {
@@ -128,6 +134,37 @@ QVariantList DeviceController::devices() const {
     }
 
     return result;
+}
+
+QVariantList DeviceController::mosaicSlots() const {
+    QVariantList result;
+    result.reserve(max_mosaic_slots_);
+    for (int slot = 0; slot < max_mosaic_slots_; ++slot) {
+        const auto& tile = tiles_[static_cast<std::size_t>(slot)];
+        QVariantMap item;
+        item.insert(QStringLiteral("slot"), slot);
+        item.insert(QStringLiteral("occupied"), !tile.deviceId.isEmpty());
+        item.insert(QStringLiteral("deviceName"), tile.deviceName);
+        item.insert(QStringLiteral("channelName"), tile.channelName);
+        item.insert(QStringLiteral("status"), tile.status);
+        item.insert(QStringLiteral("extra"), tile.extra);
+        result.push_back(item);
+    }
+    return result;
+}
+
+QWindow* DeviceController::liveSurface(int slot) {
+    if (slot < 0 || slot >= max_mosaic_slots_ || shutdown_) return nullptr;
+    auto& surface = surfaces_[static_cast<std::size_t>(slot)];
+    if (!surface) {
+        auto* window = new QWindow;
+        window->setFlags(Qt::FramelessWindowHint);
+        window->setColor(Qt::black);
+        window->create();
+        QQmlEngine::setObjectOwnership(window, QQmlEngine::CppOwnership);
+        surface = window;
+    }
+    return surface.data();
 }
 
 void DeviceController::setError(const QString& error) {
@@ -312,7 +349,7 @@ void DeviceController::onRegistrationObservation(const QString& message) {
 }
 
 void DeviceController::onRegistrationLost(const QString& id) {
-    if (live_window_ && live_device_id_ == id) live_window_->close();
+    clearLiveForDevice(id);
     auto* record = find(id);
     if (!record || !record->auto_registration || record->pending_remove) return;
     record->device.state = sentrium::device::ConnectionState::Connecting;
@@ -362,67 +399,114 @@ void DeviceController::connectDevice(const QString& id) {
 }
 
 void DeviceController::openLive(const QString& id, int channel, bool extra) {
-    if (shutdown_) return;
+    // Fill the next free tile; when full, replace the selected round-robin tile.
+    int slot = -1;
+    for (int offset = 0; offset < mosaic_capacity_; ++offset) {
+        const int candidate = (next_slot_ + offset) % mosaic_capacity_;
+        if (tiles_[static_cast<std::size_t>(candidate)].deviceId.isEmpty()) {
+            slot = candidate;
+            break;
+        }
+    }
+    if (slot < 0) slot = next_slot_ % mosaic_capacity_;
+    next_slot_ = (slot + 1) % mosaic_capacity_;
+    openLiveInSlot(id, channel, slot, extra);
+}
+
+void DeviceController::openLiveInSlot(
+    const QString& id, int channel, int slot, bool extra) {
+    if (shutdown_ || slot < 0 || slot >= mosaic_capacity_) return;
     const auto* record = find(id);
     if (!record || record->pending_remove
         || record->device.state != sentrium::device::ConnectionState::Connected
         || channel < 0
         || static_cast<std::size_t>(channel) >= record->device.channels.size()) {
-        setError(QStringLiteral("Canal não conectado; aguarde o registro e o login NetSDK"));
+        setError(QStringLiteral("Canal não conectado; aguarde o Registro Automático"));
         return;
     }
-
-    // First usable video gate: a normal Qt native top-level window.
-    // The vendor NetSDK renders into the HWND; no false QML/AI video tiles.
-    // A subsequent stage will move decoded frames into the Qt mosaics.
-    if (live_window_) live_window_->close();
-    auto* preview = new QWindow;
-    preview->setTitle(QStringLiteral("SENTRIUM VMS — Ao vivo — %1 / %2")
-        .arg(qstring(record->device.display_name),
-             qstring(record->device.channels[static_cast<std::size_t>(channel)].name)));
-    preview->resize(960, 540);
-    preview->setFlags(Qt::Window | Qt::WindowTitleHint
-                      | Qt::WindowCloseButtonHint | Qt::WindowMinMaxButtonsHint);
-
-    live_window_ = preview;
-    live_device_id_ = id;
-    connect(preview, &QWindow::visibilityChanged,
-            this, [this, preview, id](QWindow::Visibility visibility) {
-        if (visibility != QWindow::Hidden) return;
-        if (live_window_ == preview) {
-            live_window_.clear();
-            live_device_id_.clear();
-            emit requestStopLive(id);
-        }
-        preview->deleteLater();
-    });
-    preview->show();
-    const auto nativeWindow = static_cast<quint64>(preview->winId());
+    QWindow* surface = liveSurface(slot);
+    if (!surface) {
+        setError(QStringLiteral("Falha ao criar a superfície nativa de vídeo"));
+        return;
+    }
+    // The tile QWindow persists during session changes, so StopRealPlayEx is
+    // always processed on the worker before the native HWND can be destroyed.
+    emit requestStopLive(slot);
+    auto& tile = tiles_[static_cast<std::size_t>(slot)];
+    tile.deviceId = id;
+    tile.deviceName = qstring(record->device.display_name);
+    tile.channelName =
+        qstring(record->device.channels[static_cast<std::size_t>(channel)].name);
+    tile.channel = channel;
+    tile.extra = extra;
+    tile.status = QStringLiteral("Conectando vídeo...");
+    tile.token = ++preview_token_;
     setError({});
-    emit requestStartLive(id, channel, nativeWindow, extra);
-    emit auditEvent(QStringLiteral("live-preview-requested"),
-                    QStringLiteral("Native NetSDK live preview requested"));
+    emit mosaicSlotsChanged();
+    emit requestStartLive(slot, tile.token, id, channel,
+                          static_cast<quint64>(surface->winId()), extra);
+    emit auditEvent(QStringLiteral("mosaic-preview-requested"),
+                    QStringLiteral("NetSDK RealPlay requested for an embedded tile"));
+}
+
+void DeviceController::clearLiveSlot(int slot) {
+    if (slot < 0 || slot >= max_mosaic_slots_) return;
+    auto& tile = tiles_[static_cast<std::size_t>(slot)];
+    emit requestStopLive(slot);
+    tile = {};
+    emit mosaicSlotsChanged();
+}
+
+void DeviceController::clearAllLive() {
+    for (int slot = 0; slot < max_mosaic_slots_; ++slot) {
+        emit requestStopLive(slot);
+        tiles_[static_cast<std::size_t>(slot)] = {};
+    }
+    emit mosaicSlotsChanged();
+}
+
+void DeviceController::clearLiveForDevice(const QString& id) {
+    for (int slot = 0; slot < max_mosaic_slots_; ++slot) {
+        if (tiles_[static_cast<std::size_t>(slot)].deviceId == id)
+            clearLiveSlot(slot);
+    }
+}
+
+void DeviceController::setMosaicCapacity(int capacity) {
+    if (capacity != 1 && capacity != 4 && capacity != 9 && capacity != 16) {
+        setError(QStringLiteral("Layout de mosaico inválido"));
+        return;
+    }
+    if (capacity == mosaic_capacity_) return;
+    for (int slot = capacity; slot < max_mosaic_slots_; ++slot)
+        clearLiveSlot(slot);
+    mosaic_capacity_ = capacity;
+    next_slot_ %= capacity;
+    emit mosaicSlotsChanged();
 }
 
 void DeviceController::onLiveStarted(
-    const QString& id, bool success, const QString& diagnostic) {
-    if (id != live_device_id_ || !live_window_) {
-        if (success) emit requestStopLive(id);
-        return;
-    }
+    int slot, quint64 token, const QString& id,
+    bool success, const QString& diagnostic) {
+    if (shutdown_ || slot < 0 || slot >= max_mosaic_slots_) return;
+    auto& tile = tiles_[static_cast<std::size_t>(slot)];
+    if (tile.deviceId != id || tile.token != token) return;
     if (!success) {
+        tile.status = QStringLiteral("Erro ao abrir vídeo");
         setError(diagnostic);
-        live_window_->close();
-        emit auditEvent(QStringLiteral("live-preview-failed"),
-                        QStringLiteral("NetSDK RealPlayEx failed for a channel"));
+        emit auditEvent(QStringLiteral("mosaic-preview-failed"),
+                        QStringLiteral("NetSDK RealPlayEx failed"));
     } else {
-        emit auditEvent(QStringLiteral("live-preview-handle-started"),
-                        QStringLiteral("RealPlayEx returned a handle; visual frames unverified"));
+        // An SDK handle is not proof of visible motion; validate in the GUI.
+        tile.status = QStringLiteral("Reprodução solicitada");
+        emit auditEvent(QStringLiteral("mosaic-preview-handle-started"),
+                        QStringLiteral("NetSDK RealPlayEx handle created"));
     }
+    emit mosaicSlotsChanged();
 }
 
 void DeviceController::disconnectDevice(const QString& id) {
-    if (live_window_ && live_device_id_ == id) live_window_->close();
+    clearLiveForDevice(id);
     auto* record = find(id);
     if (!record) {
         setError(QStringLiteral("Device not found"));
@@ -479,6 +563,7 @@ void DeviceController::removeDevice(const QString& id) {
 }
 
 void DeviceController::erase(const QString& id) {
+    clearLiveForDevice(id);
     const std::string key = utf8(id);
     const auto found = std::find_if(
         records_.begin(),
@@ -561,7 +646,7 @@ void DeviceController::onDisconnectFinished(
     }
 
     if (success) {
-        if (live_window_ && live_device_id_ == id) live_window_->close();
+        clearLiveForDevice(id);
         record->device.state = sentrium::device::ConnectionState::Disconnected;
         record->device.channels.clear();
         record->device.diagnostic.clear();
@@ -592,7 +677,7 @@ void DeviceController::shutdown() {
         return;
     }
     shutdown_ = true;
-    if (live_window_) live_window_->close();
+    clearAllLive();
 
     if (worker_ && worker_thread_.isRunning()) {
         QMetaObject::invokeMethod(

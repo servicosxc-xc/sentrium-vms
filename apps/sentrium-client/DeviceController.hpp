@@ -7,6 +7,7 @@
 #include <QThread>
 #include <QVariantList>
 
+#include <array>
 #include <string>
 #include <vector>
 
@@ -16,6 +17,7 @@ class QWindow;
 class DeviceController final : public QObject {
     Q_OBJECT
     Q_PROPERTY(QVariantList devices READ devices NOTIFY devicesChanged)
+    Q_PROPERTY(QVariantList mosaicSlots READ mosaicSlots NOTIFY mosaicSlotsChanged)
     Q_PROPERTY(QString lastError READ lastError NOTIFY lastErrorChanged)
     Q_PROPERTY(bool registrationListening READ registrationListening NOTIFY registrationStatusChanged)
     Q_PROPERTY(QString registrationStatus READ registrationStatus NOTIFY registrationStatusChanged)
@@ -27,6 +29,7 @@ public:
     ~DeviceController() override;
 
     QVariantList devices() const;
+    QVariantList mosaicSlots() const;
     QString lastError() const { return last_error_; }
     bool registrationListening() const { return registration_listening_; }
     QString registrationStatus() const { return registration_status_; }
@@ -55,14 +58,21 @@ public:
     Q_INVOKABLE void stopRegistrationServer();
     Q_INVOKABLE void connectDevice(const QString& id);
     Q_INVOKABLE void disconnectDevice(const QString& id);
-    // First native video proof: one preview in a separate OS window.
+    // Native NetSDK preview embedded in Qt Quick WindowContainer mosaic.
+    Q_INVOKABLE QWindow* liveSurface(int slot);
     Q_INVOKABLE void openLive(const QString& id, int channel, bool extra = true);
+    Q_INVOKABLE void openLiveInSlot(
+        const QString& id, int channel, int slot, bool extra = true);
+    Q_INVOKABLE void clearLiveSlot(int slot);
+    Q_INVOKABLE void clearAllLive();
+    Q_INVOKABLE void setMosaicCapacity(int capacity);
     Q_INVOKABLE void removeDevice(const QString& id);
 
     void shutdown();
 
 signals:
     void devicesChanged();
+    void mosaicSlotsChanged();
     void lastErrorChanged();
     void registrationStatusChanged();
     void registrationEventsChanged();
@@ -75,8 +85,9 @@ signals:
         const QString& username,
         const QString& password);
     void requestDisconnect(const QString& id);
-    void requestStartLive(const QString& id, int channel, quint64 nativeWindow, bool extra);
-    void requestStopLive(const QString& id);
+    void requestStartLive(int slot, quint64 token, const QString& id,
+                          int channel, quint64 nativeWindow, bool extra);
+    void requestStopLive(int slot);
     void requestStartRegistrationServer(const QString& bindAddress, quint16 port);
     void requestStopRegistrationServer();
     void requestRegisterAutoDevice(
@@ -97,7 +108,8 @@ private slots:
         const QString& id,
         bool success,
         const QString& diagnostic);
-    void onLiveStarted(const QString& id, bool success, const QString& diagnostic);
+    void onLiveStarted(int slot, quint64 token, const QString& id,
+                       bool success, const QString& diagnostic);
 
 private:
     struct Record {
@@ -113,10 +125,25 @@ private:
     const Record* find(const QString& id) const;
     void setError(const QString& error);
     void erase(const QString& id);
+    void clearLiveForDevice(const QString& id);
+
+    struct MosaicTile {
+        QString deviceId;
+        QString deviceName;
+        QString channelName;
+        QString status;
+        int channel = -1;
+        bool extra = true;
+        quint64 token = 0;
+    };
 
     QThread worker_thread_;
-    QPointer<QWindow> live_window_;
-    QString live_device_id_;
+    static constexpr int max_mosaic_slots_ = 16;
+    std::array<QPointer<QWindow>, 16> surfaces_{};
+    std::array<MosaicTile, 16> tiles_{};
+    int mosaic_capacity_ = 4;
+    int next_slot_ = 0;
+    quint64 preview_token_ = 0;
     DeviceWorker* worker_ = nullptr;
     std::vector<Record> records_;
     QString last_error_;
