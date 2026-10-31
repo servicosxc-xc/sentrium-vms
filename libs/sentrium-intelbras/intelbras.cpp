@@ -61,6 +61,8 @@ struct Adapter::Impl {
     using CleanupFn = decltype(&CLIENT_Cleanup);
     using ListenFn = decltype(&CLIENT_ListenServer);
     using StopListenFn = decltype(&CLIENT_StopListenServer);
+    using RealPlayFn = decltype(&CLIENT_RealPlayEx);
+    using StopRealPlayFn = decltype(&CLIENT_StopRealPlayEx);
 
     HMODULE module = nullptr;
     InitFn init = nullptr;
@@ -71,6 +73,8 @@ struct Adapter::Impl {
     CleanupFn cleanup = nullptr;
     ListenFn listen = nullptr;
     StopListenFn stop_listen = nullptr;
+    RealPlayFn real_play = nullptr;
+    StopRealPlayFn stop_real_play = nullptr;
     LLONG listener_handle = 0;
     std::mutex listener_mutex;
     RegistrationCallback listener_callback;
@@ -199,6 +203,8 @@ struct Adapter::Impl {
             cleanup = load_export<CleanupFn>(module, "CLIENT_Cleanup");
             listen = load_export<ListenFn>(module, "CLIENT_ListenServer");
             stop_listen = load_export<StopListenFn>(module, "CLIENT_StopListenServer");
+            real_play = load_export<RealPlayFn>(module, "CLIENT_RealPlayEx");
+            stop_real_play = load_export<StopRealPlayFn>(module, "CLIENT_StopRealPlayEx");
 
             if (!init(&Impl::disconnected, 0, nullptr)) {
                 const int error = last_error ? last_error() : 0;
@@ -280,6 +286,52 @@ device::DisconnectResult Adapter::disconnect(device::Session session) {
         return device::DisconnectResult{true, {}};
     } catch (const std::exception& error) {
         return device::DisconnectResult{false, error.what()};
+    }
+}
+
+device::ConnectResult Adapter::startLive(
+    device::Session loginSession,
+    int zeroBasedChannel,
+    std::uintptr_t nativeWindow,
+    bool extraStream) {
+    // Decode/display is owned by the vendor runtime in a separately created
+    // native Qt window. We do not claim success until an operator sees video.
+    if (!loginSession || zeroBasedChannel < 0 || zeroBasedChannel >= 4096
+        || nativeWindow == 0) {
+        return {false, {}, 0, "Invalid live preview session, channel or window"};
+    }
+    try {
+        impl_->ensure_initialized();
+        const auto playType = extraStream
+            ? DH_RType_Realplay_1 : DH_RType_Realplay;
+        const auto hwnd = reinterpret_cast<HWND>(nativeWindow);
+        const LLONG live = impl_->real_play(
+            static_cast<LLONG>(loginSession.value),
+            zeroBasedChannel, hwnd, playType);
+        if (live == 0) {
+            const int error = impl_->last_error ? impl_->last_error() : 0;
+            return {false, {}, 0,
+                    "NetSDK RealPlayEx failed (sdk_error=" + std::to_string(error) + ")"};
+        }
+        return {true, device::Session{static_cast<std::int64_t>(live)}, 0,
+                "NetSDK RealPlayEx handle started; visual frame pending validation"};
+    } catch (const std::exception&) {
+        return {false, {}, 0, "NetSDK RealPlayEx initialization failed"};
+    }
+}
+
+device::DisconnectResult Adapter::stopLive(device::Session liveSession) {
+    if (!liveSession) return {true, {}};
+    try {
+        impl_->ensure_initialized();
+        if (!impl_->stop_real_play(static_cast<LLONG>(liveSession.value))) {
+            const int error = impl_->last_error ? impl_->last_error() : 0;
+            return {false, "NetSDK StopRealPlayEx failed (sdk_error="
+                    + std::to_string(error) + ")"};
+        }
+        return {true, {}};
+    } catch (const std::exception&) {
+        return {false, "NetSDK StopRealPlayEx failed"};
     }
 }
 

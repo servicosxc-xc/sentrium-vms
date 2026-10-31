@@ -34,6 +34,13 @@ public:
     device::ConnectResult connect(const device::LoginRequest& request) override;
     device::DisconnectResult disconnect(device::Session session) override;
 
+    // Live window MVP: NetSDK owns native rendering to operator-created HWND.
+    // This does NOT implement a Qt mosaic or provide decoded frames for AI.
+    device::ConnectResult startLive(
+        device::Session loginSession, int zeroBasedChannel,
+        std::uintptr_t nativeWindow, bool extraStream);
+    device::DisconnectResult stopLive(device::Session liveSession);
+
     // NetSDK reverse-connect server. Explicit opt-in: starts listening only
     // after the user chooses bind address/port in the client.
     ListenerResult startRegistration(

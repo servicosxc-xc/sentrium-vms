@@ -22,6 +22,8 @@ public slots:
         const QString& username,
         const QString& password);
     void disconnectDevice(const QString& id);
+    void startLive(const QString& id, int channel, quint64 nativeWindow, bool extra);
+    void stopLive(const QString& id);
     void startRegistrationServer(const QString& bindAddress, quint16 port);
     void stopRegistrationServer();
     void registerAutoDevice(
@@ -36,6 +38,7 @@ signals:
         bool success,
         int channelCount,
         const QString& diagnostic);
+    void liveStarted(const QString& id, bool success, const QString& diagnostic);
     void registrationServerChanged(bool listening, const QString& diagnostic);
     void registrationReceived(
         const QString& registrationId, const QString& peer, quint16 port, bool disconnected);
@@ -61,6 +64,8 @@ private:
     bool listening_ = false;
     std::unordered_map<std::string, RegisteredTarget> registered_;
     sentrium::intelbras::Adapter adapter_;
+    sentrium::device::Session live_session_{};
+    QString live_device_id_;
     std::unordered_map<std::string, sentrium::device::Session> sessions_;
     // A failed logout is retried before accepting a new registration.
     std::unordered_set<std::string> stale_registration_sessions_;
