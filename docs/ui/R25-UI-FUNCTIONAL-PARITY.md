@@ -1,6 +1,6 @@
 # SENTRIUM VMS — Paridade funcional e visual com XC Video IA Foundation 007 r25
 
-Data de referência: 2026-10-31. **Estado: baseline de engenharia, não implementação concluída.**
+Data de referência: 2026-10-31. **Estado: baseline de engenharia + UI-001 Home inicial codificada na branch de paridade; build e inspeção Windows pendentes.**
 
 ## Princípio obrigatório
 
@@ -79,4 +79,18 @@ Fonte: `MainWindow.xaml`, `Theme.xaml`, `MainWindowViewModel.cs`.
 
 ## 5. Restrições atuais
 
-Esta entrega documenta o levantamento comparativo. **Não afirma nenhum módulo já portado**, não executa Qt/Windows localmente e não altera código do SENTRIUM nesta primeira etapa. As imagens/capturas da r25 são referência visual adicional útil; onde o XAML e o view model já definem comportamento, esta baseline é suficiente para começar a implementação sem exigir o ZIP novamente.
+O levantamento original foi exclusivamente documental. O checkpoint UI-001 acima introduz somente a nova Home na branch de paridade; os demais módulos ainda não foram portados. Não houve execução Qt/Windows no ambiente do operador nesta entrega. As imagens/capturas da r25 são referência visual adicional útil; onde o XAML e o view model já definem comportamento, esta baseline é suficiente para começar a implementação sem exigir o ZIP novamente.
+
+## 6. Checkpoint UI-001 — Home operacional (31/10/2026)
+
+**Código alterado apenas em `feature/r25-ui-parity`, PR #5 draft:**
+
+- `apps/sentrium-client/HomeDashboard.qml`: Home em módulo QML próprio, inspirada em `src/XC.VideoIA.Client/Views/HomeView.xaml`, com seções de operação, atalhos em ícones compactos e indicadores derivados do DeviceController real.
+- `apps/sentrium-client/Main.qml`: substituído apenas o conteúdo interno da Home; navegação e Controller existentes mantidos. Os módulos de Visualização/Dispositivos, NetSDK e mosaico não foram modificados.
+- `apps/sentrium-client/CMakeLists.txt`: registra novo componente em `qt_add_qml_module`.
+
+**Invariantes:** cadastro e contagem de dispositivos reais; sem fingir IA/LPR, Cloud, telemetria de Server ou backend de Reprodução; Home não altera sessões nem abre listeners. Estado `Connected` permanece derivado do DeviceController. As referências originais de UI servem de contrato, não há port WPF literal.
+
+**Validação:** revisão estrutural do diff é possível no GitHub; **build Qt 6.12/MSVC, carregamento da QML e inspeção visual ainda NÃO EXECUTADOS no Windows**. PR #5 permanece draft, sem merge em F005 ou main. Antes de declarar UI-001 pronta, rodar o helper da branch em checkout limpo e conferir ausência de QML errors, ícones e cliques nos 8 módulos. Sem fazer testes Cloud não relacionados.
+
+**Próxima fatia:** UI-002 Visualização e UI-003 Dispositivos, com contratos da r25 (árvore e favoritos, seleção dos tiles, menus contextuais, tabela/editor), porém sem alterar NetSDK/connectividade sem testes.
