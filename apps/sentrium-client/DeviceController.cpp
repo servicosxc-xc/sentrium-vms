@@ -144,6 +144,8 @@ QVariantList DeviceController::mosaicSlots() const {
         const auto& tile = tiles_[static_cast<std::size_t>(slot)];
         QVariantMap item;
         item.insert(QStringLiteral("slot"), slot);
+        item.insert(QStringLiteral("deviceId"), tile.deviceId);
+        item.insert(QStringLiteral("channel"), tile.channel);
         item.insert(QStringLiteral("occupied"), !tile.deviceId.isEmpty());
         item.insert(QStringLiteral("deviceName"), tile.deviceName);
         item.insert(QStringLiteral("channelName"), tile.channelName);
