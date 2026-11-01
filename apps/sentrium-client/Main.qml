@@ -941,137 +941,14 @@ ApplicationWindow {
                 orientation: Qt.Horizontal
 
         Rectangle {
-            SplitView.preferredWidth: 310
-            SplitView.minimumWidth: 250
+            SplitView.preferredWidth: 268
+            SplitView.minimumWidth: 205
             color: window.panelColor
             border.color: window.borderColor
 
             ColumnLayout {
                 anchors.fill: parent
                 spacing: 0
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    Layout.leftMargin: 14
-                    Layout.rightMargin: 10
-                    Layout.topMargin: 10
-                    Layout.bottomMargin: 8
-
-                    Label {
-                        text: "DISPOSITIVOS"
-                        color: window.textSecondary
-                        font.pixelSize: 11
-                        font.bold: true
-                    }
-
-                    Item { Layout.fillWidth: true }
-
-                    Button {
-                        id: addDeviceButton
-                        text: "+ Adicionar"
-                        Layout.preferredWidth: 106
-                        Layout.preferredHeight: 32
-                        padding: 0
-                        hoverEnabled: true
-                        background: Rectangle {
-                            radius: 5
-                            color: !addDeviceButton.enabled
-                                   ? window.panelAltColor
-                                   : addDeviceButton.down
-                                     ? "#315db0"
-                                     : addDeviceButton.hovered
-                                       ? "#386dc6" : window.accent
-                            border.color: addDeviceButton.enabled
-                                          ? "#6da4ff" : window.borderColor
-                        }
-                        contentItem: Label {
-                            text: addDeviceButton.text
-                            color: "white"
-                            font.pixelSize: 11
-                            font.bold: true
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                        onClicked: addDeviceDialog.open()
-                    }
-                }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    height: 1
-                    color: window.borderColor
-                }
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    Layout.leftMargin: 12
-                    Layout.rightMargin: 12
-                    Layout.topMargin: 5
-                    Layout.bottomMargin: 5
-
-                    Label {
-                        Layout.fillWidth: true
-                        elide: Text.ElideRight
-                        text: deviceController.registrationListening
-                              ? "Registro Automático ativo"
-                              : "Registro Automático inativo"
-                        color: deviceController.registrationListening
-                               ? "#7dd3a7" : window.textSecondary
-                        font.pixelSize: 10
-                    }
-
-                    ToolButton {
-                        text: "Abrir"
-                        onClicked: window.openModule("Configurações")
-                    }
-                }
-
-                Rectangle {
-                    visible: deviceController.lastError.length > 0
-                    Layout.fillWidth: true
-                    implicitHeight: errorLabel.implicitHeight + 16
-                    color: "#352126"
-
-                    Label {
-                        id: errorLabel
-                        anchors.fill: parent
-                        anchors.margins: 8
-                        text: deviceController.lastError
-                        color: "#ffb4b4"
-                        wrapMode: Text.WordWrap
-                        font.pixelSize: 11
-                    }
-                }
-
-                Item {
-                    visible: deviceController.devices.length === 0
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-
-                    Column {
-                        anchors.centerIn: parent
-                        width: parent.width - 48
-                        spacing: 8
-
-                        Label {
-                            width: parent.width
-                            horizontalAlignment: Text.AlignHCenter
-                            text: "Nenhum dispositivo"
-                            color: window.textPrimary
-                            font.pixelSize: 14
-                            font.bold: true
-                        }
-
-                        Label {
-                            width: parent.width
-                            horizontalAlignment: Text.AlignHCenter
-                            wrapMode: Text.WordWrap
-                            text: "Adicione um gravador por LAN ou Registro Automático. Cloud/P2P independente está em desenvolvimento."
-                            color: window.textSecondary
-                            font.pixelSize: 12
-                        }
-                    }
-                }
 
                 DeviceExplorer {
                     id: deviceExplorer
