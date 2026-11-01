@@ -457,6 +457,43 @@ void DeviceController::openLiveInSlot(
                     QStringLiteral("NetSDK RealPlay requested for an embedded tile"));
 }
 
+void DeviceController::swapLiveSlots(int sourceSlot, int targetSlot) {
+    // Native render windows remain owned by physical slots. Switching positions
+    // reopens streams against the destination HWND; it never swaps QWindow
+    // ownership or bypasses the SDK's worker-side stop/start ordering.
+    if (shutdown_ || sourceSlot < 0 || targetSlot < 0
+        || sourceSlot >= mosaic_capacity_ || targetSlot >= mosaic_capacity_
+        || sourceSlot == targetSlot) {
+        return;
+    }
+    const MosaicTile source = tiles_[static_cast<std::size_t>(sourceSlot)];
+    const MosaicTile destination = tiles_[static_cast<std::size_t>(targetSlot)];
+    if (source.deviceId.isEmpty()) return;
+
+    auto validTile = [this](const MosaicTile& tile) {
+        if (tile.deviceId.isEmpty()) return true;
+        const auto* record = find(tile.deviceId);
+        return record && !record->pending_remove
+            && record->device.state == sentrium::device::ConnectionState::Connected
+            && tile.channel >= 0
+            && static_cast<std::size_t>(tile.channel) < record->device.channels.size();
+    };
+    if (!validTile(source) || !validTile(destination)) {
+        setError(QStringLiteral("Não foi possível mover: canal desconectado"));
+        return;
+    }
+
+    openLiveInSlot(source.deviceId, source.channel, targetSlot, source.extra);
+    if (destination.deviceId.isEmpty()) {
+        clearLiveSlot(sourceSlot);
+    } else {
+        openLiveInSlot(destination.deviceId, destination.channel,
+                       sourceSlot, destination.extra);
+    }
+    emit auditEvent(QStringLiteral("mosaic-slots-swapped"),
+                    QStringLiteral("Operator moved live tiles within the mosaic"));
+}
+
 void DeviceController::clearLiveSlot(int slot) {
     if (slot < 0 || slot >= max_mosaic_slots_) return;
     auto& tile = tiles_[static_cast<std::size_t>(slot)];
