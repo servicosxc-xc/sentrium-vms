@@ -38,3 +38,11 @@ git switch --track origin/release-candidate/visualizacao-r25-rc01
 Caso a branch local já exista, substituir `git switch --track ...` por `git switch release-candidate/visualizacao-r25-rc01` seguido de `git pull --ff-only`. **Não sobrescrever alterações locais.** O helper espera build/cache/toolchain já configurados, VS2022 x64 PowerShell, Windows com Qt/NetSDK/PlaySDK, e gera `out/sentrium-release/sentrium-mosaic-build-last.log` (os últimos 45 linhas são mostrados). O helper verifica se o processo não encerra nos três segundos iniciais, não prova funcionamento dos módulos.
 
 Se falhar, enviar as 45 linhas finais do log e as mensagens de QML. Se iniciar, testar árvore, abas, menu e drag/drop com 1–4 streams e só depois aumentar a grade. Registrar a aprovação visual/funcional separadamente.
+
+## Hotfix RC01 — compilação QML Qt 6.12 (01/11/2026)
+
+**Evidência do operador:** Windows 11, Visual Studio 2022 Developer PowerShell v17.14.41, Qt 6.12.0; o build gerou objetos de outras QML e falhou somente em `sentrium-client_CameraContextMenu_qml.cpp.obj`. A compilação C++ do código QML gerado por qmlcachegen disparou `C4702` (`unreachable code`) em headers da Qt e a opção global `/WX` converteu esse aviso em erro `C2220`.
+
+**Correção:** `apps/sentrium-client/CMakeLists.txt` define `QT_QML_SKIP_CACHEGEN TRUE` exclusivamente para `CameraContextMenu.qml`, **antes de `qt_add_qml_module`**. A propriedade é oficialmente suportada pela Qt 6.12: a fonte QML ainda é empacotada como recurso e interpretada em runtime; demais QML continuam com compilação AOT. Nenhuma supressão geral de warning, mudança em NetSDK nem modificação das funcionalidades do menu.
+
+**Compilação após hotfix:** PENDENTE de nova execução local. O helper `scripts/windows/sentrium-mosaic-build-run.ps1` deve reconfigurar o CMake ao perceber mudança no `CMakeLists.txt`; `git pull --ff-only origin release-candidate/visualizacao-r25-rc01` antes de executar. Não afirmar PASS antes do log.
