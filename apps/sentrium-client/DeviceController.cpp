@@ -151,6 +151,12 @@ QVariantList DeviceController::mosaicSlots() const {
         item.insert(QStringLiteral("channelName"), tile.channelName);
         item.insert(QStringLiteral("status"), tile.status);
         item.insert(QStringLiteral("extra"), tile.extra);
+        // IA has no verified server-side rule engine in Foundation 005.
+        // Keep an explicit unknown/unavailable state rather than inferring
+        // "active" from a connected stream or a QML-only preference.
+        item.insert(QStringLiteral("aiState"), QStringLiteral("Unavailable"));
+        item.insert(QStringLiteral("aiMode"), QString());
+
         result.push_back(item);
     }
     return result;
