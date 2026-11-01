@@ -1042,6 +1042,63 @@ ApplicationWindow {
                                     colSpan: 1, rowSpan: 1}
                         }
 
+                        function dropRecorder(deviceId, startSlot) {
+                            if (startSlot < 0 || startSlot >= capacity) return
+                            const records = deviceController.devices
+                            let device = null
+                            for (let i = 0; i < records.length; ++i) {
+                                if (records[i].id === deviceId) {
+                                    device = records[i]
+                                    break
+                                }
+                            }
+                            if (device === null || device.state !== "Connected"
+                                || !device.channels || device.channels.length === 0)
+                                return
+                            const numberOfCameras = Math.min(64, device.channels.length)
+                            // Include all cameras: grow to the smallest grid if the
+                            // requested contiguous range fits. At slot 63, wrap to
+                            // the beginning rather than silently dropping cameras.
+                            const required = Math.min(64, startSlot + numberOfCameras)
+                            if (required > capacity || numberOfCameras > capacity) {
+                                const grids = [1, 4, 9, 16, 25, 36, 49, 64]
+                                for (let j = 0; j < grids.length; ++j) {
+                                    if (grids[j] >= required
+                                        && grids[j] >= numberOfCameras) {
+                                        applyLayout(grids[j], "grid")
+                                        break
+                                    }
+                                }
+                            }
+                            for (let c = 0; c < numberOfCameras; ++c) {
+                                const target = (startSlot + c) % capacity
+                                deviceController.openLiveInSlot(
+                                    deviceId, device.channels[c].index, target, true)
+                            }
+                            window.activeMosaicSlot = -1
+                        }
+
+                        function acceptTreeOrTileDrop(event, targetSlot) {
+                            const source = event.source
+                            if (!source || targetSlot < 0 || targetSlot >= capacity)
+                                return
+                            if (source.payloadKind === "camera") {
+                                deviceController.openLiveInSlot(
+                                    source.payloadDeviceId, source.payloadChannel, targetSlot, true)
+                                window.activeMosaicSlot = -1
+                                event.acceptProposedAction()
+                            } else if (source.payloadKind === "recorder") {
+                                dropRecorder(source.payloadDeviceId, targetSlot)
+                                event.acceptProposedAction()
+                            } else if (source.payloadKind === "tile") {
+                                if (source.payloadSourceSlot !== targetSlot) {
+                                    deviceController.swapLiveSlots(
+                                        source.payloadSourceSlot, targetSlot)
+                                }
+                                event.acceptProposedAction()
+                            }
+                        }
+
                         function applyLayout(count, mode) {
                             if (count === capacity && mode === layoutMode) return
                             // Resize native slots before creating more QML tiles.
@@ -1221,7 +1278,8 @@ ApplicationWindow {
                                                 : cell.rowSpan * videoMosaic.cellHeight
                                                   + (cell.rowSpan - 1) * mosaicWorkspace.tileGap
                                             color: "#090e15"
-                                            border.color: isActiveTile ? window.accent : "#344354"
+                                            border.color: tileDropArea.containsDrag
+                                                ? "#70baff" : isActiveTile ? window.accent : "#344354"
                                             border.width: isActiveTile ? 2 : 1
                                             clip: true
 
@@ -1318,8 +1376,24 @@ ApplicationWindow {
                                                     }
                                                 }
                                                 MouseArea {
+                                                    id: tileHeaderMouse
                                                     anchors.fill: parent
                                                     acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                                    drag.threshold: 8
+                                                    drag.target: (pressedButtons & Qt.LeftButton)
+                                                        && mosaicTile.itemData.occupied
+                                                        ? tileDragGhost : null
+                                                    onReleased: {
+                                                        if (tileHeaderMouse.drag.active)
+                                                            tileDragGhost.Drag.drop()
+                                                        tileDragGhost.x = 0
+                                                        tileDragGhost.y = 0
+                                                    }
+                                                    onCanceled: {
+                                                        tileDragGhost.Drag.cancel()
+                                                        tileDragGhost.x = 0
+                                                        tileDragGhost.y = 0
+                                                    }
                                                     onClicked: function(mouse) {
                                                         if (mouse.button === Qt.RightButton)
                                                             mosaicWorkspace.openTileContext(
@@ -1331,6 +1405,39 @@ ApplicationWindow {
                                                         window.activeMosaicSlot = index
                                                         mosaicWorkspace.focusedSlot =
                                                             mosaicWorkspace.focusedSlot === index ? -1 : index
+                                                    }
+                                                }
+
+                                                // The tile header is always a usable drag handle
+                                                // even if the native video window captures mouse
+                                                // events inside its own viewport.
+                                                Rectangle {
+                                                    id: tileDragGhost
+                                                    x: 0
+                                                    y: 0
+                                                    z: 12
+                                                    width: Math.min(180, mosaicTile.width)
+                                                    height: 24
+                                                    visible: tileHeaderMouse.drag.active
+                                                    radius: 4
+                                                    color: "#24446c"
+                                                    border.color: window.accent
+                                                    opacity: 0.92
+                                                    property string payloadKind: "tile"
+                                                    property int payloadSourceSlot: mosaicTile.index
+                                                    Drag.active: tileHeaderMouse.drag.active
+                                                    Drag.source: tileDragGhost
+                                                    Drag.keys: ["sentrium/tile"]
+                                                    Drag.hotSpot.x: 14
+                                                    Drag.hotSpot.y: 12
+                                                    Drag.supportedActions: Qt.MoveAction
+                                                    Label {
+                                                        anchors.centerIn: parent
+                                                        width: parent.width - 12
+                                                        text: mosaicTile.itemData.channelName
+                                                        color: "white"
+                                                        font.pixelSize: 11
+                                                        elide: Text.ElideRight
                                                     }
                                                 }
 
@@ -1408,6 +1515,19 @@ ApplicationWindow {
                                                     text: "×"
                                                     enabled: mosaicTile.itemData.occupied
                                                     onClicked: deviceController.clearLiveSlot(index)
+                                                }
+                                            }
+
+                                            // Accept drags on any tile, occupied or empty.
+                                            // Only the affected slots are reopened/replaced.
+                                            DropArea {
+                                                id: tileDropArea
+                                                anchors.fill: parent
+                                                keys: ["sentrium/camera",
+                                                       "sentrium/recorder",
+                                                       "sentrium/tile"]
+                                                onDropped: function(drop) {
+                                                    mosaicWorkspace.acceptTreeOrTileDrop(drop, mosaicTile.index)
                                                 }
                                             }
                                         }
