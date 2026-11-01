@@ -38,7 +38,7 @@ ApplicationWindow {
         }
     }
 
-    function openRecorder(deviceData) {
+    function openRecorder(deviceData, extra) {
         if (deviceData.state !== "Connected" || !deviceData.channels.length)
             return
         const n = Math.min(64, deviceData.channels.length)
@@ -54,7 +54,7 @@ ApplicationWindow {
         deviceController.clearAllLive()
         for (let i = 0; i < n; ++i)
             deviceController.openLiveInSlot(
-                deviceData.id, deviceData.channels[i].index, i, true)
+                deviceData.id, deviceData.channels[i].index, i, extra !== false)
         activeMosaicSlot = -1
     }
 
@@ -974,7 +974,12 @@ ApplicationWindow {
                     onOpenCamera: function(deviceId, channelIndex, extra) {
                         window.openCamera(deviceId, channelIndex, extra)
                     }
-                    onOpenRecorder: function(deviceData) { window.openRecorder(deviceData) }
+                    onOpenRecorder: function(deviceData, extra) {
+                        window.openRecorder(deviceData, extra)
+                    }
+                    onCloseDeviceChannels: function(deviceId) {
+                        deviceController.closeDeviceChannels(deviceId)
+                    }
                     onConnectDevice: function(deviceId) { deviceController.connectDevice(deviceId) }
                     onDisconnectDevice: function(deviceId) { deviceController.disconnectDevice(deviceId) }
                     onRemoveDevice: function(deviceId) { deviceController.removeDevice(deviceId) }
