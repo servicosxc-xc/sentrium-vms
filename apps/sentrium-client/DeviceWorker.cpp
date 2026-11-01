@@ -180,6 +180,7 @@ void DeviceWorker::stopRegistrationServer() {
             session_channel_counts_.erase(key);
         } else {
             stale_registration_sessions_.insert(key);
+            offline_sessions_.insert(key);
             emit registrationObservation(
                 QStringLiteral("Servidor: não foi possível confirmar logout de um dispositivo"));
         }
@@ -333,12 +334,15 @@ void DeviceWorker::onRegistrationReceived(
         }
         target.lastPeer = peer;
         target.lastPort = port;
-        if (sessions_.contains(id) && !offline_sessions_.contains(id)) {
-            // A new registration callback, possibly on a new source port,
-            // is not evidence that the healthy SDK login stopped working.
-            // Keep the handle and let SDK disconnect/reconnect callbacks
-            // determine a true session transition.
+        if (sessions_.contains(id) && !offline_sessions_.contains(id)
+            && !stale_registration_sessions_.contains(id)) {
+            // A new callback is not proof that a healthy SDK login failed.
+            // Keep the current handle; a stale logout or a real offline
+            // callback must explicitly authorize replacing it.
             return;
+        }
+        if (stale_registration_sessions_.contains(id)) {
+            offline_sessions_.insert(id);
         }
         attemptRegisteredLogin(id, target);
         return;
