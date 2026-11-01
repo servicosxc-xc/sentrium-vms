@@ -138,6 +138,7 @@ Rectangle {
                 property var deviceData: modelData
                 property bool matches: explorer.visibleDevice(deviceData)
                 property bool expanded: explorer.isExpanded(deviceData.id)
+                    || cameraSearch.text.trim().length > 0 || explorer.favoritesOnly
                 height: matches ? deviceCard.implicitHeight + 2 : 0
                 visible: matches
 
