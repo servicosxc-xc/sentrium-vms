@@ -12,6 +12,7 @@ Rectangle {
     property var devices: []
     property var groupNames: []
     property var mosaicSlots: []
+    property var liveEventSelections: ({})
     property color textPrimary: "#eef2f7"
     property color textSecondary: "#99a6b8"
     property color accent: "#4f8cff"
@@ -32,6 +33,7 @@ Rectangle {
     signal removeDevice(string deviceId)
     signal createGroup(string groupName)
     signal moveDevice(string deviceId, string groupName)
+    signal toggleLiveEvents(string deviceId, int channelIndex)
 
     function deviceGroup(device) {
         return device.group && device.group.length ? device.group : ungroupedLabel
@@ -39,6 +41,10 @@ Rectangle {
 
     function cameraKey(deviceId, channelIndex) {
         return deviceId + ":" + channelIndex
+    }
+
+    function isLiveEventsSelected(deviceId, channelIndex) {
+        return liveEventSelections[cameraKey(deviceId, channelIndex)] === true
     }
 
     function isFavorite(deviceId, channelIndex) {
@@ -545,6 +551,22 @@ Rectangle {
                         onTriggered: explorer.openCamera(node.device.id, node.camera.index, false)
                     }
                     MenuSeparator {}
+                    Menu {
+                        title: "Inteligência de vídeo"
+                        MenuItem {
+                            text: nodeRow.isCamera &&
+                                  explorer.isLiveEventsSelected(node.device.id, node.camera.index)
+                                  ? "Retirar canal do painel Eventos ao vivo"
+                                  : "Incluir canal no painel Eventos ao vivo"
+                            enabled: nodeRow.isCamera
+                            onTriggered: explorer.toggleLiveEvents(
+                                node.device.id, node.camera.index)
+                        }
+                        MenuItem {
+                            text: "IA do servidor (não integrada)"
+                            enabled: false
+                        }
+                    }
                     MenuItem {
                         text: nodeRow.isCamera &&
                               explorer.isFavorite(node.device.id, node.camera.index)
