@@ -284,7 +284,8 @@ void DeviceWorker::onSdkSessionStatus(quint64 handle, bool online) {
     if (!handle) return;
     for (const auto& [id, session] : sessions_) {
         if (static_cast<quint64>(session.value) != handle) continue;
-        if (!registered_.contains(id)) return; // Ordinary LAN sessions are unchanged.
+        if (!registered_.contains(id) || !listening_) return;
+        // Ordinary LAN sessions and a manually stopped listener are unchanged.
         if (!online) {
             if (offline_sessions_.insert(id).second) {
                 stopLiveForDevice(qstring(id));
@@ -330,17 +331,14 @@ void DeviceWorker::onRegistrationReceived(
                 "Registro reconhecido sem endereço válido"));
             return;
         }
-        const bool endpointChanged = peer != target.lastPeer || port != target.lastPort;
         target.lastPeer = peer;
         target.lastPort = port;
-        if (sessions_.contains(id) && !offline_sessions_.contains(id) && !endpointChanged) {
-            return; // duplicate heartbeat/registration on the current session
-        }
-        if (sessions_.contains(id) && endpointChanged) {
-            if (offline_sessions_.insert(id).second) {
-                stopLiveForDevice(logicalId);
-                emit registrationLost(logicalId);
-            }
+        if (sessions_.contains(id) && !offline_sessions_.contains(id)) {
+            // A new registration callback, possibly on a new source port,
+            // is not evidence that the healthy SDK login stopped working.
+            // Keep the handle and let SDK disconnect/reconnect callbacks
+            // determine a true session transition.
+            return;
         }
         attemptRegisteredLogin(id, target);
         return;
