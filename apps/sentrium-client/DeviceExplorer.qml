@@ -228,60 +228,23 @@ Rectangle {
         anchors.fill: parent
         spacing: 5
 
-        RowLayout {
+        TextField {
+            id: cameraSearch
             Layout.fillWidth: true
-            spacing: 4
-            TextField {
-                id: cameraSearch
-                Layout.fillWidth: true
-                Layout.preferredHeight: 32
-                placeholderText: "Pesquisar sites, dispositivos, canais"
-                font.pixelSize: 11
-                selectByMouse: true
+            Layout.leftMargin: 8
+            Layout.rightMargin: 8
+            Layout.topMargin: 8
+            Layout.bottomMargin: 7
+            Layout.preferredHeight: 32
+            placeholderText: "Pesquisar dispositivo ou câmera"
+            font.pixelSize: 11
+            selectByMouse: true
+            background: Rectangle {
+                radius: 5
+                color: "#111722"
+                border.color: cameraSearch.activeFocus ? explorer.accent : explorer.borderColor
             }
-            ToolButton {
-                text: "☆"
-                checkable: true
-                checked: explorer.favoritesOnly
-                onClicked: explorer.favoritesOnly = checked
-                ToolTip.visible: hovered
-                ToolTip.text: checked ? "Mostrar todos" : "Somente favoritos"
-            }
-        }
-
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 3
-            Label {
-                Layout.fillWidth: true
-                text: "SITES · DISPOSITIVOS · CANAIS"
-                color: explorer.textSecondary
-                font.pixelSize: 9
-                font.weight: Font.DemiBold
-            }
-            ToolButton {
-                text: "+ Grupo"
-                font.pixelSize: 10
-                onClicked: createGroupDialog.open()
-                ToolTip.visible: hovered
-                ToolTip.text: "Criar um grupo/local"
-            }
-            ToolButton {
-                text: "▾"
-                implicitWidth: 24
-                font.pixelSize: 12
-                onClicked: explorer.expandAll()
-                ToolTip.visible: hovered
-                ToolTip.text: "Expandir tudo"
-            }
-            ToolButton {
-                text: "▸"
-                implicitWidth: 24
-                font.pixelSize: 12
-                onClicked: explorer.collapseAll()
-                ToolTip.visible: hovered
-                ToolTip.text: "Recolher tudo"
-            }
+            color: explorer.textPrimary
         }
 
         ListView {
@@ -315,7 +278,8 @@ Rectangle {
                     acceptedButtons: Qt.LeftButton | Qt.RightButton
                     onClicked: function(mouse) {
                         if (mouse.button === Qt.RightButton) {
-                            if (nodeRow.isDevice) deviceMenu.popup()
+                            if (nodeRow.isGroup) groupMenu.popup()
+                            else if (nodeRow.isDevice) deviceMenu.popup()
                             else if (nodeRow.isCamera) cameraMenu.popup()
                             return
                         }
@@ -386,36 +350,27 @@ Rectangle {
                         verticalAlignment: Text.AlignVCenter
                     }
 
-                    Label {
-                        visible: nodeRow.isGroup
-                        text: String(node.count)
-                        color: explorer.textSecondary
-                        font.pixelSize: 10
-                    }
 
-                    ToolButton {
-                        visible: nodeRow.isCamera
-                        implicitWidth: visible ? 24 : 0
-                        implicitHeight: 25
-                        padding: 0
-                        text: nodeRow.isCamera
-                            ? (explorer.isFavorite(node.device.id, node.camera.index) ? "★" : "☆")
-                            : ""
-                        font.pixelSize: 13
-                        onClicked: explorer.toggleFavorite(node.device.id, node.camera.index)
-                    }
+                }
 
-                    ToolButton {
-                        visible: nodeRow.isDevice || nodeRow.isCamera
-                        implicitWidth: visible ? 23 : 0
-                        implicitHeight: 25
-                        text: "⋯"
-                        padding: 0
-                        font.pixelSize: 15
-                        onClicked: {
-                            if (nodeRow.isDevice) deviceMenu.popup()
-                            else cameraMenu.popup()
-                        }
+                Menu {
+                    id: groupMenu
+                    MenuItem {
+                        text: "Criar grupo / local..."
+                        onTriggered: createGroupDialog.open()
+                    }
+                    MenuItem {
+                        text: "Expandir todos"
+                        onTriggered: explorer.expandAll()
+                    }
+                    MenuItem {
+                        text: "Recolher todos"
+                        onTriggered: explorer.collapseAll()
+                    }
+                    MenuSeparator {}
+                    MenuItem {
+                        text: explorer.favoritesOnly ? "Mostrar todas as câmeras" : "Somente favoritas"
+                        onTriggered: explorer.favoritesOnly = !explorer.favoritesOnly
                     }
                 }
 
@@ -481,22 +436,6 @@ Rectangle {
             }
         }
 
-        Label {
-            Layout.fillWidth: true
-            visible: explorer.treeRows.length === 0
-            text: explorer.devices.length === 0 && explorer.groupNames.length === 0
-                ? "Nenhum dispositivo cadastrado"
-                : "Nenhum resultado para este filtro"
-            color: explorer.textSecondary
-            font.pixelSize: 11
-            wrapMode: Text.WordWrap
-        }
 
-        Label {
-            Layout.fillWidth: true
-            text: "Favoritos e organização sem persistência nesta etapa."
-            color: explorer.textSecondary
-            font.pixelSize: 10
-        }
     }
 }
