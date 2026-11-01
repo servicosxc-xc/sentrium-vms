@@ -1265,7 +1265,9 @@ ApplicationWindow {
                                                             id: aiBadgeLabel
                                                             anchors.centerIn: parent
                                                             text: mosaicTile.itemData.aiMode === "Motion"
-                                                                ? "IA · MOV" : "IA"
+                                                                ? "IA · MOV"
+                                                                : mosaicTile.itemData.aiMode === "PersonVehicle"
+                                                                  ? "IA · P+V" : "IA"
                                                             color: "white"
                                                             font.pixelSize: 9
                                                             font.bold: true
