@@ -6,6 +6,13 @@ qt_add_executable(sentrium-client
     DeviceWorker.hpp
 )
 
+# VS2022/MSVC /WX: generated QML AOT for CameraContextMenu triggers
+# C4702 in Qt 6.12 headers. Preserve the context menu as a QML resource
+# without qmlcachegen; other modules keep the optimized cache.
+set_source_files_properties(CameraContextMenu.qml PROPERTIES
+    QT_QML_SKIP_CACHEGEN TRUE
+)
+
 qt_add_qml_module(sentrium-client
     URI Sentrium.Client
     VERSION 1.0
