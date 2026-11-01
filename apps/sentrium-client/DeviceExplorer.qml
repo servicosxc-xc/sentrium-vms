@@ -346,6 +346,22 @@ Rectangle {
                     anchors.fill: parent
                     hoverEnabled: true
                     acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    preventStealing: true
+                    drag.threshold: 8
+                    drag.target: (nodeRow.isDevice || nodeRow.isCamera)
+                                 && node.device.state === "Connected"
+                                 ? treeDragGhost : null
+                    onReleased: {
+                        if (rowMouse.drag.active)
+                            treeDragGhost.Drag.drop()
+                        treeDragGhost.x = 0
+                        treeDragGhost.y = 0
+                    }
+                    onCanceled: {
+                        treeDragGhost.Drag.cancel()
+                        treeDragGhost.x = 0
+                        treeDragGhost.y = 0
+                    }
                     onClicked: function(mouse) {
                         if (mouse.button === Qt.RightButton) {
                             if (nodeRow.isGroup) groupMenu.popup()
@@ -359,6 +375,47 @@ Rectangle {
                             explorer.setDeviceExpanded(node.device.id, !explorer.deviceExpanded(node.device.id))
                         else if (nodeRow.isCamera && node.device.state === "Connected")
                             explorer.openCamera(node.device.id, node.camera.index, true)
+                    }
+                }
+
+                // Drag a lightweight proxy instead of relocating a virtualized
+                // ListView delegate. The target DropArea reads the logical IDs
+                // from this item; no passwords, hosts or NetSDK handles travel.
+                Rectangle {
+                    id: treeDragGhost
+                    x: 0
+                    y: 0
+                    width: Math.min(160, Math.max(65, nodeRow.width - 12))
+                    height: 27
+                    z: 10
+                    radius: 4
+                    visible: rowMouse.drag.active
+                    color: "#2c4972"
+                    border.color: explorer.accent
+                    opacity: 0.92
+
+                    property string payloadKind: nodeRow.isDevice ? "recorder"
+                                                  : nodeRow.isCamera ? "camera" : ""
+                    property string payloadDeviceId: nodeRow.isGroup ? "" : node.device.id
+                    property int payloadChannel: nodeRow.isCamera ? node.camera.index : -1
+
+                    Drag.active: rowMouse.drag.active
+                    Drag.source: treeDragGhost
+                    Drag.keys: nodeRow.isDevice ? ["sentrium/recorder"]
+                               : nodeRow.isCamera ? ["sentrium/camera"] : []
+                    Drag.hotSpot.x: 14
+                    Drag.hotSpot.y: 13
+                    Drag.supportedActions: Qt.CopyAction
+
+                    Label {
+                        anchors.centerIn: parent
+                        width: parent.width - 10
+                        text: nodeRow.isGroup ? "" : nodeRow.isDevice
+                              ? "▣  " + node.device.name
+                              : "▶  " + node.camera.name
+                        color: "white"
+                        elide: Text.ElideRight
+                        font.pixelSize: 11
                     }
                 }
 
