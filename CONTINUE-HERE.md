@@ -285,3 +285,8 @@ Gate para vídeo: MAFRAN `Connected` e >0 canais, depois ▶ Extra/▶ Principal
 ## Checkpoint UI r25 em branch isolada — 31/10/2026
 
 PR #5 draft (`feature/r25-ui-parity`) agora contém código modular UI-001 Home, UI-002 DeviceExplorer e mosaico com zoom visual não destrutivo, UI-003 DevicesWorkspace, além dos documentos `docs/ui/R25-UI-FUNCTIONAL-PARITY.md` e `docs/ui/R25-UI-IMPLEMENTATION-002.md`. **Build Windows/Qt deste lote NÃO EXECUTADO.** Nenhuma alteração C++ NetSDK, F005, F004 ou `main`; Registro Automático tem regressão de campo não resolvida. Não afirmar paridade concluída, persistência de favoritos/grupos, drag/drop, abas de vídeo independentes nem IA/LPR funcional. Para testes, operador deve buscar a branch feature e executar `scripts/windows/sentrium-mosaic-build-run.ps1` apenas depois de fechar o cliente. Ler o documento UI-002 para pendências e critérios.
+
+
+## UI — Tree R1: sites → gravadores → câmeras (31/10/2026)
+
+O operador enviou prints comparativos e pediu como **primeira mudança** substituir a lista/cartões de dispositivos na lateral de Visualização por árvore compacta como na r25. Código feito na **branch `feature/r25-ui-parity`**, PR #5 draft, com `DeviceExplorer.qml` flat virtualized tree, pesquisa/favoritos, expandir/recolher, menus, criar grupo/mover dispositivo; C++ Controller atualizado apenas para `group`/`deviceGroups` em memória e identidade de tile/canal. **Não existe persistência de grupos nem build Qt Windows neste lote**. Não fazer release, merge ou afirmar que está visualmente aprovado até o operador confirmar. Referência: `docs/ui/R25-DEVICE-TREE-R1.md`.
