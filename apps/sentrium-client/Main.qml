@@ -1016,11 +1016,17 @@ ApplicationWindow {
                     Layout.fillHeight: true
                     Layout.margins: 8
                     devices: deviceController.devices
+                    groupNames: deviceController.deviceGroups
+                    mosaicSlots: deviceController.mosaicSlots
                     textPrimary: window.textPrimary
                     textSecondary: window.textSecondary
                     accent: window.accent
                     borderColor: window.borderColor
                     panelAltColor: window.panelAltColor
+                    onCreateGroup: function(groupName) { deviceController.createDeviceGroup(groupName) }
+                    onMoveDevice: function(deviceId, groupName) {
+                        deviceController.setDeviceGroup(deviceId, groupName)
+                    }
                     onOpenCamera: function(deviceId, channelIndex, extra) {
                         window.openCamera(deviceId, channelIndex, extra)
                     }
