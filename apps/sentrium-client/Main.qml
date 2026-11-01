@@ -1080,9 +1080,13 @@ ApplicationWindow {
                                             implicitHeight: 30
                                             highlighted: mosaicWorkspace.capacity === modelData
                                             onClicked: {
-                                                mosaicWorkspace.capacity = modelData
-                                                mosaicWorkspace.focusedSlot = -1
+                                                // Update the C++ slot list before increasing the QML tile count.
+
                                                 deviceController.setMosaicCapacity(modelData)
+
+                                                mosaicWorkspace.capacity = modelData
+
+                                                mosaicWorkspace.focusedSlot = -1
                                                 if (window.activeMosaicSlot >= modelData)
                                                     window.activeMosaicSlot = -1
                                             }
