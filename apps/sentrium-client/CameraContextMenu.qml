@@ -6,6 +6,12 @@ import QtQuick.Controls
 Menu {
     id: menu
 
+    // Video tiles embed native QWindows. A Popup.Item would be painted
+    // underneath those child windows; use a separate popup window.
+    popupType: Popup.Window
+    closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+    focus: true
+
     property int targetSlot: -1
     property var slots: []
     property int focusedSlot: -1
