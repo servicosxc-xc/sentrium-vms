@@ -6,6 +6,7 @@
 #include <QPointer>
 #include <QThread>
 #include <QVariantList>
+#include <QStringList>
 
 #include <array>
 #include <string>
@@ -17,6 +18,7 @@ class QWindow;
 class DeviceController final : public QObject {
     Q_OBJECT
     Q_PROPERTY(QVariantList devices READ devices NOTIFY devicesChanged)
+    Q_PROPERTY(QStringList deviceGroups READ deviceGroups NOTIFY devicesChanged)
     Q_PROPERTY(QVariantList mosaicSlots READ mosaicSlots NOTIFY mosaicSlotsChanged)
     Q_PROPERTY(QString lastError READ lastError NOTIFY lastErrorChanged)
     Q_PROPERTY(bool registrationListening READ registrationListening NOTIFY registrationStatusChanged)
@@ -29,6 +31,7 @@ public:
     ~DeviceController() override;
 
     QVariantList devices() const;
+    QStringList deviceGroups() const { return device_groups_; }
     QVariantList mosaicSlots() const;
     QString lastError() const { return last_error_; }
     bool registrationListening() const { return registration_listening_; }
@@ -67,6 +70,9 @@ public:
     Q_INVOKABLE void clearAllLive();
     Q_INVOKABLE void setMosaicCapacity(int capacity);
     Q_INVOKABLE void removeDevice(const QString& id);
+    // Operator-defined organizational metadata only; does not touch NetSDK.
+    Q_INVOKABLE bool createDeviceGroup(const QString& name);
+    Q_INVOKABLE bool setDeviceGroup(const QString& id, const QString& name);
 
     void shutdown();
 
@@ -119,6 +125,7 @@ private:
         bool pending_remove = false;
         bool auto_registration = false;
         std::string registration_id;
+        QString group_name;
     };
 
     Record* find(const QString& id);
@@ -146,6 +153,7 @@ private:
     quint64 preview_token_ = 0;
     DeviceWorker* worker_ = nullptr;
     std::vector<Record> records_;
+    QStringList device_groups_;
     QString last_error_;
     QString registration_status_ = QStringLiteral("Servidor de registro desativado");
     QString registration_last_event_ = QStringLiteral("Nenhum registro recebido");
