@@ -19,3 +19,23 @@
 - O operador identificou o texto da pesquisa lateral com cor preta, ilegível no fundo escuro.
 - Em `apps/sentrium-client/DeviceExplorer.qml`, `cameraSearch.placeholderTextColor` passa a usar `explorer.textPrimary` (`#eef2f7`), a mesma cor do texto da aba Home ativa. A cor do texto digitado já utilizava essa propriedade.
 - Ajuste somente na branch `feature/r25-ui-parity`, sem alterar a versão RC01. **Sem nova build/release até autorização.**
+
+
+## Melhoria 3 — corrigir menu de tile e arraste tile → tile
+
+**Relato do operador:** na RC01, o menu contextual de cada tile não abre e não é possível arrastar um tile aberto para outro.
+
+**Causa técnica provável:** o mosaico tem `WindowContainer` com `QWindow` nativo para vídeo NetSDK. A documentação da Qt 6.12 registra que o child window pode estar à frente de Qt Quick; os controles/drop sobre a imagem não são garantidos. O menu anterior podia ficar oculto. As causas efetivas ainda precisam de reprodução após o patch.
+
+**Código modificado somente em `feature/r25-ui-parity`:**
+
+- `CameraContextMenu.qml`: `popupType: Popup.Window`, explicitando que o menu deve aparecer em uma janela popup acima dos HWNDs de vídeo.
+- `Main.qml`: chama `cameraContextMenu.popup(popupX, popupY)` com coordenadas explícitas em vez de `popup()` sem posição.
+- `Main.qml`: cabeçalho do tile com botão `⋯` sempre acessível, e gesto de botão direito por `TapHandler`, separado da área de clique/arraste esquerdo.
+- `Main.qml`: o arraste tile → tile resolve a posição final no `MouseArea.onReleased`, via `mapToItem()` e `mosaicRepeater.itemAt()`, chamando `DeviceController.swapLiveSlots()` já existente. Evita depender de Drag/DropArea sobre o vídeo nativo. Destino recebe destaque de borda.
+- `Main.qml`: `sentrium/tile` removido das chaves do `DropArea` para evitar drops duplicados; a árvore de câmera/gravador mantém as chaves originais.
+- `apps/sentrium-client/CMakeLists.txt`: reaplicada na branch de trabalho a correção do qmlcachegen de `CameraContextMenu.qml` já validada para recompilar a RC01.
+
+**Critérios para próxima build de teste:** menu no botão `⋯` e clique direito sobre cabeçalho, trocar tile 1→4 vazio e tile 1↔4 ocupado, preservar o stream Extra/Principal e demais canais. Gesto por toda a imagem nativa não é garantido em Qt 6.12: o **cabeçalho é o handle de arraste** e o botão `⋯` fornece acesso garantido ao menu.
+
+**Estado:** código salvo, sem compilação Windows pós-patch e sem aprovação visual. **Não modificar RC01 ou main, nem gerar nova versão até autorização do operador.**
