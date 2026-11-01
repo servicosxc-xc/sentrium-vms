@@ -67,6 +67,7 @@ public:
     Q_INVOKABLE void openLiveInSlot(
         const QString& id, int channel, int slot, bool extra = true);
     Q_INVOKABLE void clearLiveSlot(int slot);
+    Q_INVOKABLE void closeDeviceChannels(const QString& id);
     Q_INVOKABLE void clearAllLive();
     Q_INVOKABLE void setMosaicCapacity(int capacity);
     Q_INVOKABLE void removeDevice(const QString& id);
