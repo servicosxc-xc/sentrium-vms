@@ -12,6 +12,7 @@ qt_add_qml_module(sentrium-client
     QML_FILES
         Main.qml
         HomeDashboard.qml
+        DeviceExplorer.qml
 )
 
 target_link_libraries(sentrium-client PRIVATE
