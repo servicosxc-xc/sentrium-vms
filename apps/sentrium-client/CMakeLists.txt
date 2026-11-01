@@ -15,6 +15,7 @@ qt_add_qml_module(sentrium-client
         DeviceExplorer.qml
         DevicesWorkspace.qml
         MosaicLayoutsPopup.qml
+        CameraContextMenu.qml
 )
 
 target_link_libraries(sentrium-client PRIVATE
