@@ -475,7 +475,13 @@ void DeviceController::clearLiveForDevice(const QString& id) {
 }
 
 void DeviceController::setMosaicCapacity(int capacity) {
-    if (capacity != 1 && capacity != 4 && capacity != 9 && capacity != 16) {
+    // Standard grids (1..64) and r25-style featured-tile variants.
+    // This changes available native preview slots only; channel limits and
+    // actual decode performance are established by device and Windows tests.
+    static constexpr std::array<int, 13> supported{
+        1, 4, 6, 8, 9, 10, 12, 14, 16, 25, 36, 49, 64
+    };
+    if (std::find(supported.begin(), supported.end(), capacity) == supported.end()) {
         setError(QStringLiteral("Layout de mosaico inválido"));
         return;
     }
