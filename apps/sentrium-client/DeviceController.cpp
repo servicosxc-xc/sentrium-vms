@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <stdexcept>
+#include <utility>
 
 namespace {
 std::string utf8(const QString& value) {
@@ -726,6 +727,15 @@ void DeviceController::onConnectFinished(
         if (success) {
             emit requestDisconnect(id);
         }
+        return;
+    }
+
+    // An asynchronous SDK callback may race with a user-initiated manual
+    // disconnect. Never silently resurrect a deliberately stopped recorder.
+    if (record->auto_registration
+        && (record->device.state == sentrium::device::ConnectionState::Disconnected
+            || record->device.state == sentrium::device::ConnectionState::Disconnecting)) {
+        if (success) emit requestDisconnect(id);
         return;
     }
 
