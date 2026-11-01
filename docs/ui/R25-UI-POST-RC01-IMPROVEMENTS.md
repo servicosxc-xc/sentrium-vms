@@ -13,3 +13,9 @@
 ## Estado
 
 **Aplicado apenas à branch `feature/r25-ui-parity`; a branch `release-candidate/visualizacao-r25-rc01` NÃO foi modificada.** Sem build/teste visual ou merge. Não criar versão, release ou incorporar à RC antes do usuário enviar todas as melhorias e autorizar explicitamente. A revisão do posicionamento exato será feita na próxima versão aprovada para teste.
+
+## Melhoria 2 — contraste da pesquisa de câmeras
+
+- O operador identificou o texto da pesquisa lateral com cor preta, ilegível no fundo escuro.
+- Em `apps/sentrium-client/DeviceExplorer.qml`, `cameraSearch.placeholderTextColor` passa a usar `explorer.textPrimary` (`#eef2f7`), a mesma cor do texto da aba Home ativa. A cor do texto digitado já utilizava essa propriedade.
+- Ajuste somente na branch `feature/r25-ui-parity`, sem alterar a versão RC01. **Sem nova build/release até autorização.**
