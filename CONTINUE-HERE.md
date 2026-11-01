@@ -290,3 +290,8 @@ PR #5 draft (`feature/r25-ui-parity`) agora contém código modular UI-001 Home,
 ## UI — Tree R1: sites → gravadores → câmeras (31/10/2026)
 
 O operador enviou prints comparativos e pediu como **primeira mudança** substituir a lista/cartões de dispositivos na lateral de Visualização por árvore compacta como na r25. Código feito na **branch `feature/r25-ui-parity`**, PR #5 draft, com `DeviceExplorer.qml` flat virtualized tree, pesquisa/favoritos, expandir/recolher, menus, criar grupo/mover dispositivo; C++ Controller atualizado apenas para `group`/`deviceGroups` em memória e identidade de tile/canal. **Não existe persistência de grupos nem build Qt Windows neste lote**. Não fazer release, merge ou afirmar que está visualmente aprovado até o operador confirmar. Referência: `docs/ui/R25-DEVICE-TREE-R1.md`.
+
+
+## UI — alterações 2 a 4 (31/10/2026), sem nova versão
+
+Seguindo a revisão módulo a módulo solicitada pelo operador, a branch isolada `feature/r25-ui-parity` (PR #5 draft) implementou: (2) abas na barra superior após nome SENTRIUM, fechamentos `×` transparentes e remoção da segunda barra 40px; (3) lateral Visualização só com pesquisa e árvore, ações por menu de contexto; (4) seletor de grades 1/4/9/16/25/36/49/64 e destaques 6/8/10/12/14. `DeviceController` expandiu armazenamento nativo para 64 slots, sem modificar SDK/autenticação, e QML passou a criar `WindowContainer` sob demanda para tiles ocupados. **Sem compilação ou teste Windows do novo lote, sem benchmark 25–64, sem release/merge até confirmação.** Documento detalhado: `docs/ui/R25-UI-CHANGES-002-004.md`.
