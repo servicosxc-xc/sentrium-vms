@@ -459,6 +459,11 @@ void DeviceController::clearLiveSlot(int slot) {
     emit mosaicSlotsChanged();
 }
 
+void DeviceController::closeDeviceChannels(const QString& id) {
+    if (shutdown_ || !find(id)) return;
+    clearLiveForDevice(id);
+}
+
 void DeviceController::clearAllLive() {
     for (int slot = 0; slot < max_mosaic_slots_; ++slot) {
         emit requestStopLive(slot);
