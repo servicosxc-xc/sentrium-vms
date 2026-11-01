@@ -155,7 +155,6 @@ Flickable {
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                        accessible.name: "Abrir " + moduleCard.modelData.title
                         onClicked: home.navigate(moduleCard.modelData.module)
                     }
                 }
