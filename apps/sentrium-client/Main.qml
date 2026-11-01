@@ -1111,11 +1111,15 @@ ApplicationWindow {
                                 Layout.fillHeight: true
                                 clip: true
 
-                                Grid {
+                                Item {
                                     id: videoMosaic
                                     anchors.fill: parent
-                                    columns: mosaicWorkspace.focusedSlot >= 0 ? 1 : mosaicWorkspace.columns
-                                    spacing: 2
+                                    property real cellWidth: Math.max(0,
+                                        (width - mosaicWorkspace.tileGap * (mosaicWorkspace.columns - 1))
+                                        / mosaicWorkspace.columns)
+                                    property real cellHeight: Math.max(0,
+                                        (height - mosaicWorkspace.tileGap * (mosaicWorkspace.rows - 1))
+                                        / mosaicWorkspace.rows)
 
                                     Repeater {
                                         model: mosaicWorkspace.capacity
@@ -1124,11 +1128,21 @@ ApplicationWindow {
                                             required property int index
                                             property var itemData: mosaicWorkspace.slots[index]
                                             property bool isActiveTile: window.activeMosaicSlot === index
-                                            visible: mosaicWorkspace.focusedSlot < 0 || mosaicWorkspace.focusedSlot === index
-                                            width: Math.max(0, (videoMosaic.width -
-                                                videoMosaic.spacing * (videoMosaic.columns - 1)) / videoMosaic.columns)
-                                            height: Math.max(0, (videoMosaic.height -
-                                                videoMosaic.spacing * (videoMosaic.columns - 1)) / videoMosaic.columns)
+                                            property var cell: mosaicWorkspace.cellFor(index)
+                                            visible: mosaicWorkspace.focusedSlot < 0
+                                                || mosaicWorkspace.focusedSlot === index
+                                            x: mosaicWorkspace.focusedSlot >= 0 ? 0
+                                               : cell.col * (videoMosaic.cellWidth + mosaicWorkspace.tileGap)
+                                            y: mosaicWorkspace.focusedSlot >= 0 ? 0
+                                               : cell.row * (videoMosaic.cellHeight + mosaicWorkspace.tileGap)
+                                            width: mosaicWorkspace.focusedSlot >= 0
+                                                ? videoMosaic.width
+                                                : cell.colSpan * videoMosaic.cellWidth
+                                                  + (cell.colSpan - 1) * mosaicWorkspace.tileGap
+                                            height: mosaicWorkspace.focusedSlot >= 0
+                                                ? videoMosaic.height
+                                                : cell.rowSpan * videoMosaic.cellHeight
+                                                  + (cell.rowSpan - 1) * mosaicWorkspace.tileGap
                                             color: "#090e15"
                                             border.color: isActiveTile ? window.accent : "#344354"
                                             border.width: isActiveTile ? 2 : 1
@@ -1136,7 +1150,8 @@ ApplicationWindow {
 
                                             Rectangle {
                                                 id: tileHeader
-                                                height: 24
+                                                height: mosaicWorkspace.capacity > 16
+                                                    && mosaicWorkspace.focusedSlot < 0 ? 18 : 24
                                                 anchors.top: parent.top
                                                 anchors.left: parent.left
                                                 anchors.right: parent.right
@@ -1212,10 +1227,17 @@ ApplicationWindow {
 
                                                 // Qt 6.12 WindowContainer owns QWindow position, clipping and
                                                 // visibility. NetSDK draws real frames in the child HWND.
-                                                WindowContainer {
+                                                // A native QWindow is attached only for live tiles,
+                                                // rather than creating 64 HWNDs for empty positions.
+                                                Loader {
                                                     anchors.fill: parent
-                                                    window: deviceController.liveSurface(index)
-                                                    visible: mosaicTile.itemData.occupied
+                                                    active: mosaicTile.itemData.occupied
+                                                    sourceComponent: Component {
+                                                        WindowContainer {
+                                                            anchors.fill: parent
+                                                            window: deviceController.liveSurface(mosaicTile.index)
+                                                        }
+                                                    }
                                                 }
 
                                                 Label {
@@ -1232,7 +1254,9 @@ ApplicationWindow {
                                                 anchors.bottom: parent.bottom
                                                 anchors.left: parent.left
                                                 anchors.right: parent.right
-                                                height: 20
+                                                height: mosaicWorkspace.capacity > 16
+                                                    && mosaicWorkspace.focusedSlot < 0 ? 0 : 20
+                                                visible: height > 0
                                                 color: "#101a27"
                                                 Row {
                                                     anchors.left: parent.left
