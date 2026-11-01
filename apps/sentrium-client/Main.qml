@@ -1174,170 +1174,24 @@ ApplicationWindow {
                     }
                 }
 
-                ListView {
-                    id: deviceList
-                    visible: deviceController.devices.length > 0
+                DeviceExplorer {
+                    id: deviceExplorer
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     Layout.margins: 8
-                    clip: true
-                    spacing: 6
-                    model: deviceController.devices
-
-                    delegate: Item {
-                        id: deviceDelegate
-                        width: deviceList.width
-                        height: deviceCard.implicitHeight + 2
-                        property var deviceData: modelData
-
-                        Rectangle {
-                            id: deviceCard
-                            width: parent.width
-                            implicitHeight: deviceContent.implicitHeight + 20
-                            radius: 6
-                            color: window.panelAltColor
-                            border.color: window.borderColor
-
-                            ColumnLayout {
-                                id: deviceContent
-                                anchors.left: parent.left
-                                anchors.right: parent.right
-                                anchors.top: parent.top
-                                anchors.margins: 10
-                                spacing: 5
-
-                                RowLayout {
-                                    Layout.fillWidth: true
-
-                                    Label {
-                                        Layout.fillWidth: true
-                                        text: deviceDelegate.deviceData.name
-                                        color: window.textPrimary
-                                        font.bold: true
-                                        elide: Text.ElideRight
-                                    }
-
-                                    Label {
-                                        text: deviceDelegate.deviceData.state
-                                        color: deviceDelegate.deviceData.state === "Connected"
-                                               ? "#7dd3a7"
-                                               : deviceDelegate.deviceData.state === "Failed"
-                                                 ? "#ff9d9d"
-                                                 : window.textSecondary
-                                        font.pixelSize: 10
-                                    }
-                                }
-
-                                // Cloud status comes from measured tunnel telemetry only.
-                                // Unknown never becomes Direct merely because a port exists.
-                                Label {
-                                    visible: deviceDelegate.deviceData.method === "Cloud"
-                                             && deviceDelegate.deviceData.state === "Connected"
-                                             && deviceDelegate.deviceData.cloudRoute !== "Unknown"
-                                    Layout.fillWidth: true
-                                    text: deviceDelegate.deviceData.cloudRoute === "Relay"
-                                          ? "Cloud / Relay" : "Cloud / P2P direto"
-                                    color: deviceDelegate.deviceData.cloudRoute === "Relay"
-                                           ? "#f6cf74" : "#6da4ff"
-                                    font.pixelSize: 10
-                                }
-
-                                Label {
-                                    Layout.fillWidth: true
-                                    text: deviceDelegate.deviceData.connectionLabel
-                                    color: window.textSecondary
-                                    font.pixelSize: 11
-                                    elide: Text.ElideRight
-                                }
-
-                                Label {
-                                    visible: deviceDelegate.deviceData.diagnostic.length > 0
-                                    Layout.fillWidth: true
-                                    text: deviceDelegate.deviceData.diagnostic
-                                    color: deviceDelegate.deviceData.state === "Failed"
-                                           ? "#ffb4b4"
-                                           : window.textSecondary
-                                    wrapMode: Text.WordWrap
-                                    font.pixelSize: 10
-                                }
-
-                                Repeater {
-                                    model: deviceDelegate.deviceData.channels
-
-                                    delegate: RowLayout {
-                                        Layout.fillWidth: true
-                                        spacing: 7
-
-                                        Rectangle {
-                                            width: 6
-                                            height: 6
-                                            radius: 3
-                                            color: "#596579"
-                                        }
-
-                                        Label {
-                                            text: modelData.name
-                                            color: window.textSecondary
-                                            font.pixelSize: 11
-                                            Layout.fillWidth: true
-                                        }
-                                        Button {
-                                            text: "▶ Extra"
-                                            enabled: deviceDelegate.deviceData.state === "Connected"
-                                            onClicked: window.openCamera(
-                                                deviceDelegate.deviceData.id, modelData.index, true)
-                                            ToolTip.visible: hovered
-                                            ToolTip.text: "Abre o canal Extra dentro do mosaico."
-                                        }
-                                        Button {
-                                            text: "▶ Principal"
-                                            enabled: deviceDelegate.deviceData.state === "Connected"
-                                            onClicked: window.openCamera(
-                                                deviceDelegate.deviceData.id, modelData.index, false)
-                                            ToolTip.visible: hovered
-                                            ToolTip.text: "Abre o canal Principal dentro do mosaico."
-                                        }
-                                    }
-                                }
-
-                                RowLayout {
-                                    Layout.fillWidth: true
-
-                                    Button {
-                                        text: "Abrir canais"
-                                        visible: deviceDelegate.deviceData.state === "Connected"
-                                        enabled: deviceDelegate.deviceData.channels.length > 0
-                                        onClicked: window.openRecorder(deviceDelegate.deviceData)
-                                        ToolTip.visible: hovered
-                                        ToolTip.text: "Preenche o mosaico com os canais disponíveis (fluxo Extra)."
-                                    }
-
-                                    Button {
-                                        text: "Conectar"
-                                        visible: deviceDelegate.deviceData.state === "Disconnected"
-                                                 || deviceDelegate.deviceData.state === "Failed"
-                                        onClicked: deviceController.connectDevice(deviceDelegate.deviceData.id)
-                                    }
-
-                                    Button {
-                                        text: "Desconectar"
-                                        visible: deviceDelegate.deviceData.state === "Connected"
-                                                 || (deviceDelegate.deviceData.method === "AutoRegistration"
-                                                     && deviceDelegate.deviceData.state === "Connecting")
-                                        onClicked: deviceController.disconnectDevice(deviceDelegate.deviceData.id)
-                                    }
-
-                                    Item { Layout.fillWidth: true }
-
-                                    ToolButton {
-                                        text: "Remover"
-                                        enabled: deviceDelegate.deviceData.state !== "Disconnecting"
-                                        onClicked: deviceController.removeDevice(deviceDelegate.deviceData.id)
-                                    }
-                                }
-                            }
-                        }
+                    devices: deviceController.devices
+                    textPrimary: window.textPrimary
+                    textSecondary: window.textSecondary
+                    accent: window.accent
+                    borderColor: window.borderColor
+                    panelAltColor: window.panelAltColor
+                    onOpenCamera: function(deviceId, channelIndex, extra) {
+                        window.openCamera(deviceId, channelIndex, extra)
                     }
+                    onOpenRecorder: function(deviceData) { window.openRecorder(deviceData) }
+                    onConnectDevice: function(deviceId) { deviceController.connectDevice(deviceId) }
+                    onDisconnectDevice: function(deviceId) { deviceController.disconnectDevice(deviceId) }
+                    onRemoveDevice: function(deviceId) { deviceController.removeDevice(deviceId) }
                 }
             }
         }
@@ -1357,6 +1211,7 @@ ApplicationWindow {
                     color: "#0f1319"
                         property var slots: deviceController.mosaicSlots
                         property int capacity: 16
+                        property int focusedSlot: -1
                         property int columns: capacity === 1 ? 1 : capacity === 4 ? 2 : capacity === 9 ? 3 : 4
 
                         ColumnLayout {
@@ -1390,6 +1245,7 @@ ApplicationWindow {
                                             highlighted: mosaicWorkspace.capacity === modelData
                                             onClicked: {
                                                 mosaicWorkspace.capacity = modelData
+                                                mosaicWorkspace.focusedSlot = -1
                                                 deviceController.setMosaicCapacity(modelData)
                                                 if (window.activeMosaicSlot >= modelData)
                                                     window.activeMosaicSlot = -1
@@ -1397,6 +1253,11 @@ ApplicationWindow {
                                         }
                                     }
                                     Item { Layout.fillWidth: true }
+                                    Button {
+                                        text: "Restaurar grade"
+                                        visible: mosaicWorkspace.focusedSlot >= 0
+                                        onClicked: mosaicWorkspace.focusedSlot = -1
+                                    }
                                     Label {
                                         text: "Selecione um tile para direcionar a câmera"
                                         color: window.textSecondary
@@ -1421,7 +1282,7 @@ ApplicationWindow {
                                 Grid {
                                     id: videoMosaic
                                     anchors.fill: parent
-                                    columns: mosaicWorkspace.columns
+                                    columns: mosaicWorkspace.focusedSlot >= 0 ? 1 : mosaicWorkspace.columns
                                     spacing: 2
 
                                     Repeater {
@@ -1431,6 +1292,7 @@ ApplicationWindow {
                                             required property int index
                                             property var itemData: mosaicWorkspace.slots[index]
                                             property bool isActiveTile: window.activeMosaicSlot === index
+                                            visible: mosaicWorkspace.focusedSlot < 0 || mosaicWorkspace.focusedSlot === index
                                             width: Math.max(0, (videoMosaic.width -
                                                 videoMosaic.spacing * (videoMosaic.columns - 1)) / videoMosaic.columns)
                                             height: Math.max(0, (videoMosaic.height -
@@ -1472,7 +1334,39 @@ ApplicationWindow {
                                                 }
                                                 MouseArea {
                                                     anchors.fill: parent
-                                                    onClicked: window.activeMosaicSlot = index
+                                                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                                    onClicked: function(mouse) {
+                                                        if (mouse.button === Qt.RightButton)
+                                                            tileMenu.popup()
+                                                        else
+                                                            window.activeMosaicSlot = index
+                                                    }
+                                                    onDoubleClicked: {
+                                                        window.activeMosaicSlot = index
+                                                        mosaicWorkspace.focusedSlot =
+                                                            mosaicWorkspace.focusedSlot === index ? -1 : index
+                                                    }
+                                                }
+                                                Menu {
+                                                    id: tileMenu
+                                                    MenuItem {
+                                                        text: "Selecionar posição"
+                                                        onTriggered: window.activeMosaicSlot = index
+                                                    }
+                                                    MenuItem {
+                                                        text: mosaicWorkspace.focusedSlot === index ? "Restaurar grade" : "Maximizar tile"
+                                                        onTriggered: {
+                                                            window.activeMosaicSlot = index
+                                                            mosaicWorkspace.focusedSlot =
+                                                                mosaicWorkspace.focusedSlot === index ? -1 : index
+                                                        }
+                                                    }
+                                                    MenuSeparator {}
+                                                    MenuItem {
+                                                        text: "Limpar câmera"
+                                                        enabled: mosaicTile.itemData.occupied
+                                                        onTriggered: deviceController.clearLiveSlot(index)
+                                                    }
                                                 }
                                             }
 
