@@ -1046,6 +1046,52 @@ ApplicationWindow {
                             }
                         }
 
+                        function openTileContext(slot, source, localX, localY) {
+                            if (slot < 0 || slot >= capacity) return
+                            const location = source.mapToItem(mosaicWorkspace, localX, localY)
+                            cameraContextMenu.targetSlot = slot
+                            cameraContextMenu.x = Math.max(0, Math.min(location.x,
+                                mosaicWorkspace.width - cameraContextMenu.width - 6))
+                            cameraContextMenu.y = Math.max(0, Math.min(location.y,
+                                mosaicWorkspace.height - 390))
+                            cameraContextMenu.popup()
+                        }
+
+                        CameraContextMenu {
+                            id: cameraContextMenu
+                            parent: mosaicWorkspace
+                            width: 292
+                            slots: deviceController.mosaicSlots
+                            focusedSlot: mosaicWorkspace.focusedSlot
+                            favorite: hasCamera && deviceExplorer.isFavorite(tile.deviceId, tile.channel)
+
+                            onCloseChannel: function(slot) {
+                                deviceController.clearLiveSlot(slot)
+                            }
+                            onCloseAllChannels: {
+                                deviceController.clearAllLive()
+                                window.activeMosaicSlot = -1
+                            }
+                            onSelectTile: function(slot) {
+                                window.activeMosaicSlot = slot
+                            }
+                            onToggleMaximize: function(slot) {
+                                window.activeMosaicSlot = slot
+                                mosaicWorkspace.focusedSlot =
+                                    mosaicWorkspace.focusedSlot === slot ? -1 : slot
+                            }
+                            onSetStream: function(slot, extra) {
+                                if (slot < 0 || slot >= deviceController.mosaicSlots.length) return
+                                const current = deviceController.mosaicSlots[slot]
+                                if (!current.occupied || current.channel < 0) return
+                                deviceController.openLiveInSlot(
+                                    current.deviceId, current.channel, slot, extra)
+                            }
+                            onToggleFavorite: function(deviceId, channelIndex) {
+                                deviceExplorer.toggleFavorite(deviceId, channelIndex)
+                            }
+                        }
+
                         ColumnLayout {
                             anchors.fill: parent
                             spacing: 3
@@ -1184,7 +1230,8 @@ ApplicationWindow {
                                                     acceptedButtons: Qt.LeftButton | Qt.RightButton
                                                     onClicked: function(mouse) {
                                                         if (mouse.button === Qt.RightButton)
-                                                            tileMenu.popup()
+                                                            mosaicWorkspace.openTileContext(
+                                                                index, tileHeader, mouse.x, mouse.y)
                                                         else
                                                             window.activeMosaicSlot = index
                                                     }
@@ -1194,27 +1241,7 @@ ApplicationWindow {
                                                             mosaicWorkspace.focusedSlot === index ? -1 : index
                                                     }
                                                 }
-                                                Menu {
-                                                    id: tileMenu
-                                                    MenuItem {
-                                                        text: "Selecionar posição"
-                                                        onTriggered: window.activeMosaicSlot = index
-                                                    }
-                                                    MenuItem {
-                                                        text: mosaicWorkspace.focusedSlot === index ? "Restaurar grade" : "Maximizar tile"
-                                                        onTriggered: {
-                                                            window.activeMosaicSlot = index
-                                                            mosaicWorkspace.focusedSlot =
-                                                                mosaicWorkspace.focusedSlot === index ? -1 : index
-                                                        }
-                                                    }
-                                                    MenuSeparator {}
-                                                    MenuItem {
-                                                        text: "Limpar câmera"
-                                                        enabled: mosaicTile.itemData.occupied
-                                                        onTriggered: deviceController.clearLiveSlot(index)
-                                                    }
-                                                }
+
                                             }
 
                                             Item {
@@ -1246,6 +1273,17 @@ ApplicationWindow {
                                                     color: window.textSecondary
                                                     font.pixelSize: 10
                                                     visible: !mosaicTile.itemData.occupied
+                                                }
+
+                                                // Right click overlay, where supported by the native
+                                                // WindowContainer. Header context access is always present.
+                                                MouseArea {
+                                                    anchors.fill: parent
+                                                    acceptedButtons: Qt.RightButton
+                                                    onClicked: function(mouse) {
+                                                        mosaicWorkspace.openTileContext(
+                                                            index, videoViewport, mouse.x, mouse.y)
+                                                    }
                                                 }
                                             }
 
