@@ -94,3 +94,8 @@ O levantamento original foi exclusivamente documental. O checkpoint UI-001 acima
 **Validação:** revisão estrutural do diff é possível no GitHub; **build Qt 6.12/MSVC, carregamento da QML e inspeção visual ainda NÃO EXECUTADOS no Windows**. PR #5 permanece draft, sem merge em F005 ou main. Antes de declarar UI-001 pronta, rodar o helper da branch em checkout limpo e conferir ausência de QML errors, ícones e cliques nos 8 módulos. Sem fazer testes Cloud não relacionados.
 
 **Próxima fatia:** UI-002 Visualização e UI-003 Dispositivos, com contratos da r25 (árvore e favoritos, seleção dos tiles, menus contextuais, tabela/editor), porém sem alterar NetSDK/connectividade sem testes.
+
+
+## Checkpoint de implementação UI-002/003 — 31/10/2026
+
+A interface modular foi iniciada na branch `feature/r25-ui-parity` com `HomeDashboard.qml` (UI-001), `DeviceExplorer.qml` (UI-002) e `DevicesWorkspace.qml` (UI-003). O mosaico existente recebeu seleção/menu e ampliação de tile visualmente sem reduzir a capacidade de slots. Alterações ainda não executadas no Windows; sem alteração no NetSDK e sem merge para F005/main. A especificação acima é contrato-alvo, não prova de entrega integral. Veja [R25-UI-IMPLEMENTATION-002.md](R25-UI-IMPLEMENTATION-002.md) para lista exata do que foi codificado, pendências e teste.
