@@ -962,6 +962,7 @@ ApplicationWindow {
                     devices: deviceController.devices
                     groupNames: deviceController.deviceGroups
                     mosaicSlots: deviceController.mosaicSlots
+                    liveEventSelections: mosaicWorkspace.liveEventSelections
                     textPrimary: window.textPrimary
                     textSecondary: window.textSecondary
                     accent: window.accent
@@ -970,6 +971,9 @@ ApplicationWindow {
                     onCreateGroup: function(groupName) { deviceController.createDeviceGroup(groupName) }
                     onMoveDevice: function(deviceId, groupName) {
                         deviceController.setDeviceGroup(deviceId, groupName)
+                    }
+                    onToggleLiveEvents: function(deviceId, channelIndex) {
+                        mosaicWorkspace.toggleLiveEvents(deviceId, channelIndex)
                     }
                     onOpenCamera: function(deviceId, channelIndex, extra) {
                         window.openCamera(deviceId, channelIndex, extra)
