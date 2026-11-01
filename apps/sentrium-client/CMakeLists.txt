@@ -11,6 +11,7 @@ qt_add_qml_module(sentrium-client
     VERSION 1.0
     QML_FILES
         Main.qml
+        HomeDashboard.qml
 )
 
 target_link_libraries(sentrium-client PRIVATE
