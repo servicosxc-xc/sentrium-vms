@@ -3,6 +3,7 @@
 #include <QByteArray>
 #include <QTimer>
 #include <algorithm>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -176,6 +177,7 @@ void DeviceWorker::stopRegistrationServer() {
         if (result.success) {
             sessions_.erase(session);
             stale_registration_sessions_.erase(key);
+            session_channel_counts_.erase(key);
         } else {
             stale_registration_sessions_.insert(key);
             emit registrationObservation(
@@ -187,9 +189,9 @@ void DeviceWorker::stopRegistrationServer() {
     adapter_.stopRegistration();
     listening_ = false;
     offline_sessions_.clear();
-    for (auto& [id, target] : registered_) {
-        target.lastPeer.clear();
-        target.lastPort = 0;
+    for (auto& entry : registered_) {
+        entry.second.lastPeer.clear();
+        entry.second.lastPort = 0;
     }
     emit registrationServerChanged(false, QStringLiteral("Registro Automático desativado"));
 }
