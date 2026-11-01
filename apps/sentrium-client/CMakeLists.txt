@@ -6,6 +6,15 @@ qt_add_executable(sentrium-client
     DeviceWorker.hpp
 )
 
+# Qt 6.12 qmlcachegen emits a CameraContextMenu_qml.cpp translation unit
+# that triggers MSVC C4702 inside Qt headers with /W4 /WX on VS 17.14.
+# Keep this single context menu as an embedded QML resource (loaded by
+# the engine at runtime), preserving AOT compilation for every other QML.
+# QT_QML_SKIP_CACHEGEN is the supported per-file Qt 6.12 property.
+set_source_files_properties(CameraContextMenu.qml PROPERTIES
+    QT_QML_SKIP_CACHEGEN TRUE
+)
+
 qt_add_qml_module(sentrium-client
     URI Sentrium.Client
     VERSION 1.0
