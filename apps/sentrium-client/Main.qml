@@ -1005,6 +1005,21 @@ ApplicationWindow {
                         property string layoutMode: "grid"
                         property int focusedSlot: -1
                         property int tileGap: 2
+                        // Selection only: does not enable Server IA or create events.
+                        property var liveEventSelections: ({})
+                        function liveEventKey(deviceId, channel) { return deviceId + ":" + channel }
+                        function isLiveEventsSelected(deviceId, channel) {
+                            return liveEventSelections[liveEventKey(deviceId, channel)] === true
+                        }
+                        function toggleLiveEvents(deviceId, channel) {
+                            if (!deviceId || channel < 0) return
+                            const key = liveEventKey(deviceId, channel)
+                            const next = Object.assign({}, liveEventSelections)
+                            if (next[key]) delete next[key]
+                            else next[key] = true
+                            liveEventSelections = next
+                        }
+
                         property int rightColumns: capacity <= 6 ? 2 : capacity <= 10 ? 3 : 4
                         property int columns: layoutMode === "grid"
                             ? Math.round(Math.sqrt(capacity)) : rightColumns + 2
@@ -1069,6 +1084,10 @@ ApplicationWindow {
                             slots: deviceController.mosaicSlots
                             focusedSlot: mosaicWorkspace.focusedSlot
                             favorite: hasCamera && deviceExplorer.isFavorite(tile.deviceId, tile.channel)
+                            liveEventsSelected: hasCamera && mosaicWorkspace.isLiveEventsSelected(
+                                tile.deviceId, tile.channel)
+                            liveEventsFeedConnected: false
+
 
                             onCloseChannel: function(slot) {
                                 deviceController.clearLiveSlot(slot)
@@ -1094,6 +1113,9 @@ ApplicationWindow {
                             }
                             onToggleFavorite: function(deviceId, channelIndex) {
                                 deviceExplorer.toggleFavorite(deviceId, channelIndex)
+                            }
+                            onToggleLiveEvents: function(deviceId, channelIndex) {
+                                mosaicWorkspace.toggleLiveEvents(deviceId, channelIndex)
                             }
                         }
 
@@ -1207,28 +1229,87 @@ ApplicationWindow {
                                                 anchors.left: parent.left
                                                 anchors.right: parent.right
                                                 color: "#101a27"
-                                                Label {
-                                                    anchors.left: parent.left
+                                                RowLayout {
+                                                    anchors.fill: parent
                                                     anchors.leftMargin: 7
-                                                    anchors.verticalCenter: parent.verticalCenter
-                                                    width: parent.width - 90
-                                                    text: mosaicTile.itemData.occupied
-                                                        ? mosaicTile.itemData.channelName +
-                                                          " — " + mosaicTile.itemData.deviceName
-                                                        : "Canal " + String(index + 1).padStart(2, "0")
-                                                    elide: Text.ElideRight
-                                                    color: window.textPrimary
-                                                    font.pixelSize: 10
-                                                }
-                                                Label {
-                                                    anchors.right: parent.right
-                                                    anchors.rightMargin: 9
-                                                    anchors.verticalCenter: parent.verticalCenter
-                                                    text: mosaicTile.itemData.occupied
-                                                          ? (mosaicTile.itemData.extra ? "Extra" : "Principal")
-                                                          : ""
-                                                    color: "#9bc3ff"
-                                                    font.pixelSize: 9
+                                                    anchors.rightMargin: 7
+                                                    spacing: 5
+                                                    Label {
+                                                        Layout.fillWidth: true
+                                                        Layout.minimumWidth: 10
+                                                        text: mosaicTile.itemData.occupied
+                                                            ? mosaicTile.itemData.channelName
+                                                              + " — " + mosaicTile.itemData.deviceName
+                                                            : "Canal " + String(index + 1).padStart(2, "0")
+                                                        color: window.textPrimary
+                                                        font.pixelSize: 10
+                                                        font.bold: true
+                                                        elide: Text.ElideRight
+                                                    }
+                                                    Rectangle {
+                                                        id: intelligenceBadge
+                                                        readonly property bool active:
+                                                            mosaicTile.itemData.occupied
+                                                            && mosaicTile.itemData.aiState === "Active"
+                                                        visible: active
+                                                        implicitWidth: active ? aiBadgeLabel.implicitWidth + 10 : 0
+                                                        implicitHeight: 17
+                                                        radius: 3
+                                                        color: mosaicTile.itemData.aiMode === "Motion"
+                                                            ? "#C98A28" : "#7A5AF8"
+                                                        Label {
+                                                            id: aiBadgeLabel
+                                                            anchors.centerIn: parent
+                                                            text: mosaicTile.itemData.aiMode === "Motion"
+                                                                ? "IA · MOV" : "IA"
+                                                            color: "white"
+                                                            font.pixelSize: 9
+                                                            font.bold: true
+                                                        }
+                                                        HoverHandler { id: aiBadgeHover }
+                                                        ToolTip.visible: aiBadgeHover.hovered
+                                                        ToolTip.text: "Inteligência ativa confirmada pelo Server"
+                                                    }
+                                                    Rectangle {
+                                                        id: liveEventsBadge
+                                                        readonly property bool selected:
+                                                            mosaicTile.itemData.occupied
+                                                            && mosaicWorkspace.isLiveEventsSelected(
+                                                                mosaicTile.itemData.deviceId,
+                                                                mosaicTile.itemData.channel)
+                                                        visible: selected
+                                                        implicitWidth: selected
+                                                            ? liveEventsBadgeLabel.implicitWidth + 10 : 0
+                                                        implicitHeight: 17
+                                                        radius: 3
+                                                        color: "#2F8CFF"
+                                                        Label {
+                                                            id: liveEventsBadgeLabel
+                                                            anchors.centerIn: parent
+                                                            text: mosaicTile.width < 180 ? "EV" : "EVENTOS"
+                                                            color: "white"
+                                                            font.pixelSize: 9
+                                                            font.bold: true
+                                                        }
+                                                        HoverHandler { id: liveEventsBadgeHover }
+                                                        ToolTip.visible: liveEventsBadgeHover.hovered
+                                                        ToolTip.text: "Canal selecionado para Eventos ao vivo. "
+                                                            + "O feed de eventos ainda não está integrado."
+                                                    }
+                                                    Rectangle {
+                                                        visible: mosaicTile.itemData.occupied
+                                                        implicitWidth: visible ? streamLabel.implicitWidth + 9 : 0
+                                                        implicitHeight: 16
+                                                        radius: 3
+                                                        color: "#18222D"
+                                                        Label {
+                                                            id: streamLabel
+                                                            anchors.centerIn: parent
+                                                            text: mosaicTile.itemData.extra ? "Extra" : "Principal"
+                                                            color: "#9bc3ff"
+                                                            font.pixelSize: 9
+                                                        }
+                                                    }
                                                 }
                                                 MouseArea {
                                                     anchors.fill: parent
