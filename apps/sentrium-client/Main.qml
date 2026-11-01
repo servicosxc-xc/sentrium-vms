@@ -973,6 +973,8 @@ ApplicationWindow {
                         property string layoutMode: "grid"
                         property int focusedSlot: -1
                         property int tileGap: 2
+                        property int draggedTileSource: -1
+                        property int hoveredTileTarget: -1
                         // Selection only: does not enable Server IA or create events.
                         property var liveEventSelections: ({})
                         function liveEventKey(deviceId, channel) { return deviceId + ":" + channel }
@@ -1063,6 +1065,28 @@ ApplicationWindow {
                             }
                         }
 
+                        // Compute the destination from actual tile coordinates.
+                        // This keeps tile reordering independent of DropArea/
+                        // WindowContainer child HWND drag delivery.
+                        function tileAt(x, y) {
+                            if (x < 0 || y < 0 || x >= videoMosaic.width
+                                || y >= videoMosaic.height)
+                                return -1
+                            for (let i = 0; i < capacity; ++i) {
+                                const tile = mosaicRepeater.itemAt(i)
+                                if (tile && tile.visible
+                                    && x >= tile.x && x < tile.x + tile.width
+                                    && y >= tile.y && y < tile.y + tile.height)
+                                    return i
+                            }
+                            return -1
+                        }
+
+                        function resetTileDrag() {
+                            draggedTileSource = -1
+                            hoveredTileTarget = -1
+                        }
+
                         function applyLayout(count, mode) {
                             if (count === capacity && mode === layoutMode) return
                             // Resize native slots before creating more QML tiles.
@@ -1095,11 +1119,11 @@ ApplicationWindow {
                             if (slot < 0 || slot >= capacity) return
                             const location = source.mapToItem(mosaicWorkspace, localX, localY)
                             cameraContextMenu.targetSlot = slot
-                            cameraContextMenu.x = Math.max(0, Math.min(location.x,
+                            const popupX = Math.max(0, Math.min(location.x,
                                 mosaicWorkspace.width - cameraContextMenu.width - 6))
-                            cameraContextMenu.y = Math.max(0, Math.min(location.y,
+                            const popupY = Math.max(0, Math.min(location.y,
                                 mosaicWorkspace.height - 390))
-                            cameraContextMenu.popup()
+                            cameraContextMenu.popup(popupX, popupY)
                         }
 
                         CameraContextMenu {
@@ -1220,6 +1244,7 @@ ApplicationWindow {
                                         / mosaicWorkspace.rows)
 
                                     Repeater {
+                                        id: mosaicRepeater
                                         model: mosaicWorkspace.capacity
                                         delegate: Rectangle {
                                             id: mosaicTile
@@ -1243,6 +1268,7 @@ ApplicationWindow {
                                                   + (cell.rowSpan - 1) * mosaicWorkspace.tileGap
                                             color: "#090e15"
                                             border.color: tileDropArea.containsDrag
+                                                || mosaicWorkspace.hoveredTileTarget === index
                                                 ? "#70baff" : isActiveTile ? window.accent : "#344354"
                                             border.width: isActiveTile ? 2 : 1
                                             clip: true
@@ -1258,7 +1284,7 @@ ApplicationWindow {
                                                 RowLayout {
                                                     anchors.fill: parent
                                                     anchors.leftMargin: 7
-                                                    anchors.rightMargin: 7
+                                                    anchors.rightMargin: 27
                                                     spacing: 5
                                                     Label {
                                                         Layout.fillWidth: true
@@ -1339,71 +1365,103 @@ ApplicationWindow {
                                                         }
                                                     }
                                                 }
+                                                // The header is the stable interaction handle:
+                                                // the SDK's embedded video window may intercept
+                                                // pointer input over the viewport itself.
                                                 MouseArea {
                                                     id: tileHeaderMouse
                                                     anchors.fill: parent
-                                                    acceptedButtons: Qt.LeftButton | Qt.RightButton
-                                                    drag.threshold: 8
-                                                    drag.target: (pressedButtons & Qt.LeftButton)
-                                                        && mosaicTile.itemData.occupied
-                                                        ? tileDragGhost : null
-                                                    onReleased: {
-                                                        if (tileHeaderMouse.drag.active)
-                                                            tileDragGhost.Drag.drop()
-                                                        tileDragGhost.x = 0
-                                                        tileDragGhost.y = 0
+                                                    acceptedButtons: Qt.LeftButton
+                                                    preventStealing: true
+                                                    hoverEnabled: true
+                                                    cursorShape: mosaicTile.itemData.occupied
+                                                        ? Qt.OpenHandCursor : Qt.ArrowCursor
+                                                    property real dragStartX: 0
+                                                    property real dragStartY: 0
+                                                    property bool moved: false
+
+                                                    onPressed: function(mouse) {
+                                                        dragStartX = mouse.x
+                                                        dragStartY = mouse.y
+                                                        moved = false
+                                                    }
+                                                    onPositionChanged: function(mouse) {
+                                                        if (!(pressedButtons & Qt.LeftButton)
+                                                            || !mosaicTile.itemData.occupied)
+                                                            return
+                                                        const dx = mouse.x - dragStartX
+                                                        const dy = mouse.y - dragStartY
+                                                        if (!moved && dx * dx + dy * dy < 64)
+                                                            return
+                                                        moved = true
+                                                        const pos = mapToItem(videoMosaic, mouse.x, mouse.y)
+                                                        mosaicWorkspace.draggedTileSource = mosaicTile.index
+                                                        mosaicWorkspace.hoveredTileTarget =
+                                                            mosaicWorkspace.tileAt(pos.x, pos.y)
+                                                    }
+                                                    onReleased: function(mouse) {
+                                                        if (mouse.button === Qt.LeftButton && moved) {
+                                                            const pos = mapToItem(videoMosaic, mouse.x, mouse.y)
+                                                            const destination =
+                                                                mosaicWorkspace.tileAt(pos.x, pos.y)
+                                                            if (destination >= 0
+                                                                && destination !== mosaicTile.index)
+                                                                deviceController.swapLiveSlots(
+                                                                    mosaicTile.index, destination)
+                                                        }
+                                                        moved = false
+                                                        mosaicWorkspace.resetTileDrag()
                                                     }
                                                     onCanceled: {
-                                                        tileDragGhost.Drag.cancel()
-                                                        tileDragGhost.x = 0
-                                                        tileDragGhost.y = 0
+                                                        moved = false
+                                                        mosaicWorkspace.resetTileDrag()
                                                     }
-                                                    onClicked: function(mouse) {
-                                                        if (mouse.button === Qt.RightButton)
-                                                            mosaicWorkspace.openTileContext(
-                                                                index, tileHeader, mouse.x, mouse.y)
-                                                        else
-                                                            window.activeMosaicSlot = index
-                                                    }
+                                                    onClicked: window.activeMosaicSlot = mosaicTile.index
                                                     onDoubleClicked: {
-                                                        window.activeMosaicSlot = index
+                                                        window.activeMosaicSlot = mosaicTile.index
                                                         mosaicWorkspace.focusedSlot =
-                                                            mosaicWorkspace.focusedSlot === index ? -1 : index
+                                                            mosaicWorkspace.focusedSlot === mosaicTile.index
+                                                            ? -1 : mosaicTile.index
                                                     }
                                                 }
 
-                                                // The tile header is always a usable drag handle
-                                                // even if the native video window captures mouse
-                                                // events inside its own viewport.
-                                                Rectangle {
-                                                    id: tileDragGhost
-                                                    x: 0
-                                                    y: 0
-                                                    z: 12
-                                                    width: Math.min(180, mosaicTile.width)
-                                                    height: 24
-                                                    visible: tileHeaderMouse.drag.active
-                                                    radius: 4
-                                                    color: "#24446c"
-                                                    border.color: window.accent
-                                                    opacity: 0.92
-                                                    property string payloadKind: "tile"
-                                                    property int payloadSourceSlot: mosaicTile.index
-                                                    Drag.active: tileHeaderMouse.drag.active
-                                                    Drag.source: tileDragGhost
-                                                    Drag.keys: ["sentrium/tile"]
-                                                    Drag.hotSpot.x: 14
-                                                    Drag.hotSpot.y: 12
-                                                    Drag.supportedActions: Qt.MoveAction
-                                                    Drag.proposedAction: Qt.MoveAction
-                                                    Label {
-                                                        anchors.centerIn: parent
-                                                        width: parent.width - 12
-                                                        text: mosaicTile.itemData.channelName
-                                                        color: "white"
-                                                        font.pixelSize: 11
-                                                        elide: Text.ElideRight
+                                                TapHandler {
+                                                    acceptedButtons: Qt.RightButton
+                                                    onTapped: {
+                                                        mosaicWorkspace.openTileContext(
+                                                            mosaicTile.index, tileHeader,
+                                                            Math.min(tileHeader.width - 8, 40), 5)
                                                     }
+                                                }
+
+                                                // Guaranteed access to the context menu even
+                                                // when right-click delivery differs on Windows.
+                                                ToolButton {
+                                                    id: tileContextButton
+                                                    anchors.right: parent.right
+                                                    anchors.rightMargin: 2
+                                                    anchors.verticalCenter: parent.verticalCenter
+                                                    width: 23
+                                                    height: Math.max(17, parent.height - 2)
+                                                    z: 20
+                                                    padding: 0
+                                                    text: "⋯"
+                                                    hoverEnabled: true
+                                                    background: Rectangle {
+                                                        color: tileContextButton.hovered
+                                                            ? "#263750" : "transparent"
+                                                        radius: 3
+                                                    }
+                                                    contentItem: Label {
+                                                        text: tileContextButton.text
+                                                        color: window.textSecondary
+                                                        font.pixelSize: 15
+                                                        horizontalAlignment: Text.AlignHCenter
+                                                        verticalAlignment: Text.AlignVCenter
+                                                    }
+                                                    onClicked: mosaicWorkspace.openTileContext(
+                                                        mosaicTile.index, tileHeader,
+                                                        tileHeader.width - 8, tileHeader.height)
                                                 }
 
                                             }
@@ -1489,8 +1547,7 @@ ApplicationWindow {
                                                 id: tileDropArea
                                                 anchors.fill: parent
                                                 keys: ["sentrium/camera",
-                                                       "sentrium/recorder",
-                                                       "sentrium/tile"]
+                                                       "sentrium/recorder"]
                                                 onDropped: function(drop) {
                                                     mosaicWorkspace.acceptTreeOrTileDrop(drop, mosaicTile.index)
                                                 }
