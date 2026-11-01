@@ -16,7 +16,14 @@ Menu {
                                 extra: true, channelName: "", status: "" })
     readonly property bool hasCamera: tile.occupied === true
         && tile.deviceId !== "" && tile.channel >= 0
-    readonly property bool hasAnyCamera: slots.some(function(slot) { return slot.occupied === true })
+    readonly property bool hasAnyCamera: anyCameraOccupied()
+
+    function anyCameraOccupied() {
+        for (let i = 0; i < slots.length; ++i)
+            if (slots[i].occupied === true)
+                return true
+        return false
+    }
 
     signal closeChannel(int slot)
     signal closeAllChannels()
@@ -24,6 +31,13 @@ Menu {
     signal toggleMaximize(int slot)
     signal setStream(int slot, bool extra)
     signal toggleFavorite(string deviceId, int channelIndex)
+
+    background: Rectangle {
+        color: "#151e29"
+        border.color: "#3b4c64"
+        border.width: 1
+        radius: 6
+    }
 
     MenuItem {
         text: "Fechar canal"
