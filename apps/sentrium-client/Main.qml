@@ -1431,6 +1431,7 @@ ApplicationWindow {
                                                     Drag.hotSpot.x: 14
                                                     Drag.hotSpot.y: 12
                                                     Drag.supportedActions: Qt.MoveAction
+                                                    Drag.proposedAction: Qt.MoveAction
                                                     Label {
                                                         anchors.centerIn: parent
                                                         width: parent.width - 12
