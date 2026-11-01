@@ -406,6 +406,7 @@ Rectangle {
                     Drag.hotSpot.x: 14
                     Drag.hotSpot.y: 13
                     Drag.supportedActions: Qt.CopyAction
+                    Drag.proposedAction: Qt.CopyAction
 
                     Label {
                         anchors.centerIn: parent
