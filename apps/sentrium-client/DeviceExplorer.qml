@@ -307,6 +307,7 @@ Rectangle {
             Layout.bottomMargin: 7
             Layout.preferredHeight: 32
             placeholderText: "Pesquisar dispositivo ou câmera"
+            placeholderTextColor: explorer.textPrimary
             font.pixelSize: 11
             selectByMouse: true
             background: Rectangle {
