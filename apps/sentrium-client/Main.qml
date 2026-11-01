@@ -490,7 +490,12 @@ ApplicationWindow {
             }
 
             ColumnLayout {
-                Layout.preferredWidth: 189
+                // Keep the branding at its natural width. Otherwise the outer
+                // RowLayout can stretch this column and push tabs to the right.
+                Layout.preferredWidth: 187
+                Layout.minimumWidth: 187
+                Layout.maximumWidth: 187
+                Layout.fillWidth: false
                 spacing: 1
                 Label {
                     text: sentriumProduct
@@ -595,47 +600,6 @@ ApplicationWindow {
                             }
                         }
 
-                        ToolButton {
-                            id: createWorkspaceButton
-                            height: 39
-                            text: "+ Nova visualização"
-                            padding: 8
-                            hoverEnabled: true
-                            background: Rectangle {
-                                radius: 5
-                                color: createWorkspaceButton.hovered
-                                       ? window.panelAltColor : "transparent"
-                            }
-                            contentItem: Label {
-                                text: createWorkspaceButton.text
-                                color: window.textSecondary
-                                font.pixelSize: 11
-                                horizontalAlignment: Text.AlignHCenter
-                                verticalAlignment: Text.AlignVCenter
-                            }
-                            onClicked: window.openModule("Visualização")
-                        }
-
-                        ToolButton {
-                            id: playbackTabButton
-                            height: 39
-                            text: "Reprodução"
-                            padding: 8
-                            hoverEnabled: true
-                            background: Rectangle {
-                                radius: 5
-                                color: playbackTabButton.hovered
-                                       ? window.panelAltColor : "transparent"
-                            }
-                            contentItem: Label {
-                                text: playbackTabButton.text
-                                color: window.textSecondary
-                                font.pixelSize: 11
-                                horizontalAlignment: Text.AlignHCenter
-                                verticalAlignment: Text.AlignVCenter
-                            }
-                            onClicked: window.openModule("Reprodução")
-                        }
                     }
                 }
             }
