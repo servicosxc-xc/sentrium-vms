@@ -633,197 +633,31 @@ ApplicationWindow {
                 onNavigate: function(moduleName) { window.openModule(moduleName) }
             }
 
-            Rectangle {
+            DevicesWorkspace {
                 id: devicesModule
                 anchors.fill: parent
                 visible: window.activeModule === "Dispositivos"
-                color: "#0f1319"
+                devices: deviceController.devices
+                textPrimary: window.textPrimary
+                textSecondary: window.textSecondary
+                panelColor: window.panelColor
+                panelAltColor: window.panelAltColor
+                borderColor: window.borderColor
+                accent: window.accent
 
-                ColumnLayout {
-                    anchors.fill: parent
-                    anchors.margins: 14
-                    spacing: 10
-
-                    RowLayout {
-                        Layout.fillWidth: true
-                        Label {
-                            text: "Dispositivos"
-                            color: window.textPrimary
-                            font.bold: true
-                            font.pixelSize: 21
-                        }
-                        Item { Layout.fillWidth: true }
-                        Label {
-                            text: "Cadastrados: " + deviceController.devices.length
-                                  + "    Conectados: " + window.connectedCount()
-                            color: window.textSecondary
-                            font.pixelSize: 11
-                        }
-                    }
-                    Label {
-                        text: "Cadastro, conexão e diagnóstico de gravadores e câmeras"
-                        color: window.textSecondary
-                        font.pixelSize: 11
-                    }
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: 8
-                        TextField {
-                            id: deviceSearch
-                            Layout.preferredWidth: 300
-                            placeholderText: "Pesquisar dispositivo"
-                        }
-                        Item { Layout.fillWidth: true }
-                        Button { text: "Novo"; onClicked: addDeviceDialog.open() }
-                        Button {
-                            text: "Conectar"
-                            enabled: window.selectedDevice() !== null
-                                     && (window.selectedDevice().state === "Disconnected"
-                                         || window.selectedDevice().state === "Failed")
-                            onClicked: deviceController.connectDevice(window.selectedDeviceId)
-                        }
-                        Button {
-                            text: "Desconectar"
-                            enabled: window.selectedDevice() !== null
-                                     && window.selectedDevice().state === "Connected"
-                            onClicked: deviceController.disconnectDevice(window.selectedDeviceId)
-                        }
-                        Button {
-                            text: "Excluir"
-                            enabled: window.selectedDevice() !== null
-                            onClicked: {
-                                deviceController.removeDevice(window.selectedDeviceId)
-                                window.selectedDeviceId = ""
-                            }
-                        }
-                    }
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 30
-                        color: window.panelAltColor
-                        border.color: window.borderColor
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.leftMargin: 12
-                            anchors.rightMargin: 12
-                            Label { text: "Dispositivo"; Layout.fillWidth: true; color: window.textSecondary; font.pixelSize: 11 }
-                            Label { text: "Tipo de conexão"; Layout.preferredWidth: 165; color: window.textSecondary; font.pixelSize: 11 }
-                            Label { text: "Canais"; Layout.preferredWidth: 90; color: window.textSecondary; font.pixelSize: 11 }
-                            Label { text: "Estado"; Layout.preferredWidth: 120; color: window.textSecondary; font.pixelSize: 11 }
-                        }
-                    }
-                    ListView {
-                        id: devicesTable
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        clip: true
-                        spacing: 4
-                        model: deviceController.devices
-
-                        delegate: Rectangle {
-                            id: deviceRow
-                            property var item: modelData
-                            width: devicesTable.width
-                            height: (!deviceSearch.text
-                                     || item.name.toLowerCase().indexOf(deviceSearch.text.toLowerCase()) >= 0)
-                                    ? 48 : 0
-                            visible: height > 0
-                            radius: 3
-                            color: window.selectedDeviceId === item.id ? "#273449" : window.panelColor
-                            border.color: window.selectedDeviceId === item.id ? window.accent : window.borderColor
-
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.leftMargin: 12
-                                anchors.rightMargin: 12
-                                spacing: 8
-                                ColumnLayout {
-                                    Layout.fillWidth: true
-                                    spacing: 0
-                                    Label {
-                                        text: deviceRow.item.name
-                                        color: window.textPrimary
-                                        font.pixelSize: 12
-                                        font.bold: true
-                                        elide: Text.ElideRight
-                                    }
-                                    Label {
-                                        text: deviceRow.item.connectionLabel
-                                        color: window.textSecondary
-                                        font.pixelSize: 10
-                                        elide: Text.ElideRight
-                                    }
-                                }
-                                Label {
-                                    Layout.preferredWidth: 165
-                                    text: deviceRow.item.method
-                                    color: window.textSecondary
-                                    font.pixelSize: 11
-                                }
-                                Label {
-                                    Layout.preferredWidth: 90
-                                    text: String(deviceRow.item.channels.length)
-                                    color: window.textSecondary
-                                    font.pixelSize: 11
-                                }
-                                Label {
-                                    Layout.preferredWidth: 120
-                                    text: deviceRow.item.state
-                                    color: deviceRow.item.state === "Connected"
-                                            ? "#7dd3a7" : window.textSecondary
-                                    font.pixelSize: 11
-                                }
-                            }
-                            MouseArea {
-                                anchors.fill: parent
-                                onClicked: window.selectedDeviceId = deviceRow.item.id
-                            }
-                        }
-                    }
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 146
-                        radius: 4
-                        color: window.panelColor
-                        border.color: window.borderColor
-                        ColumnLayout {
-                            anchors.fill: parent
-                            anchors.margins: 12
-                            spacing: 7
-                            Label {
-                                text: "Dispositivo selecionado"
-                                color: window.textPrimary
-                                font.bold: true
-                                font.pixelSize: 12
-                            }
-                            Label {
-                                Layout.fillWidth: true
-                                text: window.selectedDevice() !== null
-                                      ? window.selectedDevice().name + "  •  " + window.selectedDevice().method
-                                        + "  •  " + window.selectedDevice().state
-                                      : "Selecione um dispositivo na tabela"
-                                color: window.textSecondary
-                                font.pixelSize: 11
-                                elide: Text.ElideRight
-                            }
-                            Label {
-                                Layout.fillWidth: true
-                                text: window.selectedDevice() !== null
-                                      ? window.selectedDevice().diagnostic : ""
-                                color: window.textSecondary
-                                font.pixelSize: 11
-                                wrapMode: Text.WordWrap
-                            }
-                            Label {
-                                Layout.fillWidth: true
-                                text: window.selectedDevice() !== null
-                                      ? "Canais retornados pelo NetSDK: " + window.selectedDevice().channels.length
-                                      : ""
-                                color: window.textSecondary
-                                font.pixelSize: 11
-                            }
-                        }
-                    }
+                onAddDevice: addDeviceDialog.open()
+                onConnectDevice: function(deviceId) { deviceController.connectDevice(deviceId) }
+                onDisconnectDevice: function(deviceId) { deviceController.disconnectDevice(deviceId) }
+                onRemoveDevice: function(deviceId) { deviceController.removeDevice(deviceId) }
+                onOpenCamera: function(deviceId, channelIndex, extra) {
+                    let tabs = window.openModules.filter(function(name) {
+                        return name.indexOf("Visualização") === 0
+                    })
+                    if (tabs.length > 0)
+                        window.activeModule = tabs[0]
+                    else
+                        window.newVisualization()
+                    window.openCamera(deviceId, channelIndex, extra)
                 }
             }
 
