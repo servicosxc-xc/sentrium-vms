@@ -43,8 +43,10 @@ ApplicationWindow {
             return
         const n = Math.min(16, deviceData.channels.length)
         const capacity = n > 9 ? 16 : n > 4 ? 9 : n > 1 ? 4 : 1
-        mosaicWorkspace.capacity = capacity
+        // The C++ slot list must be resized before QML creates additional tiles.
         deviceController.setMosaicCapacity(capacity)
+        mosaicWorkspace.capacity = capacity
+        mosaicWorkspace.focusedSlot = -1
         deviceController.clearAllLive()
         for (let i = 0; i < n; ++i)
             deviceController.openLiveInSlot(
