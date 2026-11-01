@@ -85,14 +85,14 @@ struct Adapter::Impl {
     static void dispatch_session_status(LLONG login_id, LDWORD user, bool online) noexcept {
         if (!user || !login_id) return;
         auto* self = reinterpret_cast<Impl*>(static_cast<std::uintptr_t>(user));
-        SessionStatusCallback callback;
-        {
-            std::lock_guard lock(self->session_callback_mutex);
-            callback = self->session_callback;
-        }
-        if (!callback) return;
         try {
-            callback(device::Session{static_cast<std::int64_t>(login_id)}, online);
+            SessionStatusCallback callback;
+            {
+                std::lock_guard lock(self->session_callback_mutex);
+                callback = self->session_callback;
+            }
+            if (callback)
+                callback(device::Session{static_cast<std::int64_t>(login_id)}, online);
         } catch (...) {
             // Never unwind across a native SDK callback boundary.
         }
