@@ -39,3 +39,11 @@
 **Critérios para próxima build de teste:** menu no botão `⋯` e clique direito sobre cabeçalho, trocar tile 1→4 vazio e tile 1↔4 ocupado, preservar o stream Extra/Principal e demais canais. Gesto por toda a imagem nativa não é garantido em Qt 6.12: o **cabeçalho é o handle de arraste** e o botão `⋯` fornece acesso garantido ao menu.
 
 **Estado:** código salvo, sem compilação Windows pós-patch e sem aprovação visual. **Não modificar RC01 ou main, nem gerar nova versão até autorização do operador.**
+
+## Melhoria 4 — reconexão Registro Automático sem reconfigurar NVR
+
+Usuário encontrou falha de operação real: depois da primeira autenticação, NVR não volta sozinho após perda de conexão, a menos que grave novamente o cadastro de AutoRegistro no próprio equipamento. Comparação com SIM Next sugere lacuna de watchdog no SENTRIUM. **Causa concreta** localizada nos callbacks NetSDK de disconnect/reconnect vazios e no bloqueio por sessão existente/stale; além disso não existia retry ativo do app para AutoRegistro.
+
+Mudanças implementadas em `feature/r25-ui-parity`: callback NetSDK propagado ao Worker com Qt QueuedConnection e mutex; retry QTimer a cada 15s para dispositivo já cadastrado com endpoint real conhecido; reciclagem controlada do login antigo após queda; UI retorna para Connecting e restaura slots/canais/streams quando login é confirmado; deslogar manualmente cancela a intenção de reconectar; stream 16→64 em worker. A documentação do NetSDK indica que login Server Conn/AutoRegister não possui a mesma reconexão automática nativa que TCP; o retry explícito é necessário. Os detalhes e critérios estão em `docs/foundation-005/F005-AUTOREG-RECOVERY-RC02.md`.
+
+**Ainda NÃO testado no Windows nem validado em NVR.** Não lançar nova versão até autorização específica. RC01 e branch principal preservadas.
