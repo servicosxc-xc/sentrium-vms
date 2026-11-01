@@ -2,28 +2,39 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-// Camera explorer inspired by the r25 operator workflow.
-// Favorites and expanded state are local to this UI until the DataRoot
-// persistence contract has been implemented and reviewed.
+// Hierarchical operator tree: Group/Site -> Recorder -> Camera.
+// Tree state/favorites are transient UI state until DataRoot persistence is approved.
+// All device sessions and video actions continue through the existing controller.
 Rectangle {
     id: explorer
     color: "transparent"
 
     property var devices: []
+    property var groupNames: []
+    property var mosaicSlots: []
     property color textPrimary: "#eef2f7"
     property color textSecondary: "#99a6b8"
     property color accent: "#4f8cff"
     property color borderColor: "#2b3442"
     property color panelAltColor: "#1d2430"
     property var favorites: ({})
+    property var expandedGroups: ({})
     property var expandedDevices: ({})
     property bool favoritesOnly: false
+    property string ungroupedLabel: "Sem grupo"
+    readonly property var treeRows: buildTree()
 
     signal openCamera(string deviceId, int channelIndex, bool extra)
     signal openRecorder(var deviceData)
     signal connectDevice(string deviceId)
     signal disconnectDevice(string deviceId)
     signal removeDevice(string deviceId)
+    signal createGroup(string groupName)
+    signal moveDevice(string deviceId, string groupName)
+
+    function deviceGroup(device) {
+        return device.group && device.group.length ? device.group : ungroupedLabel
+    }
 
     function cameraKey(deviceId, channelIndex) {
         return deviceId + ":" + channelIndex
@@ -35,310 +46,435 @@ Rectangle {
 
     function toggleFavorite(deviceId, channelIndex) {
         const key = cameraKey(deviceId, channelIndex)
-        const updated = Object.assign({}, favorites)
-        updated[key] = !isFavorite(deviceId, channelIndex)
-        favorites = updated
+        const next = Object.assign({}, favorites)
+        if (next[key]) delete next[key]
+        else next[key] = true
+        favorites = next
     }
 
-    function setExpanded(deviceId, value) {
-        const updated = Object.assign({}, expandedDevices)
-        updated[deviceId] = value
-        expandedDevices = updated
+    function groupExpanded(groupName) {
+        return expandedGroups[groupName] !== false
     }
 
-    function isExpanded(deviceId) {
-        return expandedDevices[deviceId] === true
+    function deviceExpanded(id) {
+        return expandedDevices[id] === true
     }
 
-    function visibleDevice(deviceData) {
-        if (deviceData === null || deviceData === undefined)
-            return false
-        const search = cameraSearch.text.trim().toLocaleLowerCase()
-        const nameMatches = !search || deviceData.name.toLocaleLowerCase().indexOf(search) >= 0
-        if (nameMatches && !favoritesOnly)
-            return true
-        for (let i = 0; i < deviceData.channels.length; ++i) {
-            const camera = deviceData.channels[i]
-            if ((!favoritesOnly || isFavorite(deviceData.id, camera.index))
-                && (nameMatches || camera.name.toLocaleLowerCase().indexOf(search) >= 0))
+    function setGroupExpanded(groupName, expanded) {
+        const next = Object.assign({}, expandedGroups)
+        next[groupName] = expanded
+        expandedGroups = next
+    }
+
+    function setDeviceExpanded(id, expanded) {
+        const next = Object.assign({}, expandedDevices)
+        next[id] = expanded
+        expandedDevices = next
+    }
+
+    function collapseAll() {
+        const nextGroups = {}
+        const nextDevices = {}
+        const names = availableGroups()
+        for (let i = 0; i < names.length; ++i) nextGroups[names[i]] = false
+        for (let i = 0; i < devices.length; ++i) nextDevices[devices[i].id] = false
+        expandedGroups = nextGroups
+        expandedDevices = nextDevices
+    }
+
+    function expandAll() {
+        const nextGroups = {}
+        const nextDevices = {}
+        const names = availableGroups()
+        for (let i = 0; i < names.length; ++i) nextGroups[names[i]] = true
+        for (let i = 0; i < devices.length; ++i) nextDevices[devices[i].id] = true
+        expandedGroups = nextGroups
+        expandedDevices = nextDevices
+    }
+
+    function availableGroups() {
+        const found = {}
+        const result = []
+        for (let i = 0; i < groupNames.length; ++i) {
+            const group = groupNames[i]
+            if (!found[group]) { found[group] = true; result.push(group) }
+        }
+        for (let i = 0; i < devices.length; ++i) {
+            const group = deviceGroup(devices[i])
+            if (!found[group]) { found[group] = true; result.push(group) }
+        }
+        result.sort(function(a, b) { return a.localeCompare(b, "pt-BR") })
+        return result
+    }
+
+    function isCameraOpen(deviceId, channelIndex) {
+        for (let i = 0; i < mosaicSlots.length; ++i) {
+            const tile = mosaicSlots[i]
+            if (tile.occupied && tile.deviceId === deviceId && tile.channel === channelIndex
+                && tile.status === "Reprodução solicitada")
                 return true
         }
         return false
     }
 
-    function visibleCamera(deviceData, camera) {
+    function deviceIconColor(device) {
+        if (device.state === "Failed") return "#f28b82"
+        if (device.method === "Cloud" && device.state === "Connected") {
+            if (device.cloudRoute === "Relay") return "#f3c86a"
+            if (device.cloudRoute === "Direct") return "#63a1ff"
+        }
+        return "#7893b3"
+    }
+
+    function buildTree() {
+        const result = []
         const search = cameraSearch.text.trim().toLocaleLowerCase()
-        const nameMatches = deviceData.name.toLocaleLowerCase().indexOf(search) >= 0
-        return (!favoritesOnly || isFavorite(deviceData.id, camera.index))
-            && (!search || nameMatches || camera.name.toLocaleLowerCase().indexOf(search) >= 0)
+        const searching = search.length > 0 || favoritesOnly
+        const names = availableGroups()
+        for (let g = 0; g < names.length; ++g) {
+            const group = names[g]
+            const groupMatches = search && group.toLocaleLowerCase().indexOf(search) >= 0
+            const matchingDevices = []
+            for (let i = 0; i < devices.length; ++i) {
+                const device = devices[i]
+                if (deviceGroup(device) !== group) continue
+                const nameMatches = device.name.toLocaleLowerCase().indexOf(search) >= 0
+                const matchedChannels = []
+                for (let n = 0; n < device.channels.length; ++n) {
+                    const camera = device.channels[n]
+                    if (favoritesOnly && !isFavorite(device.id, camera.index)) continue
+                    if (!search || groupMatches || nameMatches
+                        || camera.name.toLocaleLowerCase().indexOf(search) >= 0)
+                        matchedChannels.push(camera)
+                }
+                const display = !searching || (favoritesOnly ? matchedChannels.length > 0 : 
+                                groupMatches || nameMatches || matchedChannels.length > 0)
+                if (display) matchingDevices.push({device: device, cameras: matchedChannels})
+            }
+            if (searching && matchingDevices.length === 0) continue
+            result.push({kind: "group", group: group, count: matchingDevices.length})
+            if (!searching && !groupExpanded(group)) continue
+            for (let d = 0; d < matchingDevices.length; ++d) {
+                const node = matchingDevices[d]
+                result.push({kind: "device", group: group, device: node.device})
+                if (!searching && !deviceExpanded(node.device.id)) continue
+                for (let k = 0; k < node.cameras.length; ++k) {
+                    result.push({kind: "camera", group: group, device: node.device,
+                                 camera: node.cameras[k]})
+                }
+            }
+        }
+        return result
+    }
+
+    Dialog {
+        id: createGroupDialog
+        parent: Overlay.overlay
+        modal: true
+        closePolicy: Popup.CloseOnEscape
+        title: "Novo grupo / local"
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        width: Math.min(330, explorer.width + 40)
+        x: (parent.width - width) / 2
+        y: (parent.height - height) / 2
+        onOpened: { groupInput.text = ""; groupInput.forceActiveFocus() }
+        onAccepted: {
+            const text = groupInput.text.trim()
+            if (text.length > 0) explorer.createGroup(text)
+        }
+        ColumnLayout {
+            width: parent.width
+            Label { text: "Nome do grupo"; color: explorer.textPrimary }
+            TextField {
+                id: groupInput
+                Layout.fillWidth: true
+                maximumLength: 80
+                placeholderText: "Ex.: Condomínio, Portaria, Sede"
+            }
+        }
+    }
+
+    Dialog {
+        id: moveDialog
+        parent: Overlay.overlay
+        modal: true
+        closePolicy: Popup.CloseOnEscape
+        property string deviceId: ""
+        title: "Mover dispositivo para grupo"
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        width: Math.min(340, explorer.width + 50)
+        x: (parent.width - width) / 2
+        y: (parent.height - height) / 2
+        onOpened: targetGroup.currentIndex = 0
+        onAccepted: explorer.moveDevice(deviceId,
+                            targetGroup.currentIndex === 0 ? "" : targetGroup.currentText)
+        ColumnLayout {
+            width: parent.width
+            Label { text: "Grupo / local"; color: explorer.textPrimary }
+            ComboBox {
+                id: targetGroup
+                Layout.fillWidth: true
+                model: [explorer.ungroupedLabel].concat(explorer.groupNames)
+            }
+            Label {
+                text: "Os grupos ainda são mantidos somente nesta execução."
+                color: explorer.textSecondary
+                font.pixelSize: 10
+            }
+        }
     }
 
     ColumnLayout {
         anchors.fill: parent
-        spacing: 6
+        spacing: 5
 
         RowLayout {
             Layout.fillWidth: true
-            spacing: 5
+            spacing: 4
             TextField {
                 id: cameraSearch
                 Layout.fillWidth: true
-                Layout.preferredHeight: 34
-                placeholderText: "Pesquisar dispositivo ou câmera"
+                Layout.preferredHeight: 32
+                placeholderText: "Pesquisar sites, dispositivos, canais"
                 font.pixelSize: 11
                 selectByMouse: true
             }
             ToolButton {
-                text: "★"
+                text: "☆"
                 checkable: true
                 checked: explorer.favoritesOnly
                 onClicked: explorer.favoritesOnly = checked
                 ToolTip.visible: hovered
-                ToolTip.text: checked ? "Mostrar todas as câmeras" : "Mostrar somente favoritos"
+                ToolTip.text: checked ? "Mostrar todos" : "Somente favoritos"
             }
         }
 
         RowLayout {
             Layout.fillWidth: true
+            spacing: 3
             Label {
                 Layout.fillWidth: true
-                text: "GRUPOS E DISPOSITIVOS"
+                text: "SITES · DISPOSITIVOS · CANAIS"
                 color: explorer.textSecondary
-                font.pixelSize: 10
-                font.bold: true
+                font.pixelSize: 9
+                font.weight: Font.DemiBold
             }
             ToolButton {
-                text: "Recolher"
+                text: "+ Grupo"
                 font.pixelSize: 10
-                onClicked: explorer.expandedDevices = ({})
+                onClicked: createGroupDialog.open()
+                ToolTip.visible: hovered
+                ToolTip.text: "Criar um grupo/local"
             }
             ToolButton {
-                text: "Expandir"
-                font.pixelSize: 10
-                onClicked: {
-                    const next = {}
-                    for (let i = 0; i < explorer.devices.length; ++i)
-                        next[explorer.devices[i].id] = true
-                    explorer.expandedDevices = next
-                }
+                text: "▾"
+                implicitWidth: 24
+                font.pixelSize: 12
+                onClicked: explorer.expandAll()
+                ToolTip.visible: hovered
+                ToolTip.text: "Expandir tudo"
+            }
+            ToolButton {
+                text: "▸"
+                implicitWidth: 24
+                font.pixelSize: 12
+                onClicked: explorer.collapseAll()
+                ToolTip.visible: hovered
+                ToolTip.text: "Recolher tudo"
             }
         }
 
         ListView {
-            id: deviceList
+            id: tree
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
-            spacing: 5
-            model: explorer.devices
+            spacing: 1
+            model: explorer.treeRows
+            boundsBehavior: Flickable.StopAtBounds
 
             delegate: Item {
-                id: deviceDelegate
-                width: deviceList.width
-                property var deviceData: modelData
-                property bool matches: explorer.visibleDevice(deviceData)
-                property bool expanded: explorer.isExpanded(deviceData.id)
-                    || cameraSearch.text.trim().length > 0 || explorer.favoritesOnly
-                height: matches ? deviceCard.implicitHeight + 2 : 0
-                visible: matches
+                id: nodeRow
+                required property var modelData
+                property var node: modelData
+                property bool isGroup: node.kind === "group"
+                property bool isDevice: node.kind === "device"
+                property bool isCamera: node.kind === "camera"
+                width: tree.width
+                height: isGroup ? 31 : isDevice ? 28 : 26
 
                 Rectangle {
-                    id: deviceCard
-                    width: parent.width
-                    implicitHeight: deviceContent.implicitHeight + 12
-                    radius: 5
-                    color: explorer.panelAltColor
-                    border.color: explorer.borderColor
-
-                    ColumnLayout {
-                        id: deviceContent
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.top: parent.top
-                        anchors.margins: 7
-                        spacing: 3
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: 5
-                            ToolButton {
-                                implicitWidth: 28
-                                implicitHeight: 27
-                                text: deviceDelegate.expanded ? "▾" : "▸"
-                                onClicked: explorer.setExpanded(deviceDelegate.deviceData.id,
-                                                                 !deviceDelegate.expanded)
-                                ToolTip.visible: hovered
-                                ToolTip.text: deviceDelegate.expanded ? "Recolher canais" : "Expandir canais"
-                            }
-                            Rectangle {
-                                implicitWidth: 7
-                                implicitHeight: 7
-                                radius: 4
-                                color: deviceDelegate.deviceData.state === "Failed"
-                                    ? "#ff8d8d" : "#8492a7"
-                                // Green is reserved for a truly active video tile,
-                                // not merely an authenticated recorder.
-                            }
-                            Label {
-                                Layout.fillWidth: true
-                                text: deviceDelegate.deviceData.name
-                                color: explorer.textPrimary
-                                font.pixelSize: 12
-                                font.bold: true
-                                elide: Text.ElideRight
-                            }
-                            ToolButton {
-                                text: "⋯"
-                                implicitWidth: 28
-                                implicitHeight: 27
-                                onClicked: recorderMenu.popup()
-                            }
-                            Menu {
-                                id: recorderMenu
-                                MenuItem {
-                                    text: "Expandir / recolher"
-                                    onTriggered: explorer.setExpanded(deviceDelegate.deviceData.id,
-                                                                      !deviceDelegate.expanded)
-                                }
-                                MenuItem {
-                                    text: "Abrir todos (Extra)"
-                                    enabled: deviceDelegate.deviceData.state === "Connected"
-                                             && deviceDelegate.deviceData.channels.length > 0
-                                    onTriggered: explorer.openRecorder(deviceDelegate.deviceData)
-                                }
-                                MenuSeparator {}
-                                MenuItem {
-                                    text: "Conectar"
-                                    enabled: deviceDelegate.deviceData.state === "Disconnected"
-                                             || deviceDelegate.deviceData.state === "Failed"
-                                    onTriggered: explorer.connectDevice(deviceDelegate.deviceData.id)
-                                }
-                                MenuItem {
-                                    text: "Desconectar"
-                                    enabled: deviceDelegate.deviceData.state === "Connected"
-                                             || (deviceDelegate.deviceData.method === "AutoRegistration"
-                                                 && deviceDelegate.deviceData.state === "Connecting")
-                                    onTriggered: explorer.disconnectDevice(deviceDelegate.deviceData.id)
-                                }
-                                MenuItem {
-                                    text: "Remover dispositivo"
-                                    enabled: deviceDelegate.deviceData.state !== "Disconnecting"
-                                    onTriggered: explorer.removeDevice(deviceDelegate.deviceData.id)
-                                }
-                            }
+                    anchors.fill: parent
+                    color: rowMouse.containsMouse ? "#263141" : "transparent"
+                    radius: 3
+                }
+                MouseArea {
+                    id: rowMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    onClicked: function(mouse) {
+                        if (mouse.button === Qt.RightButton) {
+                            if (nodeRow.isDevice) deviceMenu.popup()
+                            else if (nodeRow.isCamera) cameraMenu.popup()
+                            return
                         }
+                        if (nodeRow.isGroup)
+                            explorer.setGroupExpanded(node.group, !explorer.groupExpanded(node.group))
+                        else if (nodeRow.isDevice)
+                            explorer.setDeviceExpanded(node.device.id, !explorer.deviceExpanded(node.device.id))
+                        else if (nodeRow.isCamera && node.device.state === "Connected")
+                            explorer.openCamera(node.device.id, node.camera.index, true)
+                    }
+                }
 
-                        RowLayout {
-                            Layout.fillWidth: true
-                            Layout.leftMargin: 33
-                            spacing: 6
-                            Label {
-                                Layout.fillWidth: true
-                                text: deviceDelegate.deviceData.state + " · "
-                                    + deviceDelegate.deviceData.channels.length + " canais"
-                                font.pixelSize: 10
-                                color: explorer.textSecondary
-                            }
-                            ToolButton {
-                                text: "Abrir canais"
-                                font.pixelSize: 10
-                                enabled: deviceDelegate.deviceData.state === "Connected"
-                                         && deviceDelegate.deviceData.channels.length > 0
-                                onClicked: explorer.openRecorder(deviceDelegate.deviceData)
-                            }
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: nodeRow.isGroup ? 3 : nodeRow.isDevice ? 17 : 35
+                    anchors.rightMargin: 4
+                    spacing: 5
+                    ToolButton {
+                        visible: !nodeRow.isCamera
+                        implicitWidth: visible ? 16 : 0
+                        implicitHeight: 23
+                        padding: 0
+                        text: nodeRow.isGroup
+                            ? (explorer.groupExpanded(node.group) || cameraSearch.text.length
+                                || explorer.favoritesOnly ? "▾" : "▸")
+                            : (explorer.deviceExpanded(node.device.id) || cameraSearch.text.length
+                                || explorer.favoritesOnly ? "▾" : "▸")
+                        font.pixelSize: 12
+                        onClicked: {
+                            if (nodeRow.isGroup)
+                                explorer.setGroupExpanded(node.group, !explorer.groupExpanded(node.group))
+                            else
+                                explorer.setDeviceExpanded(node.device.id,
+                                                            !explorer.deviceExpanded(node.device.id))
                         }
+                    }
 
-                        Label {
-                            Layout.fillWidth: true
-                            Layout.leftMargin: 33
-                            visible: deviceDelegate.deviceData.state !== "Connected"
-                            text: deviceDelegate.deviceData.diagnostic
-                            elide: Text.ElideRight
-                            font.pixelSize: 10
-                            color: deviceDelegate.deviceData.state === "Failed"
-                                ? "#ffb4b4" : explorer.textSecondary
+                    Rectangle {
+                        implicitWidth: 11
+                        implicitHeight: 11
+                        radius: nodeRow.isCamera ? 5 : 2
+                        color: "transparent"
+                        border.color: nodeRow.isGroup ? "#77a1d6"
+                            : nodeRow.isDevice ? explorer.deviceIconColor(node.device)
+                            : explorer.isCameraOpen(node.device.id, node.camera.index)
+                              ? "#58c688" : "#71859c"
+                        border.width: 1
+                        Rectangle {
+                            visible: nodeRow.isCamera &&
+                                     explorer.isCameraOpen(node.device.id, node.camera.index)
+                            anchors.centerIn: parent
+                            width: 5
+                            height: 5
+                            radius: 3
+                            color: "#58c688"
                         }
+                    }
 
-                        Repeater {
-                            model: deviceDelegate.expanded ? deviceDelegate.deviceData.channels : []
-                            delegate: Item {
-                                id: cameraRow
-                                required property var modelData
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: visible ? 31 : 0
-                                visible: explorer.visibleCamera(deviceDelegate.deviceData, modelData)
-                                property bool isOpened: false
+                    Label {
+                        Layout.fillWidth: true
+                        text: nodeRow.isGroup ? node.group
+                             : nodeRow.isDevice ? node.device.name : node.camera.name
+                        color: nodeRow.isCamera ? explorer.textSecondary : explorer.textPrimary
+                        font.pixelSize: nodeRow.isGroup ? 12 : nodeRow.isDevice ? 11 : 11
+                        font.bold: nodeRow.isGroup
+                        elide: Text.ElideRight
+                        verticalAlignment: Text.AlignVCenter
+                    }
 
-                                RowLayout {
-                                    anchors.fill: parent
-                                    spacing: 5
-                                    Item { Layout.preferredWidth: 17 }
-                                    ToolButton {
-                                        implicitWidth: 26
-                                        implicitHeight: 26
-                                        text: explorer.isFavorite(deviceDelegate.deviceData.id,
-                                                                  cameraRow.modelData.index)
-                                              ? "★" : "☆"
-                                        onClicked: explorer.toggleFavorite(deviceDelegate.deviceData.id,
-                                                                            cameraRow.modelData.index)
-                                        ToolTip.visible: hovered
-                                        ToolTip.text: "Favorito nesta sessão"
-                                    }
-                                    Rectangle {
-                                        width: 6
-                                        height: 6
-                                        radius: 3
-                                        color: "#586477"
-                                    }
-                                    Label {
-                                        Layout.fillWidth: true
-                                        text: cameraRow.modelData.name
-                                        elide: Text.ElideRight
-                                        color: explorer.textPrimary
-                                        font.pixelSize: 11
-                                    }
-                                    ToolButton {
-                                        implicitWidth: 27
-                                        implicitHeight: 25
-                                        text: "▶"
-                                        enabled: deviceDelegate.deviceData.state === "Connected"
-                                        onClicked: explorer.openCamera(deviceDelegate.deviceData.id,
-                                                                       cameraRow.modelData.index, true)
-                                        ToolTip.visible: hovered
-                                        ToolTip.text: "Abrir no mosaico (Extra)"
-                                    }
-                                    ToolButton {
-                                        implicitWidth: 27
-                                        implicitHeight: 25
-                                        text: "⋯"
-                                        onClicked: cameraMenu.popup()
-                                    }
-                                }
-                                Menu {
-                                    id: cameraMenu
-                                    MenuItem {
-                                        text: "Abrir — Extra"
-                                        enabled: deviceDelegate.deviceData.state === "Connected"
-                                        onTriggered: explorer.openCamera(deviceDelegate.deviceData.id,
-                                                                         cameraRow.modelData.index, true)
-                                    }
-                                    MenuItem {
-                                        text: "Abrir — Principal"
-                                        enabled: deviceDelegate.deviceData.state === "Connected"
-                                        onTriggered: explorer.openCamera(deviceDelegate.deviceData.id,
-                                                                         cameraRow.modelData.index, false)
-                                    }
-                                    MenuSeparator {}
-                                    MenuItem {
-                                        text: explorer.isFavorite(deviceDelegate.deviceData.id,
-                                                                  cameraRow.modelData.index)
-                                              ? "Remover dos favoritos" : "Adicionar aos favoritos"
-                                        onTriggered: explorer.toggleFavorite(deviceDelegate.deviceData.id,
-                                                                             cameraRow.modelData.index)
-                                    }
-                                }
-                            }
+                    Label {
+                        visible: nodeRow.isGroup
+                        text: String(node.count)
+                        color: explorer.textSecondary
+                        font.pixelSize: 10
+                    }
+
+                    ToolButton {
+                        visible: nodeRow.isCamera
+                        implicitWidth: visible ? 24 : 0
+                        implicitHeight: 25
+                        padding: 0
+                        text: explorer.isFavorite(node.device.id, node.camera.index) ? "★" : "☆"
+                        font.pixelSize: 13
+                        color: explorer.isFavorite(node.device.id, node.camera.index)
+                            ? "#f2c975" : explorer.textSecondary
+                        onClicked: explorer.toggleFavorite(node.device.id, node.camera.index)
+                    }
+
+                    ToolButton {
+                        visible: nodeRow.isDevice || nodeRow.isCamera
+                        implicitWidth: visible ? 23 : 0
+                        implicitHeight: 25
+                        text: "⋯"
+                        padding: 0
+                        font.pixelSize: 15
+                        onClicked: {
+                            if (nodeRow.isDevice) deviceMenu.popup()
+                            else cameraMenu.popup()
                         }
+                    }
+                }
+
+                Menu {
+                    id: deviceMenu
+                    MenuItem {
+                        text: "Abrir canais (Extra)"
+                        enabled: nodeRow.isDevice && node.device.state === "Connected"
+                            && node.device.channels.length > 0
+                        onTriggered: explorer.openRecorder(node.device)
+                    }
+                    MenuItem {
+                        text: "Mover para grupo..."
+                        enabled: nodeRow.isDevice
+                        onTriggered: {
+                            moveDialog.deviceId = node.device.id
+                            moveDialog.open()
+                        }
+                    }
+                    MenuSeparator {}
+                    MenuItem {
+                        text: "Conectar"
+                        enabled: nodeRow.isDevice
+                            && (node.device.state === "Disconnected" || node.device.state === "Failed")
+                        onTriggered: explorer.connectDevice(node.device.id)
+                    }
+                    MenuItem {
+                        text: "Desconectar"
+                        enabled: nodeRow.isDevice
+                            && (node.device.state === "Connected"
+                                || (node.device.method === "AutoRegistration"
+                                    && node.device.state === "Connecting"))
+                        onTriggered: explorer.disconnectDevice(node.device.id)
+                    }
+                    MenuItem {
+                        text: "Remover dispositivo"
+                        enabled: nodeRow.isDevice && node.device.state !== "Disconnecting"
+                        onTriggered: explorer.removeDevice(node.device.id)
+                    }
+                }
+
+                Menu {
+                    id: cameraMenu
+                    MenuItem {
+                        text: "Abrir no mosaico — Extra"
+                        enabled: nodeRow.isCamera && node.device.state === "Connected"
+                        onTriggered: explorer.openCamera(node.device.id, node.camera.index, true)
+                    }
+                    MenuItem {
+                        text: "Abrir no mosaico — Principal"
+                        enabled: nodeRow.isCamera && node.device.state === "Connected"
+                        onTriggered: explorer.openCamera(node.device.id, node.camera.index, false)
+                    }
+                    MenuSeparator {}
+                    MenuItem {
+                        text: nodeRow.isCamera &&
+                              explorer.isFavorite(node.device.id, node.camera.index)
+                              ? "Remover favorito" : "Adicionar aos favoritos"
+                        enabled: nodeRow.isCamera
+                        onTriggered: explorer.toggleFavorite(node.device.id, node.camera.index)
                     }
                 }
             }
@@ -346,11 +482,20 @@ Rectangle {
 
         Label {
             Layout.fillWidth: true
-            text: explorer.favoritesOnly ? "Favoritos somente desta sessão" :
-                  "Clique em ▸ para expandir. Selecione um tile no mosaico antes de abrir uma câmera."
+            visible: explorer.treeRows.length === 0
+            text: explorer.devices.length === 0 && explorer.groupNames.length === 0
+                ? "Nenhum dispositivo cadastrado"
+                : "Nenhum resultado para este filtro"
+            color: explorer.textSecondary
+            font.pixelSize: 11
+            wrapMode: Text.WordWrap
+        }
+
+        Label {
+            Layout.fillWidth: true
+            text: "Favoritos e organização sem persistência nesta etapa."
             color: explorer.textSecondary
             font.pixelSize: 10
-            wrapMode: Text.WordWrap
         }
     }
 }
