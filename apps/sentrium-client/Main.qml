@@ -456,9 +456,10 @@ ApplicationWindow {
         }
     }
 
+    // A single compact top bar: product identity -> scrollable workspaces -> status.
+    // Closing a tab never changes the C++ device session ownership.
     header: ToolBar {
         height: 58
-
         background: Rectangle {
             color: window.panelColor
             border.color: window.borderColor
@@ -466,16 +467,15 @@ ApplicationWindow {
 
         RowLayout {
             anchors.fill: parent
-            anchors.leftMargin: 18
-            anchors.rightMargin: 18
-            spacing: 14
+            anchors.leftMargin: 14
+            anchors.rightMargin: 14
+            spacing: 10
 
             Rectangle {
-                width: 34
-                height: 34
+                Layout.preferredWidth: 34
+                Layout.preferredHeight: 34
                 radius: 8
                 color: window.accent
-
                 Label {
                     anchors.centerIn: parent
                     text: "S"
@@ -486,29 +486,161 @@ ApplicationWindow {
             }
 
             ColumnLayout {
-                spacing: 0
-
+                Layout.preferredWidth: 189
+                spacing: 1
                 Label {
                     text: sentriumProduct
                     color: window.textPrimary
-                    font.pixelSize: 17
+                    font.pixelSize: 16
                     font.bold: true
+                    elide: Text.ElideRight
+                    Layout.fillWidth: true
                 }
-
                 Label {
                     text: "Intelligent Video Management System"
                     color: window.textSecondary
-                    font.pixelSize: 11
+                    font.pixelSize: 9
+                    elide: Text.ElideRight
+                    Layout.fillWidth: true
                 }
             }
 
-            Item { Layout.fillWidth: true }
+            Rectangle {
+                Layout.preferredWidth: 1
+                Layout.preferredHeight: 28
+                color: window.borderColor
+            }
+
+            Item {
+                Layout.fillWidth: true
+                Layout.minimumWidth: 125
+                Layout.preferredHeight: 48
+                clip: true
+
+                Flickable {
+                    id: headerTabs
+                    anchors.fill: parent
+                    contentWidth: headerTabsRow.implicitWidth
+                    contentHeight: height
+                    boundsBehavior: Flickable.StopAtBounds
+                    flickableDirection: Flickable.HorizontalFlick
+                    clip: true
+                    ScrollBar.horizontal: ScrollBar {
+                        policy: ScrollBar.AsNeeded
+                    }
+                    ScrollBar.vertical: ScrollBar { policy: ScrollBar.AlwaysOff }
+
+                    Row {
+                        id: headerTabsRow
+                        height: parent.height
+                        spacing: 3
+
+                        Repeater {
+                            model: window.openModules
+                            delegate: Rectangle {
+                                id: moduleTab
+                                required property string modelData
+                                property string moduleName: modelData
+                                height: 39
+                                width: Math.max(76, Math.min(174,
+                                       tabTitle.implicitWidth + (moduleName === "Home" ? 27 : 54)))
+                                radius: 5
+                                color: window.activeModule === moduleName
+                                       ? window.panelAltColor : "transparent"
+                                border.color: window.activeModule === moduleName
+                                              ? window.accent : "transparent"
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 9
+                                    anchors.rightMargin: 3
+                                    spacing: 1
+                                    Label {
+                                        id: tabTitle
+                                        Layout.fillWidth: true
+                                        text: moduleTab.moduleName
+                                        color: window.activeModule === moduleTab.moduleName
+                                               ? window.textPrimary : window.textSecondary
+                                        font.pixelSize: 11
+                                        elide: Text.ElideRight
+                                    }
+                                    ToolButton {
+                                        id: closeTab
+                                        visible: moduleTab.moduleName !== "Home"
+                                        implicitWidth: 24
+                                        implicitHeight: 27
+                                        padding: 0
+                                        hoverEnabled: true
+                                        background: Item {}
+                                        contentItem: Label {
+                                            text: "×"
+                                            color: closeTab.hovered ? "#ffaeae" : window.textSecondary
+                                            font.pixelSize: 17
+                                            horizontalAlignment: Text.AlignHCenter
+                                            verticalAlignment: Text.AlignVCenter
+                                        }
+                                        onClicked: window.closeModule(moduleTab.moduleName)
+                                    }
+                                }
+                                MouseArea {
+                                    anchors.fill: parent
+                                    anchors.rightMargin: moduleTab.moduleName === "Home" ? 0 : 27
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: window.openModule(moduleTab.moduleName)
+                                }
+                            }
+                        }
+
+                        ToolButton {
+                            id: createWorkspaceButton
+                            height: 39
+                            text: "+ Nova visualização"
+                            padding: 8
+                            hoverEnabled: true
+                            background: Rectangle {
+                                radius: 5
+                                color: createWorkspaceButton.hovered
+                                       ? window.panelAltColor : "transparent"
+                            }
+                            contentItem: Label {
+                                text: createWorkspaceButton.text
+                                color: window.textSecondary
+                                font.pixelSize: 11
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                            onClicked: window.openModule("Visualização")
+                        }
+
+                        ToolButton {
+                            id: playbackTabButton
+                            height: 39
+                            text: "Reprodução"
+                            padding: 8
+                            hoverEnabled: true
+                            background: Rectangle {
+                                radius: 5
+                                color: playbackTabButton.hovered
+                                       ? window.panelAltColor : "transparent"
+                            }
+                            contentItem: Label {
+                                text: playbackTabButton.text
+                                color: window.textSecondary
+                                font.pixelSize: 11
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                            onClicked: window.openModule("Reprodução")
+                        }
+                    }
+                }
+            }
 
             Button {
                 id: settingsButton
                 text: "Configurações"
-                implicitWidth: 112
-                implicitHeight: 32
+                implicitWidth: 103
+                implicitHeight: 31
                 background: Rectangle {
                     radius: 5
                     color: settingsButton.down ? "#315db0"
@@ -528,94 +660,25 @@ ApplicationWindow {
             Label {
                 text: window.runtimeState
                 color: "#7dd3a7"
-                font.pixelSize: 12
+                font.pixelSize: 11
             }
 
             Rectangle {
                 width: 1
-                height: 24
+                height: 22
                 color: window.borderColor
             }
 
             Label {
                 text: sentriumVersion
                 color: window.textSecondary
-                font.pixelSize: 12
+                font.pixelSize: 10
             }
         }
     }
-
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
-
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 40
-            color: "#0d121a"
-            border.color: window.borderColor
-
-            Row {
-                anchors.fill: parent
-                anchors.leftMargin: 8
-                spacing: 3
-
-                Repeater {
-                    model: window.openModules
-                    delegate: Rectangle {
-                        id: moduleTab
-                        property string moduleName: modelData
-                        height: 39
-                        width: Math.max(96, tabTitle.implicitWidth + (moduleName === "Home" ? 30 : 59))
-                        color: window.activeModule === moduleName
-                               ? window.panelColor : "#0d121a"
-                        border.color: window.activeModule === moduleName
-                                      ? window.accent : "transparent"
-
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.leftMargin: 10
-                            anchors.rightMargin: 5
-                            spacing: 4
-
-                            Label {
-                                id: tabTitle
-                                Layout.fillWidth: true
-                                text: moduleTab.moduleName
-                                color: window.activeModule === moduleTab.moduleName
-                                       ? window.textPrimary : window.textSecondary
-                                font.pixelSize: 11
-                                elide: Text.ElideRight
-                            }
-                            ToolButton {
-                                visible: moduleTab.moduleName !== "Home"
-                                text: "×"
-                                font.pixelSize: 14
-                                implicitWidth: 23
-                                implicitHeight: 26
-                                onClicked: window.closeModule(moduleTab.moduleName)
-                            }
-                        }
-                        MouseArea {
-                            anchors.fill: parent
-                            anchors.rightMargin: moduleTab.moduleName === "Home" ? 0 : 27
-                            onClicked: window.openModule(moduleTab.moduleName)
-                        }
-                    }
-                }
-
-                ToolButton {
-                    text: "+ Nova visualização"
-                    height: 38
-                    onClicked: window.openModule("Visualização")
-                }
-                ToolButton {
-                    text: "Reprodução"
-                    height: 38
-                    onClicked: window.openModule("Reprodução")
-                }
-            }
-        }
 
         Item {
             Layout.fillWidth: true
