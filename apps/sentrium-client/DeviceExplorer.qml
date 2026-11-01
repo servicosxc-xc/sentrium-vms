@@ -341,8 +341,9 @@ Rectangle {
                         text: nodeRow.isGroup
                             ? (explorer.groupExpanded(node.group) || cameraSearch.text.length
                                 || explorer.favoritesOnly ? "▾" : "▸")
-                            : (explorer.deviceExpanded(node.device.id) || cameraSearch.text.length
-                                || explorer.favoritesOnly ? "▾" : "▸")
+                            : (nodeRow.isDevice
+                                ? (explorer.deviceExpanded(node.device.id) || cameraSearch.text.length
+                                   || explorer.favoritesOnly ? "▾" : "▸") : "")
                         font.pixelSize: 12
                         onClicked: {
                             if (nodeRow.isGroup)
@@ -397,10 +398,10 @@ Rectangle {
                         implicitWidth: visible ? 24 : 0
                         implicitHeight: 25
                         padding: 0
-                        text: explorer.isFavorite(node.device.id, node.camera.index) ? "★" : "☆"
+                        text: nodeRow.isCamera
+                            ? (explorer.isFavorite(node.device.id, node.camera.index) ? "★" : "☆")
+                            : ""
                         font.pixelSize: 13
-                        color: explorer.isFavorite(node.device.id, node.camera.index)
-                            ? "#f2c975" : explorer.textSecondary
                         onClicked: explorer.toggleFavorite(node.device.id, node.camera.index)
                     }
 
