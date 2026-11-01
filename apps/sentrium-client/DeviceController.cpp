@@ -108,6 +108,7 @@ QVariantList DeviceController::devices() const {
         QVariantMap item;
         item.insert(QStringLiteral("id"), qstring(record.device.id));
         item.insert(QStringLiteral("name"), qstring(record.device.display_name));
+        item.insert(QStringLiteral("group"), record.group_name);
 
         item.insert(QStringLiteral("method"),
                     qstring(sentrium::device::name(record.device.access_method)));
@@ -530,6 +531,65 @@ void DeviceController::disconnectDevice(const QString& id) {
     } else {
         emit requestDisconnect(id);
     }
+}
+
+bool DeviceController::createDeviceGroup(const QString& name) {
+    if (shutdown_) return false;
+    const QString normalized = name.trimmed();
+    if (normalized.isEmpty() || normalized.size() > 80
+        || normalized.compare(QStringLiteral("Sem grupo"), Qt::CaseInsensitive) == 0) {
+        setError(QStringLiteral("Nome de grupo inválido (máximo 80 caracteres)"));
+        return false;
+    }
+    for (const QChar character : normalized) {
+        if (!character.isPrint() || character == QLatin1Char('/')
+            || character == QLatin1Char('\\')) {
+            setError(QStringLiteral("Nome de grupo contém caracteres inválidos"));
+            return false;
+        }
+    }
+    for (const QString& existing : device_groups_) {
+        if (existing.compare(normalized, Qt::CaseInsensitive) == 0) {
+            setError(QStringLiteral("Grupo já cadastrado"));
+            return false;
+        }
+    }
+    device_groups_.append(normalized);
+    setError({});
+    emit devicesChanged();
+    emit auditEvent(QStringLiteral("device-group-added"),
+                    QStringLiteral("Organizational group created in memory"));
+    return true;
+}
+
+bool DeviceController::setDeviceGroup(const QString& id, const QString& name) {
+    if (shutdown_) return false;
+    Record* record = find(id);
+    if (!record) {
+        setError(QStringLiteral("Dispositivo não encontrado"));
+        return false;
+    }
+    const QString normalized = name.trimmed();
+    QString target;
+    if (!normalized.isEmpty()) {
+        for (const QString& group : device_groups_) {
+            if (group.compare(normalized, Qt::CaseInsensitive) == 0) {
+                target = group;
+                break;
+            }
+        }
+        if (target.isEmpty()) {
+            setError(QStringLiteral("Grupo não cadastrado"));
+            return false;
+        }
+    }
+    if (record->group_name == target) return true;
+    record->group_name = target;
+    setError({});
+    emit devicesChanged();
+    emit auditEvent(QStringLiteral("device-group-changed"),
+                    QStringLiteral("Device organization updated in memory"));
+    return true;
 }
 
 void DeviceController::removeDevice(const QString& id) {
