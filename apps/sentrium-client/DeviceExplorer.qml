@@ -25,7 +25,8 @@ Rectangle {
     readonly property var treeRows: buildTree()
 
     signal openCamera(string deviceId, int channelIndex, bool extra)
-    signal openRecorder(var deviceData)
+    signal openRecorder(var deviceData, bool extra)
+    signal closeDeviceChannels(string deviceId)
     signal connectDevice(string deviceId)
     signal disconnectDevice(string deviceId)
     signal removeDevice(string deviceId)
@@ -112,6 +113,15 @@ Rectangle {
             const tile = mosaicSlots[i]
             if (tile.occupied && tile.deviceId === deviceId && tile.channel === channelIndex
                 && tile.status === "Reprodução solicitada")
+                return true
+        }
+        return false
+    }
+
+    function deviceHasOpenVideo(deviceId) {
+        for (let i = 0; i < mosaicSlots.length; ++i) {
+            const slot = mosaicSlots[i]
+            if (slot.occupied === true && slot.deviceId === deviceId)
                 return true
         }
         return false
@@ -220,6 +230,60 @@ Rectangle {
                 text: "Os grupos ainda são mantidos somente nesta execução."
                 color: explorer.textSecondary
                 font.pixelSize: 10
+            }
+        }
+    }
+
+    Dialog {
+        id: deviceInfoDialog
+        parent: Overlay.overlay
+        modal: true
+        closePolicy: Popup.CloseOnEscape
+        width: Math.min(390, explorer.width + 110)
+        x: Math.max(0, (parent.width - width) / 2)
+        y: Math.max(0, (parent.height - height) / 2)
+        title: "Informações do dispositivo"
+        standardButtons: Dialog.Close
+        property var info: ({name: "", state: "", method: "",
+                              connectionLabel: "", diagnostic: "", channels: []})
+
+        ColumnLayout {
+            width: parent.width
+            spacing: 9
+            Label {
+                text: deviceInfoDialog.info.name
+                font.pixelSize: 15
+                font.bold: true
+                color: explorer.textPrimary
+                Layout.fillWidth: true
+                elide: Text.ElideRight
+            }
+            Label {
+                text: "Conexão: " + deviceInfoDialog.info.method
+                color: explorer.textSecondary
+                Layout.fillWidth: true
+                wrapMode: Text.WordWrap
+            }
+            Label {
+                text: "Estado: " + deviceInfoDialog.info.state
+                color: explorer.textSecondary
+                Layout.fillWidth: true
+            }
+            Label {
+                text: "Localização: " + explorer.deviceGroup(deviceInfoDialog.info)
+                color: explorer.textSecondary
+                Layout.fillWidth: true
+            }
+            Label {
+                text: "Canais detectados: " + deviceInfoDialog.info.channels.length
+                color: explorer.textSecondary
+                Layout.fillWidth: true
+            }
+            Label {
+                text: deviceInfoDialog.info.diagnostic
+                color: explorer.textSecondary
+                Layout.fillWidth: true
+                wrapMode: Text.WordWrap
             }
         }
     }
@@ -377,11 +441,82 @@ Rectangle {
                 Menu {
                     id: deviceMenu
                     MenuItem {
-                        text: "Abrir canais (Extra)"
-                        enabled: nodeRow.isDevice && node.device.state === "Connected"
-                            && node.device.channels.length > 0
-                        onTriggered: explorer.openRecorder(node.device)
+                        text: "Conectar / Desconectar"
+                        enabled: nodeRow.isDevice
+                            && (node.device.state === "Disconnected"
+                                || node.device.state === "Failed"
+                                || node.device.state === "Connected"
+                                || (node.device.method === "AutoRegistration"
+                                    && node.device.state === "Connecting"))
+                        onTriggered: {
+                            if (node.device.state === "Connected"
+                                || (node.device.method === "AutoRegistration"
+                                    && node.device.state === "Connecting"))
+                                explorer.disconnectDevice(node.device.id)
+                            else
+                                explorer.connectDevice(node.device.id)
+                        }
                     }
+
+                    Menu {
+                        title: "Canais"
+                        MenuItem {
+                            text: "Abrir todas as câmeras em stream Extra"
+                            enabled: nodeRow.isDevice && node.device.state === "Connected"
+                                && node.device.channels.length > 0
+                            onTriggered: explorer.openRecorder(node.device, true)
+                        }
+                        MenuItem {
+                            text: "Abrir todas as câmeras em stream Principal"
+                            enabled: nodeRow.isDevice && node.device.state === "Connected"
+                                && node.device.channels.length > 0
+                            onTriggered: explorer.openRecorder(node.device, false)
+                        }
+                        MenuSeparator {}
+                        MenuItem {
+                            text: "Fechar canais deste dispositivo"
+                            enabled: nodeRow.isDevice && explorer.deviceHasOpenVideo(node.device.id)
+                            onTriggered: explorer.closeDeviceChannels(node.device.id)
+                        }
+                    }
+
+                    Menu {
+                        title: "Stream padrão"
+                        MenuItem {
+                            text: "Principal (a implementar)"
+                            enabled: false
+                        }
+                        MenuItem {
+                            text: "Extra (a implementar)"
+                            enabled: false
+                        }
+                    }
+
+                    Menu {
+                        title: "Áudio"
+                        MenuItem {
+                            text: "Áudio bidirecional (não implementado)"
+                            enabled: false
+                        }
+                    }
+
+                    Menu {
+                        title: "Dispositivo"
+                        MenuItem {
+                            text: "Informações"
+                            enabled: nodeRow.isDevice
+                            onTriggered: {
+                                deviceInfoDialog.info = node.device
+                                deviceInfoDialog.open()
+                            }
+                        }
+                        MenuItem {
+                            text: "Configuração (não implementada)"
+                            enabled: false
+                        }
+                    }
+
+                    MenuSeparator {}
                     MenuItem {
                         text: "Mover para grupo..."
                         enabled: nodeRow.isDevice
@@ -389,21 +524,6 @@ Rectangle {
                             moveDialog.deviceId = node.device.id
                             moveDialog.open()
                         }
-                    }
-                    MenuSeparator {}
-                    MenuItem {
-                        text: "Conectar"
-                        enabled: nodeRow.isDevice
-                            && (node.device.state === "Disconnected" || node.device.state === "Failed")
-                        onTriggered: explorer.connectDevice(node.device.id)
-                    }
-                    MenuItem {
-                        text: "Desconectar"
-                        enabled: nodeRow.isDevice
-                            && (node.device.state === "Connected"
-                                || (node.device.method === "AutoRegistration"
-                                    && node.device.state === "Connecting"))
-                        onTriggered: explorer.disconnectDevice(node.device.id)
                     }
                     MenuItem {
                         text: "Remover dispositivo"
