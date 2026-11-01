@@ -619,149 +619,18 @@ ApplicationWindow {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
-            Flickable {
+            HomeDashboard {
                 id: homeScreen
                 anchors.fill: parent
                 visible: window.activeModule === "Home"
-                clip: true
-                contentWidth: width
-                contentHeight: homeLayout.implicitHeight + 60
-                ScrollBar.vertical: ScrollBar {}
-
-                ColumnLayout {
-                    id: homeLayout
-                    x: 24
-                    y: 26
-                    width: homeScreen.width - 48
-                    spacing: 14
-
-                    Label {
-                        text: "Central de operação"
-                        color: window.textPrimary
-                        font.pixelSize: 24
-                        font.bold: true
-                    }
-                    Label {
-                        text: "SENTRIUM VMS  •  Plataforma de gerenciamento de vídeo"
-                        color: window.textSecondary
-                        font.pixelSize: 12
-                    }
-                    Label {
-                        Layout.topMargin: 16
-                        text: "OPERAÇÃO"
-                        color: window.textSecondary
-                        font.pixelSize: 10
-                    }
-                    GridLayout {
-                        Layout.fillWidth: true
-                        columns: 4
-                        rowSpacing: 10
-                        columnSpacing: 10
-
-                        Repeater {
-                            model: [
-                                { title: "Visualização", glyph: "◉", module: "Visualização" },
-                                { title: "Reprodução", glyph: "▶", module: "Reprodução" },
-                                { title: "Dispositivos", glyph: "▦", module: "Dispositivos" },
-                                { title: "Eventos", glyph: "ϟ", module: "Eventos" },
-                                { title: "Regras IA", glyph: "◇", module: "Regras IA" },
-                                { title: "Mídia", glyph: "▣", module: "Mídia" },
-                                { title: "LPR", glyph: "▤", module: "LPR" },
-                                { title: "Configurações", glyph: "⚙", module: "Configurações" }
-                            ]
-
-                            delegate: Rectangle {
-                                id: homeCard
-                                required property var modelData
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: 120
-                                radius: 5
-                                color: cardMouse.containsMouse ? "#253247" : window.panelColor
-                                border.color: cardMouse.containsMouse ? window.accent : window.borderColor
-                                ColumnLayout {
-                                    anchors.fill: parent
-                                    anchors.margins: 14
-                                    spacing: 4
-                                    Label {
-                                        text: homeCard.modelData.glyph
-                                        color: window.accent
-                                        font.pixelSize: 19
-                                    }
-                                    Label {
-                                        text: homeCard.modelData.title
-                                        color: window.textPrimary
-                                        font.pixelSize: 14
-                                        font.bold: true
-                                    }
-                                    Item { Layout.fillHeight: true }
-                                    Label {
-                                        Layout.alignment: Qt.AlignRight
-                                        text: "Abrir  →"
-                                        color: window.accent
-                                        font.pixelSize: 11
-                                    }
-                                }
-                                MouseArea {
-                                    id: cardMouse
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: window.openModule(homeCard.modelData.module)
-                                }
-                            }
-                        }
-                    }
-                    Label {
-                        Layout.topMargin: 18
-                        text: "ESTADO OPERACIONAL"
-                        color: window.textSecondary
-                        font.pixelSize: 10
-                    }
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: 10
-
-                        Repeater {
-                            model: [
-                                { title: "Dispositivos cadastrados", value: String(deviceController.devices.length) },
-                                { title: "Sessões conectadas", value: String(window.connectedCount()) },
-                                { title: "Registro Automático", value: deviceController.registrationListening ? "Ativo" : "Inativo" },
-                                { title: "Cloud / P2P", value: "Em implementação" }
-                            ]
-                            delegate: Rectangle {
-                                required property var modelData
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: 90
-                                color: window.panelColor
-                                border.color: window.borderColor
-                                radius: 4
-                                ColumnLayout {
-                                    anchors.fill: parent
-                                    anchors.margins: 12
-                                    Label {
-                                        text: modelData.title
-                                        color: window.textSecondary
-                                        font.pixelSize: 10
-                                    }
-                                    Label {
-                                        text: modelData.value
-                                        color: window.textPrimary
-                                        font.pixelSize: 15
-                                        font.bold: true
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    Label {
-                        Layout.topMargin: 10
-                        text: "Conectividade real por LAN e Registro Automático em evolução. Recursos sem backend permanecem identificados como indisponíveis."
-                        color: window.textSecondary
-                        font.pixelSize: 11
-                        wrapMode: Text.WordWrap
-                        Layout.fillWidth: true
-                    }
-                }
+                devices: deviceController.devices
+                registrationListening: deviceController.registrationListening
+                panelColor: window.panelColor
+                borderColor: window.borderColor
+                textPrimary: window.textPrimary
+                textSecondary: window.textSecondary
+                accent: window.accent
+                onNavigate: function(moduleName) { window.openModule(moduleName) }
             }
 
             Rectangle {
