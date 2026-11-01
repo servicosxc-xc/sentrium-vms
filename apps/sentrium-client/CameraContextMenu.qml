@@ -10,6 +10,8 @@ Menu {
     property var slots: []
     property int focusedSlot: -1
     property bool favorite: false
+    property bool liveEventsSelected: false
+    property bool liveEventsFeedConnected: false
 
     readonly property var tile: targetSlot >= 0 && targetSlot < slots.length
         ? slots[targetSlot] : ({ occupied: false, deviceId: "", channel: -1,
@@ -31,6 +33,7 @@ Menu {
     signal toggleMaximize(int slot)
     signal setStream(int slot, bool extra)
     signal toggleFavorite(string deviceId, int channelIndex)
+    signal toggleLiveEvents(string deviceId, int channelIndex)
 
     background: Rectangle {
         color: "#151e29"
@@ -127,6 +130,19 @@ Menu {
         }
         MenuItem {
             text: "Overlay de detecções (não implementado)"
+            enabled: false
+        }
+        MenuSeparator {}
+        MenuItem {
+            text: menu.liveEventsSelected
+                ? "Desmarcar câmera do painel Eventos ao vivo"
+                : "Incluir câmera no painel Eventos ao vivo"
+            enabled: menu.hasCamera
+            onTriggered: menu.toggleLiveEvents(menu.tile.deviceId, menu.tile.channel)
+        }
+        MenuItem {
+            text: menu.liveEventsFeedConnected
+                ? "Feed de eventos conectado" : "Feed de eventos: integração pendente"
             enabled: false
         }
     }
