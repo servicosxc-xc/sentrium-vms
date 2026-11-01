@@ -41,12 +41,16 @@ ApplicationWindow {
     function openRecorder(deviceData) {
         if (deviceData.state !== "Connected" || !deviceData.channels.length)
             return
-        const n = Math.min(16, deviceData.channels.length)
-        const capacity = n > 9 ? 16 : n > 4 ? 9 : n > 1 ? 4 : 1
-        // The C++ slot list must be resized before QML creates additional tiles.
-        deviceController.setMosaicCapacity(capacity)
-        mosaicWorkspace.capacity = capacity
-        mosaicWorkspace.focusedSlot = -1
+        const n = Math.min(64, deviceData.channels.length)
+        if (n > mosaicWorkspace.capacity) {
+            const grids = [1, 4, 9, 16, 25, 36, 49, 64]
+            for (let i = 0; i < grids.length; ++i) {
+                if (grids[i] >= n) {
+                    mosaicWorkspace.applyLayout(grids[i], "grid")
+                    break
+                }
+            }
+        }
         deviceController.clearAllLive()
         for (let i = 0; i < n; ++i)
             deviceController.openLiveInSlot(
@@ -993,8 +997,54 @@ ApplicationWindow {
                     color: "#0f1319"
                         property var slots: deviceController.mosaicSlots
                         property int capacity: 16
+                        property string layoutMode: "grid"
                         property int focusedSlot: -1
-                        property int columns: capacity === 1 ? 1 : capacity === 4 ? 2 : capacity === 9 ? 3 : 4
+                        property int tileGap: 2
+                        property int rightColumns: capacity <= 6 ? 2 : capacity <= 10 ? 3 : 4
+                        property int columns: layoutMode === "grid"
+                            ? Math.round(Math.sqrt(capacity)) : rightColumns + 2
+                        property int rows: layoutMode === "grid"
+                            ? columns : Math.ceil((capacity - 1) / rightColumns)
+
+                        function cellFor(slot) {
+                            if (layoutMode === "grid")
+                                return {col: slot % columns, row: Math.floor(slot / columns),
+                                        colSpan: 1, rowSpan: 1}
+                            if (slot === 0)
+                                return {col: 0, row: 0, colSpan: 2, rowSpan: rows}
+                            const offset = slot - 1
+                            return {col: 2 + offset % rightColumns,
+                                    row: Math.floor(offset / rightColumns),
+                                    colSpan: 1, rowSpan: 1}
+                        }
+
+                        function applyLayout(count, mode) {
+                            if (count === capacity && mode === layoutMode) return
+                            // Resize native slots before creating more QML tiles.
+                            deviceController.setMosaicCapacity(count)
+                            capacity = count
+                            layoutMode = mode
+                            focusedSlot = -1
+                            if (window.activeMosaicSlot >= count)
+                                window.activeMosaicSlot = -1
+                        }
+
+                        MosaicLayoutsPopup {
+                            id: allLayoutsPopup
+                            parent: mosaicWorkspace
+                            x: Math.max(4, Math.min(210, mosaicWorkspace.width - width - 8))
+                            y: 41
+                            selectedCapacity: mosaicWorkspace.capacity
+                            selectedMode: mosaicWorkspace.layoutMode
+                            textPrimary: window.textPrimary
+                            textSecondary: window.textSecondary
+                            borderColor: window.borderColor
+                            panelColor: window.panelColor
+                            accent: window.accent
+                            onLayoutSelected: function(count, mode) {
+                                mosaicWorkspace.applyLayout(count, mode)
+                            }
+                        }
 
                         ColumnLayout {
                             anchors.fill: parent
@@ -1024,19 +1074,15 @@ ApplicationWindow {
                                             text: String(modelData)
                                             implicitWidth: 42
                                             implicitHeight: 30
-                                            highlighted: mosaicWorkspace.capacity === modelData
-                                            onClicked: {
-                                                // Update the C++ slot list before increasing the QML tile count.
-
-                                                deviceController.setMosaicCapacity(modelData)
-
-                                                mosaicWorkspace.capacity = modelData
-
-                                                mosaicWorkspace.focusedSlot = -1
-                                                if (window.activeMosaicSlot >= modelData)
-                                                    window.activeMosaicSlot = -1
-                                            }
+                                            highlighted: mosaicWorkspace.layoutMode === "grid"
+                                                && mosaicWorkspace.capacity === modelData
+                                            onClicked: mosaicWorkspace.applyLayout(modelData, "grid")
                                         }
+                                    }
+                                    Button {
+                                        text: "▦  Todos os layouts  ▾"
+                                        implicitHeight: 30
+                                        onClicked: allLayoutsPopup.open()
                                     }
                                     Item { Layout.fillWidth: true }
                                     Button {
