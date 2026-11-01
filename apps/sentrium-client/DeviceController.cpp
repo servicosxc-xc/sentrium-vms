@@ -336,6 +336,7 @@ void DeviceController::stopRegistrationServer() {
 void DeviceController::onRegistrationServerChanged(
     bool listening, const QString& diagnostic) {
     registration_listening_ = listening;
+    if (!listening) resume_on_reconnect_.clear();
     registration_status_ = diagnostic;
     emit registrationStatusChanged();
     for (auto& record : records_) {
@@ -357,12 +358,25 @@ void DeviceController::onRegistrationObservation(const QString& message) {
 }
 
 void DeviceController::onRegistrationLost(const QString& id) {
-    clearLiveForDevice(id);
     auto* record = find(id);
     if (!record || !record->auto_registration || record->pending_remove) return;
+    const auto key = utf8(id);
+    // Capture the existing visual layout once, before clearing the dead
+    // real-play handles. Repeated SDK disconnect notifications must not
+    // accidentally replace the original desired layout with an empty one.
+    if (!resume_on_reconnect_.contains(key)) {
+        std::vector<ResumeSlot> snapshots;
+        for (int slot = 0; slot < mosaic_capacity_; ++slot) {
+            const auto& tile = tiles_[static_cast<std::size_t>(slot)];
+            if (tile.deviceId == id && tile.channel >= 0)
+                snapshots.push_back(ResumeSlot{slot, tile.channel, tile.extra});
+        }
+        resume_on_reconnect_.emplace(key, std::move(snapshots));
+    }
+    clearLiveForDevice(id);
     record->device.state = sentrium::device::ConnectionState::Connecting;
     record->device.channels.clear();
-    record->device.diagnostic = "Aguardando reconexão do gravador";
+    record->device.diagnostic = "Aguardando reconexão automática do gravador";
     emit devicesChanged();
 }
 
@@ -562,6 +576,7 @@ void DeviceController::onLiveStarted(
 }
 
 void DeviceController::disconnectDevice(const QString& id) {
+    resume_on_reconnect_.erase(utf8(id));
     clearLiveForDevice(id);
     auto* record = find(id);
     if (!record) {
@@ -732,7 +747,9 @@ void DeviceController::onConnectFinished(
         }
     } else {
         record->device.channels.clear();
-        record->device.state = sentrium::device::ConnectionState::Failed;
+        record->device.state = record->auto_registration
+            ? sentrium::device::ConnectionState::Connecting
+            : sentrium::device::ConnectionState::Failed;
         emit auditEvent(
             QStringLiteral("device-connect-failed"),
             QStringLiteral("Device connection failed"));
@@ -740,6 +757,22 @@ void DeviceController::onConnectFinished(
 
     const bool remove_after = record->pending_remove;
     emit devicesChanged();
+
+    if (success && !remove_after && record->auto_registration) {
+        const auto key = utf8(id);
+        const auto pending = resume_on_reconnect_.find(key);
+        if (pending != resume_on_reconnect_.end()) {
+            const auto previews = std::move(pending->second);
+            resume_on_reconnect_.erase(pending);
+            for (const auto& preview : previews) {
+                if (preview.slot >= 0 && preview.slot < mosaic_capacity_
+                    && preview.channel >= 0 && preview.channel < channelCount
+                    && tiles_[static_cast<std::size_t>(preview.slot)].deviceId.isEmpty()) {
+                    openLiveInSlot(id, preview.channel, preview.slot, preview.extra);
+                }
+            }
+        }
+    }
 
     if (remove_after) {
         if (success) {
@@ -788,6 +821,7 @@ void DeviceController::onDisconnectFinished(
 }
 
 void DeviceController::shutdown() {
+    resume_on_reconnect_.clear();
     if (shutdown_) {
         return;
     }
