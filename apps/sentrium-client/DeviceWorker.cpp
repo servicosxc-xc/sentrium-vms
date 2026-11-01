@@ -1,6 +1,7 @@
 #include "DeviceWorker.hpp"
 
 #include <QByteArray>
+#include <QTimer>
 #include <algorithm>
 #include <vector>
 
@@ -19,6 +20,14 @@ DeviceWorker::DeviceWorker(QObject* parent) : QObject(parent) {
     connect(this, &DeviceWorker::registrationReceived,
             this, &DeviceWorker::onRegistrationReceived,
             Qt::QueuedConnection);
+    connect(this, &DeviceWorker::sdkSessionStatus,
+            this, &DeviceWorker::onSdkSessionStatus,
+            Qt::QueuedConnection);
+    adapter_.setSessionStatusCallback([this](sentrium::device::Session session, bool online) {
+        // NetSDK callback is not the Qt worker thread: send only the opaque
+        // login handle through the queued signal; no SDK calls here.
+        emit sdkSessionStatus(static_cast<quint64>(session.value), online);
+    });
 }
 
 void DeviceWorker::connectDevice(
@@ -56,7 +65,7 @@ void DeviceWorker::startLive(int slot, quint64 token, const QString& id,
                              int channel, quint64 nativeWindow, bool extra) {
     // One NetSDK RealPlay handle per independently embedded Qt tile.
     // All NetSDK operations remain on the existing worker thread.
-    if (slot < 0 || slot >= 16) {
+    if (slot < 0 || slot >= 64) {
         emit liveStarted(slot, token, id, false, QStringLiteral("Índice de mosaico inválido"));
         return;
     }
@@ -103,6 +112,9 @@ void DeviceWorker::disconnectDevice(const QString& id) {
     const std::string key = utf8(id);
     const auto found = sessions_.find(key);
     if (found == sessions_.end()) {
+        offline_sessions_.erase(key);
+        stale_registration_sessions_.erase(key);
+        session_channel_counts_.erase(key);
         emit disconnectFinished(id, true, {});
         return;
     }
@@ -111,6 +123,8 @@ void DeviceWorker::disconnectDevice(const QString& id) {
     if (result.success) {
         sessions_.erase(found);
         stale_registration_sessions_.erase(key);
+        offline_sessions_.erase(key);
+        session_channel_counts_.erase(key);
     } else if (registered_.contains(key)) {
         stale_registration_sessions_.insert(key);
     }
@@ -136,10 +150,20 @@ void DeviceWorker::startRegistrationServer(const QString& bindAddress, quint16 p
                 event.disconnected);
         });
     listening_ = result.success;
+    if (listening_) {
+        if (!registration_retry_timer_) {
+            registration_retry_timer_ = new QTimer(this);
+            registration_retry_timer_->setInterval(15000);
+            connect(registration_retry_timer_, &QTimer::timeout,
+                    this, &DeviceWorker::retryPendingRegistrations);
+        }
+        registration_retry_timer_->start();
+    }
     emit registrationServerChanged(listening_, qstring(result.diagnostic));
 }
 
 void DeviceWorker::stopRegistrationServer() {
+    if (registration_retry_timer_) registration_retry_timer_->stop();
     // Logout must happen while the reverse-registration service still owns
     // its connections; closing the listener first may invalidate live sessions.
     for (const auto& entry : registered_) {
@@ -162,6 +186,11 @@ void DeviceWorker::stopRegistrationServer() {
 
     adapter_.stopRegistration();
     listening_ = false;
+    offline_sessions_.clear();
+    for (auto& [id, target] : registered_) {
+        target.lastPeer.clear();
+        target.lastPort = 0;
+    }
     emit registrationServerChanged(false, QStringLiteral("Registro Automático desativado"));
 }
 
@@ -178,88 +207,149 @@ void DeviceWorker::registerAutoDevice(
             return;
         }
     }
-    registered_.insert_or_assign(key, RegisteredTarget{registrationId, username, password});
+    auto current = registered_.find(key);
+    if (current != registered_.end()) {
+        // Keep the last verified endpoint when the user explicitly retries
+        // the same registration ID; no spurious shutdown/reconfiguration.
+        current->second.registrationId = registrationId;
+        current->second.username = username;
+        current->second.password = password;
+    } else {
+        registered_.emplace(key, RegisteredTarget{registrationId, username, password, {}, 0});
+    }
 }
 
 void DeviceWorker::unregisterAutoDevice(const QString& id) {
     const auto key = utf8(id);
     registered_.erase(key);
+    offline_sessions_.erase(key);
+    stale_registration_sessions_.erase(key);
+    session_channel_counts_.erase(key);
     disconnectDevice(id);
+}
+
+void DeviceWorker::attemptRegisteredLogin(
+    const std::string& id, const RegisteredTarget& target) {
+    if (!listening_ || target.lastPeer.isEmpty() || target.lastPort == 0)
+        return;
+
+    const QString logicalId = qstring(id);
+    auto existing = sessions_.find(id);
+    if (existing != sessions_.end()) {
+        if (!offline_sessions_.contains(id)) return;
+        stopLiveForDevice(logicalId);
+        // A lost NetSDK login handle must not block every future
+        // re-registration forever if Logout fails on a dead connection.
+        const auto logout = adapter_.disconnect(existing->second);
+        if (!logout.success) {
+            emit registrationObservation(QStringLiteral(
+                "Sessão NetSDK anterior indisponível; tentando recuperar o registro"));
+        }
+        sessions_.erase(existing);
+        session_channel_counts_.erase(id);
+    }
+
+    const sentrium::device::LoginRequest request{
+        utf8(target.lastPeer), static_cast<std::uint16_t>(target.lastPort),
+        utf8(target.username), utf8(target.password)};
+    const auto result = adapter_.connectRegistered(request, utf8(target.registrationId));
+    if (result.success) {
+        sessions_.insert_or_assign(id, result.session);
+        session_channel_counts_.insert_or_assign(id, result.channel_count);
+        offline_sessions_.erase(id);
+        stale_registration_sessions_.erase(id);
+        emit registrationObservation(QStringLiteral(
+            "Registro Automático reconectado; canais reais: %1").arg(result.channel_count));
+    } else {
+        offline_sessions_.insert(id);
+        emit registrationObservation(QStringLiteral(
+            "Registro Automático: login indisponível; tentativa automática programada"));
+    }
+    emit connectFinished(logicalId, result.success,
+                         result.channel_count, qstring(result.diagnostic));
+}
+
+void DeviceWorker::retryPendingRegistrations() {
+    if (!listening_) return;
+    for (const auto& [id, target] : registered_) {
+        if (target.lastPeer.isEmpty() || target.lastPort == 0) continue;
+        if (sessions_.contains(id) && !offline_sessions_.contains(id)) continue;
+        attemptRegisteredLogin(id, target);
+    }
+}
+
+void DeviceWorker::onSdkSessionStatus(quint64 handle, bool online) {
+    if (!handle) return;
+    for (const auto& [id, session] : sessions_) {
+        if (static_cast<quint64>(session.value) != handle) continue;
+        if (!registered_.contains(id)) return; // Ordinary LAN sessions are unchanged.
+        if (!online) {
+            if (offline_sessions_.insert(id).second) {
+                stopLiveForDevice(qstring(id));
+                emit registrationObservation(QStringLiteral(
+                    "NetSDK detectou queda de sessão; aguardando reconexão automática"));
+                emit registrationLost(qstring(id));
+            }
+        } else if (offline_sessions_.erase(id) != 0) {
+            // CLIENT_SetAutoReconnect already restored this SDK login handle.
+            // Do not create a competing LoginEx2 or require the operator to
+            // edit/salvar the NVR again.
+            emit registrationObservation(QStringLiteral(
+                "NetSDK restabeleceu a sessão automaticamente"));
+            const auto found = session_channel_counts_.find(id);
+            const int channels = found == session_channel_counts_.end() ? 0 : found->second;
+            emit connectFinished(qstring(id), true, channels,
+                                 QStringLiteral("Reconexão NetSDK automática"));
+        }
+        return;
+    }
 }
 
 void DeviceWorker::onRegistrationReceived(
     const QString& registrationId, const QString& peer, quint16 port, bool disconnected) {
     if (!listening_) return;
-    for (const auto& [id, target] : registered_) {
+    for (auto& [id, target] : registered_) {
         if (registrationId != target.registrationId) continue;
-        // Do not expose this ID, peer IP, username or password to UI/logs.
-        emit registrationObservation(disconnected
-            ? QStringLiteral("Desconexão informada por dispositivo cadastrado")
-            : QStringLiteral("Registro recebido de dispositivo cadastrado"));
-        auto existing = sessions_.find(id);
-        if (disconnected) {
-            if (existing != sessions_.end()) {
-                stopLiveForDevice(qstring(id));
-                const auto logout = adapter_.disconnect(existing->second);
-                if (!logout.success) {
-                    emit registrationObservation(QStringLiteral(
-                        "Gravador desconectou, mas o NetSDK não confirmou a liberação da sessão"));
-                }
-                if (logout.success) {
-                    sessions_.erase(existing);
-                    stale_registration_sessions_.erase(id);
-                } else {
-                    // Keep the handle for retry on the next registration,
-                    // rather than accepting a duplicate NetSDK session.
-                    stale_registration_sessions_.insert(id);
-                }
-                emit registrationLost(qstring(id));
-            }
-            return;
-        }
-        if (existing != sessions_.end()) {
-            if (!stale_registration_sessions_.contains(id)) return;
-            stopLiveForDevice(qstring(id));
-            const auto logout = adapter_.disconnect(existing->second);
-            if (!logout.success) {
-                emit registrationObservation(QStringLiteral(
-                    "Novo registro aguardando liberação da sessão NetSDK anterior"));
-                return;
-            }
-            sessions_.erase(existing);
-            stale_registration_sessions_.erase(id);
-        }
         const QString logicalId = qstring(id);
-        if (peer.isEmpty() || port == 0) {
-            emit registrationObservation(QStringLiteral("Registro reconhecido sem endpoint válido"));
-            emit connectFinished(logicalId, false, 0,
-                                 QStringLiteral("Registro recebido sem endereço válido"));
+        if (disconnected) {
+            // Registration transport can disappear independently from the
+            // NetSDK login handle. Keep that handle for SDK auto-reconnect;
+            // never immediately tear it down and lose the callback.
+            if (sessions_.contains(id) && offline_sessions_.insert(id).second) {
+                stopLiveForDevice(logicalId);
+                emit registrationLost(logicalId);
+            }
+            emit registrationObservation(QStringLiteral(
+                "Registrador informou desconexão; aguardando retorno automático"));
             return;
         }
-        const sentrium::device::LoginRequest request{
-            utf8(peer), static_cast<std::uint16_t>(port),
-            utf8(target.username), utf8(target.password)};
-        const auto result = adapter_.connectRegistered(request, utf8(registrationId));
-        if (result.success) {
-            sessions_.emplace(id, result.session);
+        if (peer.isEmpty() || port == 0) {
             emit registrationObservation(QStringLiteral(
-                "Login NetSDK por Registro Automático concluído; canais reais obtidos: %1")
-                .arg(result.channel_count));
-        } else {
-            emit registrationObservation(QStringLiteral(
-                "Registro reconhecido, mas login NetSDK falhou (verifique diagnóstico do dispositivo)"));
+                "Registro reconhecido sem endereço válido"));
+            return;
         }
-        emit connectFinished(logicalId, result.success,
-                             result.channel_count, qstring(result.diagnostic));
+        const bool endpointChanged = peer != target.lastPeer || port != target.lastPort;
+        target.lastPeer = peer;
+        target.lastPort = port;
+        if (sessions_.contains(id) && !offline_sessions_.contains(id) && !endpointChanged) {
+            return; // duplicate heartbeat/registration on the current session
+        }
+        if (sessions_.contains(id) && endpointChanged) {
+            if (offline_sessions_.insert(id).second) {
+                stopLiveForDevice(logicalId);
+                emit registrationLost(logicalId);
+            }
+        }
+        attemptRegisteredLogin(id, target);
         return;
     }
-    // Never auto-enroll unexpected equipment, but show a privacy-safe hint
-    // so the operator can detect an ID mismatch when using a real recorder.
     emit registrationObservation(QStringLiteral(
         "Registro recebido com ID não cadastrado (verifique o ID no gravador)"));
 }
 
 void DeviceWorker::shutdown() {
+    if (registration_retry_timer_) registration_retry_timer_->stop();
+    adapter_.setSessionStatusCallback({});
     stopAllLive();
     adapter_.stopRegistration();
     listening_ = false;
@@ -277,4 +367,6 @@ void DeviceWorker::shutdown() {
     // logout could not be completed, so process shutdown remains bounded.
     sessions_.clear();
     stale_registration_sessions_.clear();
+    offline_sessions_.clear();
+    session_channel_counts_.clear();
 }
