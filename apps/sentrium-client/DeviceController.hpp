@@ -10,6 +10,7 @@
 
 #include <array>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 class DeviceWorker;
@@ -135,6 +136,13 @@ private:
     void setError(const QString& error);
     void erase(const QString& id);
     void clearLiveForDevice(const QString& id);
+
+    struct ResumeSlot {
+        int slot = -1;
+        int channel = -1;
+        bool extra = true;
+    };
+    std::unordered_map<std::string, std::vector<ResumeSlot>> resume_on_reconnect_;
 
     struct MosaicTile {
         QString deviceId;
