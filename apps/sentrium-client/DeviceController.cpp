@@ -286,7 +286,7 @@ void DeviceController::addAndConnect(
 
         for (const auto& existing : records_) {
             if (!existing.auto_registration
-                && QString::fromUtf8(existing.device.host).compare(
+                && qstring(existing.device.host).compare(
                        host.trimmed(), Qt::CaseInsensitive) == 0
                 && existing.device.port == port) {
                 setError(QStringLiteral("Este dispositivo IP/porta já está cadastrado"));
