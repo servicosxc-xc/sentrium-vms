@@ -1199,13 +1199,11 @@ ApplicationWindow {
 
                         function openTileContextAt(slot, x, y) {
                             if (slot < 0 || slot >= capacity) return
-                            tileHoverHud.close()
                             cameraContextMenu.targetSlot = slot
-                            const popupX = Math.max(0, Math.min(x,
-                                mosaicWorkspace.width - cameraContextMenu.width - 6))
-                            const popupY = Math.max(0, Math.min(y,
-                                mosaicWorkspace.height - 390))
-                            cameraContextMenu.popup(popupX, popupY)
+                            // Native Windows child windows may use a different
+                            // coordinate system. Qt positions the menu at the
+                            // real desktop pointer when popup() has no offset.
+                            cameraContextMenu.popup()
                         }
 
                         function openTileContext(slot, source, localX, localY) {
@@ -1264,163 +1262,6 @@ ApplicationWindow {
                             }
                             onToggleLiveEvents: function(deviceId, channelIndex) {
                                 mosaicWorkspace.toggleLiveEvents(deviceId, channelIndex)
-                            }
-                        }
-
-                        // Single native overlay shared by all tiles. An ordinary
-                        // QML rectangle would be covered by the NetSDK child HWND.
-                        Popup {
-                            id: tileHoverHud
-                            parent: mosaicWorkspace
-                            popupType: Popup.Window
-                            modal: false
-                            focus: false
-                            padding: 0
-                            width: 160
-                            height: 27
-                            closePolicy: Popup.NoAutoClose
-                            property int targetSlot: -1
-                            readonly property var tileData: targetSlot >= 0
-                                && targetSlot < deviceController.mosaicSlots.length
-                                ? deviceController.mosaicSlots[targetSlot]
-                                : ({occupied: false})
-
-                            background: Rectangle {
-                                radius: 3
-                                color: "#df111b2a"
-                                border.color: "#344960"
-                            }
-                            contentItem: Item {
-                                MouseArea {
-                                    anchors.fill: parent
-                                    acceptedButtons: Qt.LeftButton | Qt.RightButton
-                                    cursorShape: Qt.OpenHandCursor
-                                    onPressed: function(mouse) {
-                                        if (mouse.button === Qt.LeftButton)
-                                            mosaicWorkspace.beginTileDrag(tileHoverHud.targetSlot)
-                                    }
-                                    onClicked: function(mouse) {
-                                        if (mouse.button === Qt.RightButton) {
-                                            const cursor = deviceController.cursorScreenPos()
-                                            const p = mosaicWorkspace.mapFromGlobal(
-                                                cursor.x, cursor.y)
-                                            const slot = tileHoverHud.targetSlot
-                                            tileHoverHud.close()
-                                            mosaicWorkspace.openTileContextAt(slot, p.x, p.y)
-                                        } else
-                                            window.activeMosaicSlot = tileHoverHud.targetSlot
-                                    }
-                                    onDoubleClicked: function(mouse) {
-                                        if (mouse.button !== Qt.LeftButton) return
-                                        mosaicWorkspace.focusedSlot =
-                                            mosaicWorkspace.focusedSlot === tileHoverHud.targetSlot
-                                            ? -1 : tileHoverHud.targetSlot
-                                    }
-                                }
-                                RowLayout {
-                                    anchors.fill: parent
-                                    anchors.leftMargin: 6
-                                    anchors.rightMargin: 4
-                                    spacing: 4
-                                    Label {
-                                        Layout.fillWidth: true
-                                        Layout.minimumWidth: 10
-                                        text: tileHoverHud.tileData.occupied
-                                            ? tileHoverHud.tileData.channelName
-                                            : "Canal " + (tileHoverHud.targetSlot + 1)
-                                        color: window.textPrimary
-                                        font.pixelSize: 10
-                                        font.bold: true
-                                        elide: Text.ElideRight
-                                        HoverHandler { id: hudNameHover }
-                                        ToolTip.visible: hudNameHover.hovered
-                                        ToolTip.text: tileHoverHud.tileData.occupied
-                                            ? tileHoverHud.tileData.deviceName + " · "
-                                              + tileHoverHud.tileData.channelName + " · "
-                                              + tileHoverHud.tileData.status
-                                            : "Posição livre"
-                                    }
-                                    Label {
-                                        visible: tileHoverHud.width > 250
-                                            && tileHoverHud.tileData.aiState === "Active"
-                                        text: "IA"
-                                        color: "#ae92ff"
-                                        font.pixelSize: 10
-                                        font.bold: true
-                                    }
-                                    Label {
-                                        visible: tileHoverHud.width > 205
-                                            && tileHoverHud.tileData.occupied
-                                            && mosaicWorkspace.isLiveEventsSelected(
-                                                tileHoverHud.tileData.deviceId,
-                                                tileHoverHud.tileData.channel)
-                                        text: "EVENTOS"
-                                        color: "#4e9aff"
-                                        font.pixelSize: 9
-                                        font.bold: true
-                                    }
-                                    Label {
-                                        visible: tileHoverHud.width > 160
-                                            && tileHoverHud.tileData.occupied
-                                        text: tileHoverHud.tileData.extra
-                                            ? "Extra" : "Principal"
-                                        color: "#9bc3ff"
-                                        font.pixelSize: 9
-                                    }
-                                    ToolButton {
-                                        id: closeHoveredTile
-                                        text: "×"
-                                        implicitWidth: 21
-                                        implicitHeight: 22
-                                        padding: 0
-                                        background: Item {}
-                                        contentItem: Label {
-                                            text: closeHoveredTile.text
-                                            color: window.textPrimary
-                                            font.pixelSize: 17
-                                            horizontalAlignment: Text.AlignHCenter
-                                            verticalAlignment: Text.AlignVCenter
-                                        }
-                                        onClicked: {
-                                            if (tileHoverHud.targetSlot >= 0)
-                                                deviceController.clearLiveSlot(tileHoverHud.targetSlot)
-                                            tileHoverHud.close()
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        Timer {
-                            interval: 80
-                            repeat: true
-                            running: window.visible
-                                && window.activeModule.indexOf("Visualização") === 0
-                            onRunningChanged: {
-                                if (!running) tileHoverHud.close()
-                            }
-                            onTriggered: {
-                                if (mosaicWorkspace.draggedTileSource >= 0
-                                    || cameraContextMenu.opened || allLayoutsPopup.opened) {
-                                    tileHoverHud.close()
-                                    return
-                                }
-                                const cursor = deviceController.cursorScreenPos()
-                                const p = videoMosaic.mapFromGlobal(cursor.x, cursor.y)
-                                const index = mosaicWorkspace.tileAt(p.x, p.y)
-                                if (index < 0) { tileHoverHud.close(); return }
-                                const tile = mosaicRepeater.itemAt(index)
-                                if (!tile || !tile.visible) {
-                                    tileHoverHud.close()
-                                    return
-                                }
-                                const top = tile.mapToItem(mosaicWorkspace, 0, 0)
-                                tileHoverHud.targetSlot = index
-                                tileHoverHud.width = Math.max(60, tile.width - 2)
-                                tileHoverHud.x = top.x + 1
-                                tileHoverHud.y = top.y + 1
-                                if (!tileHoverHud.opened)
-                                    tileHoverHud.open()
                             }
                         }
 
@@ -1529,11 +1370,87 @@ ApplicationWindow {
                                             border.width: isActiveTile ? 2 : 1
                                             clip: true
 
+                                            // Stability fallback: one compact fixed strip,
+                                            // not a focus-stealing popup recreated on hover.
+                                            // This is temporary until live frames render
+                                            // in a composited scene with true overlay support.
+                                            Rectangle {
+                                                id: tileHeader
+                                                anchors.top: parent.top
+                                                anchors.left: parent.left
+                                                anchors.right: parent.right
+                                                height: mosaicWorkspace.capacity > 16 ? 16 : 19
+                                                color: "#131c29"
+                                                RowLayout {
+                                                    anchors.fill: parent
+                                                    anchors.leftMargin: 5
+                                                    anchors.rightMargin: 5
+                                                    spacing: 4
+                                                    Label {
+                                                        Layout.fillWidth: true
+                                                        Layout.minimumWidth: 9
+                                                        text: mosaicTile.itemData.occupied
+                                                            ? mosaicTile.itemData.channelName
+                                                            : "Canal " + (mosaicTile.index + 1)
+                                                        color: window.textPrimary
+                                                        font.pixelSize: 10
+                                                        elide: Text.ElideRight
+                                                    }
+                                                    Label {
+                                                        visible: mosaicTile.itemData.occupied
+                                                            && mosaicTile.itemData.aiState === "Active"
+                                                        text: "IA"
+                                                        color: "#c1a5ff"
+                                                        font.pixelSize: 9
+                                                    }
+                                                    Label {
+                                                        visible: mosaicTile.itemData.occupied
+                                                            && mosaicWorkspace.isLiveEventsSelected(
+                                                                mosaicTile.itemData.deviceId,
+                                                                mosaicTile.itemData.channel)
+                                                        text: "EVENTOS"
+                                                        color: "#71adff"
+                                                        font.pixelSize: 9
+                                                    }
+                                                    Label {
+                                                        visible: mosaicTile.itemData.occupied
+                                                        text: mosaicTile.itemData.extra ? "Extra" : "Principal"
+                                                        color: "#9bc3ff"
+                                                        font.pixelSize: 9
+                                                    }
+                                                }
+                                                MouseArea {
+                                                    anchors.fill: parent
+                                                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                                    preventStealing: true
+                                                    onPressed: function(mouse) {
+                                                        if (mouse.button === Qt.LeftButton)
+                                                            mosaicWorkspace.beginTileDrag(mosaicTile.index)
+                                                    }
+                                                    onClicked: function(mouse) {
+                                                        if (mouse.button === Qt.RightButton)
+                                                            mosaicWorkspace.openTileContextAt(
+                                                                mosaicTile.index, mouse.x, mouse.y)
+                                                        else
+                                                            window.activeMosaicSlot = mosaicTile.index
+                                                    }
+                                                    onDoubleClicked: function(mouse) {
+                                                        if (mouse.button === Qt.LeftButton)
+                                                            mosaicWorkspace.focusedSlot =
+                                                                mosaicWorkspace.focusedSlot === mosaicTile.index
+                                                                    ? -1 : mosaicTile.index
+                                                    }
+                                                }
+                                            }
+
                                             Item {
                                                 id: videoViewport
-                                                // Native video now fills the tile. A single native
-                                                // Popup.Window provides the hover-only status bar.
-                                                anchors.fill: parent
+                                                // Compact 16–19px title strip; no bottom
+                                                // footer and no floating/independent window.
+                                                anchors.top: tileHeader.bottom
+                                                anchors.bottom: parent.bottom
+                                                anchors.left: parent.left
+                                                anchors.right: parent.right
                                                 clip: true
 
                                                 // Qt 6.12 WindowContainer owns QWindow position, clipping and
