@@ -41,12 +41,8 @@ Menu {
     signal toggleFavorite(string deviceId, int channelIndex)
     signal toggleLiveEvents(string deviceId, int channelIndex)
 
-    background: Rectangle {
-        color: "#151e29"
-        border.color: "#3b4c64"
-        border.width: 1
-        radius: 6
-    }
+    // Use the Qt Controls menu theme with its matching foreground colors.
+    // Custom dark backgrounds rendered black text in RC03 on Windows.
 
     MenuItem {
         text: "Fechar canal"
