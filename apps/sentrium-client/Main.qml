@@ -10,7 +10,7 @@ ApplicationWindow {
     minimumWidth: 1080
     minimumHeight: 680
     visible: true
-    title: sentriumProduct + " — Device Connectivity"
+    title: sentriumProduct + " — Visualização r25 RC02 (teste)"
     color: "#11151c"
 
     property color panelColor: "#171c24"
