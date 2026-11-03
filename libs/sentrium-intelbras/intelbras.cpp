@@ -78,9 +78,29 @@ struct Adapter::Impl {
     LLONG listener_handle = 0;
     std::mutex listener_mutex;
     RegistrationCallback listener_callback;
+    std::mutex session_callback_mutex;
+    SessionStatusCallback session_callback;
     bool initialized = false;
 
-    static void CALLBACK disconnected(LLONG, char*, LONG, LDWORD) noexcept {}
+    static void dispatch_session_status(LLONG login_id, LDWORD user, bool online) noexcept {
+        if (!user || !login_id) return;
+        auto* self = reinterpret_cast<Impl*>(static_cast<std::uintptr_t>(user));
+        try {
+            SessionStatusCallback callback;
+            {
+                std::lock_guard lock(self->session_callback_mutex);
+                callback = self->session_callback;
+            }
+            if (callback)
+                callback(device::Session{static_cast<std::int64_t>(login_id)}, online);
+        } catch (...) {
+            // Never unwind across a native SDK callback boundary.
+        }
+    }
+
+    static void CALLBACK disconnected(LLONG login_id, char*, LONG, LDWORD user) noexcept {
+        dispatch_session_status(login_id, user, false);
+    }
 
     static int CALLBACK service_notice(
         LLONG, char* peer, WORD port, LONG command,
@@ -159,7 +179,9 @@ struct Adapter::Impl {
         }
         return 0;
     }
-    static void CALLBACK reconnected(LLONG, char*, LONG, LDWORD) noexcept {}
+    static void CALLBACK reconnected(LLONG login_id, char*, LONG, LDWORD user) noexcept {
+        dispatch_session_status(login_id, user, true);
+    }
 
     ~Impl() {
         if (listener_handle && stop_listen) {
@@ -169,6 +191,10 @@ struct Adapter::Impl {
         {
             std::lock_guard lock(listener_mutex);
             listener_callback = {};
+        }
+        {
+            std::lock_guard lock(session_callback_mutex);
+            session_callback = {};
         }
         if (initialized && cleanup) {
             cleanup();
@@ -206,14 +232,16 @@ struct Adapter::Impl {
             real_play = load_export<RealPlayFn>(module, "CLIENT_RealPlayEx");
             stop_real_play = load_export<StopRealPlayFn>(module, "CLIENT_StopRealPlayEx");
 
-            if (!init(&Impl::disconnected, 0, nullptr)) {
+            const auto user_context = static_cast<LDWORD>(
+                reinterpret_cast<std::uintptr_t>(this));
+            if (!init(&Impl::disconnected, user_context, nullptr)) {
                 const int error = last_error ? last_error() : 0;
                 throw std::runtime_error(
                     "NetSDK initialization failed (sdk_error=" + std::to_string(error) + ")");
             }
 
             initialized = true;
-            set_auto_reconnect(&Impl::reconnected, 0);
+            set_auto_reconnect(&Impl::reconnected, user_context);
         } catch (...) {
             if (initialized && cleanup) {
                 cleanup();
@@ -228,6 +256,11 @@ struct Adapter::Impl {
 
 Adapter::Adapter() : impl_(std::make_unique<Impl>()) {}
 Adapter::~Adapter() = default;
+
+void Adapter::setSessionStatusCallback(SessionStatusCallback callback) {
+    std::lock_guard lock(impl_->session_callback_mutex);
+    impl_->session_callback = std::move(callback);
+}
 
 device::ConnectResult Adapter::connect(const device::LoginRequest& request) {
     try {

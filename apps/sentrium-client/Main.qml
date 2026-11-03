@@ -38,17 +38,23 @@ ApplicationWindow {
         }
     }
 
-    function openRecorder(deviceData) {
+    function openRecorder(deviceData, extra) {
         if (deviceData.state !== "Connected" || !deviceData.channels.length)
             return
-        const n = Math.min(16, deviceData.channels.length)
-        const capacity = n > 9 ? 16 : n > 4 ? 9 : n > 1 ? 4 : 1
-        mosaicWorkspace.capacity = capacity
-        deviceController.setMosaicCapacity(capacity)
+        const n = Math.min(64, deviceData.channels.length)
+        if (n > mosaicWorkspace.capacity) {
+            const grids = [1, 4, 9, 16, 25, 36, 49, 64]
+            for (let i = 0; i < grids.length; ++i) {
+                if (grids[i] >= n) {
+                    mosaicWorkspace.applyLayout(grids[i], "grid")
+                    break
+                }
+            }
+        }
         deviceController.clearAllLive()
         for (let i = 0; i < n; ++i)
             deviceController.openLiveInSlot(
-                deviceData.id, deviceData.channels[i].index, i, true)
+                deviceData.id, deviceData.channels[i].index, i, extra !== false)
         activeMosaicSlot = -1
     }
 
@@ -119,6 +125,8 @@ ApplicationWindow {
 
         onOpened: {
             connectionMethod.currentIndex = 0
+            deviceGroupChoice.currentIndex = 0
+            deviceGroupChoice.editText = "SEM GRUPO"
             deviceName.forceActiveFocus()
         }
 
@@ -129,7 +137,8 @@ ApplicationWindow {
                     deviceHost.text,
                     devicePort.value,
                     deviceUser.text,
-                    devicePassword.text)
+                    devicePassword.text,
+                    deviceGroupChoice.editText)
             } else if (connectionMethod.currentIndex === 1) {
                 deviceController.addCloudBridgeAndConnect(
                     deviceName.text,
@@ -141,7 +150,8 @@ ApplicationWindow {
                     deviceName.text,
                     registrationDeviceId.text,
                     registrationUser.text,
-                    registrationPassword.text)
+                    registrationPassword.text,
+                    deviceGroupChoice.editText)
                 // The server is managed independently in Configurações.
                 // Registering a device does not implicitly open a network port.
             }
@@ -197,6 +207,41 @@ ApplicationWindow {
                 placeholderText: "Nome do dispositivo"
                 text: "NVR Intelbras"
                 maximumLength: 128
+            }
+
+            Label {
+                text: "Grupo / local"
+                color: window.textSecondary
+                font.pixelSize: 11
+            }
+
+            ComboBox {
+                id: deviceGroupChoice
+                Layout.fillWidth: true
+                editable: true
+                model: ["SEM GRUPO"].concat(deviceController.deviceGroups)
+                currentIndex: 0
+                selectTextByMouse: true
+                palette.text: window.textPrimary
+                palette.buttonText: window.textPrimary
+                palette.base: "#111722"
+                palette.window: window.panelColor
+                palette.windowText: window.textPrimary
+                background: Rectangle {
+                    color: "#111722"
+                    radius: 5
+                    border.color: deviceGroupChoice.activeFocus
+                        ? window.accent : window.borderColor
+                }
+                onActivated: function(index) {
+                    if (index >= 0)
+                        editText = model[index]
+                }
+                // Accept an existing case-insensitive name or a new group.
+                // Uniqueness and membership are enforced atomically in C++.
+                ToolTip.visible: hovered
+                ToolTip.text: "Selecione um grupo existente ou digite outro. "
+                    + "Não são permitidos grupos duplicados."
             }
 
             TextField {
@@ -454,9 +499,10 @@ ApplicationWindow {
         }
     }
 
+    // A single compact top bar: product identity -> scrollable workspaces -> status.
+    // Closing a tab never changes the C++ device session ownership.
     header: ToolBar {
         height: 58
-
         background: Rectangle {
             color: window.panelColor
             border.color: window.borderColor
@@ -464,16 +510,15 @@ ApplicationWindow {
 
         RowLayout {
             anchors.fill: parent
-            anchors.leftMargin: 18
-            anchors.rightMargin: 18
-            spacing: 14
+            anchors.leftMargin: 14
+            anchors.rightMargin: 14
+            spacing: 10
 
             Rectangle {
-                width: 34
-                height: 34
+                Layout.preferredWidth: 34
+                Layout.preferredHeight: 34
                 radius: 8
                 color: window.accent
-
                 Label {
                     anchors.centerIn: parent
                     text: "S"
@@ -484,29 +529,125 @@ ApplicationWindow {
             }
 
             ColumnLayout {
-                spacing: 0
-
+                // Keep the branding at its natural width. Otherwise the outer
+                // RowLayout can stretch this column and push tabs to the right.
+                Layout.preferredWidth: 187
+                Layout.minimumWidth: 187
+                Layout.maximumWidth: 187
+                Layout.fillWidth: false
+                spacing: 1
                 Label {
                     text: sentriumProduct
                     color: window.textPrimary
-                    font.pixelSize: 17
+                    font.pixelSize: 16
                     font.bold: true
+                    elide: Text.ElideRight
+                    Layout.fillWidth: true
                 }
-
                 Label {
                     text: "Intelligent Video Management System"
                     color: window.textSecondary
-                    font.pixelSize: 11
+                    font.pixelSize: 9
+                    elide: Text.ElideRight
+                    Layout.fillWidth: true
                 }
             }
 
-            Item { Layout.fillWidth: true }
+            Rectangle {
+                Layout.preferredWidth: 1
+                Layout.preferredHeight: 28
+                color: window.borderColor
+            }
+
+            Item {
+                Layout.fillWidth: true
+                Layout.minimumWidth: 125
+                Layout.preferredHeight: 48
+                clip: true
+
+                Flickable {
+                    id: headerTabs
+                    anchors.fill: parent
+                    contentWidth: headerTabsRow.implicitWidth
+                    contentHeight: height
+                    boundsBehavior: Flickable.StopAtBounds
+                    flickableDirection: Flickable.HorizontalFlick
+                    clip: true
+                    ScrollBar.horizontal: ScrollBar {
+                        policy: ScrollBar.AsNeeded
+                    }
+                    ScrollBar.vertical: ScrollBar { policy: ScrollBar.AlwaysOff }
+
+                    Row {
+                        id: headerTabsRow
+                        height: parent.height
+                        spacing: 3
+
+                        Repeater {
+                            model: window.openModules
+                            delegate: Rectangle {
+                                id: moduleTab
+                                required property string modelData
+                                property string moduleName: modelData
+                                height: 39
+                                width: Math.max(76, Math.min(174,
+                                       tabTitle.implicitWidth + (moduleName === "Home" ? 27 : 54)))
+                                radius: 5
+                                color: window.activeModule === moduleName
+                                       ? window.panelAltColor : "transparent"
+                                border.color: window.activeModule === moduleName
+                                              ? window.accent : "transparent"
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 9
+                                    anchors.rightMargin: 3
+                                    spacing: 1
+                                    Label {
+                                        id: tabTitle
+                                        Layout.fillWidth: true
+                                        text: moduleTab.moduleName
+                                        color: window.activeModule === moduleTab.moduleName
+                                               ? window.textPrimary : window.textSecondary
+                                        font.pixelSize: 11
+                                        elide: Text.ElideRight
+                                    }
+                                    ToolButton {
+                                        id: closeTab
+                                        visible: moduleTab.moduleName !== "Home"
+                                        implicitWidth: 24
+                                        implicitHeight: 27
+                                        padding: 0
+                                        hoverEnabled: true
+                                        background: Item {}
+                                        contentItem: Label {
+                                            text: "×"
+                                            color: closeTab.hovered ? "#ffaeae" : window.textSecondary
+                                            font.pixelSize: 17
+                                            horizontalAlignment: Text.AlignHCenter
+                                            verticalAlignment: Text.AlignVCenter
+                                        }
+                                        onClicked: window.closeModule(moduleTab.moduleName)
+                                    }
+                                }
+                                MouseArea {
+                                    anchors.fill: parent
+                                    anchors.rightMargin: moduleTab.moduleName === "Home" ? 0 : 27
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: window.openModule(moduleTab.moduleName)
+                                }
+                            }
+                        }
+
+                    }
+                }
+            }
 
             Button {
                 id: settingsButton
                 text: "Configurações"
-                implicitWidth: 112
-                implicitHeight: 32
+                implicitWidth: 103
+                implicitHeight: 31
                 background: Rectangle {
                     radius: 5
                     color: settingsButton.down ? "#315db0"
@@ -526,435 +667,69 @@ ApplicationWindow {
             Label {
                 text: window.runtimeState
                 color: "#7dd3a7"
-                font.pixelSize: 12
+                font.pixelSize: 11
             }
 
             Rectangle {
                 width: 1
-                height: 24
+                height: 22
                 color: window.borderColor
             }
 
             Label {
                 text: sentriumVersion
                 color: window.textSecondary
-                font.pixelSize: 12
+                font.pixelSize: 10
             }
         }
     }
-
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
-
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 40
-            color: "#0d121a"
-            border.color: window.borderColor
-
-            Row {
-                anchors.fill: parent
-                anchors.leftMargin: 8
-                spacing: 3
-
-                Repeater {
-                    model: window.openModules
-                    delegate: Rectangle {
-                        id: moduleTab
-                        property string moduleName: modelData
-                        height: 39
-                        width: Math.max(96, tabTitle.implicitWidth + (moduleName === "Home" ? 30 : 59))
-                        color: window.activeModule === moduleName
-                               ? window.panelColor : "#0d121a"
-                        border.color: window.activeModule === moduleName
-                                      ? window.accent : "transparent"
-
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.leftMargin: 10
-                            anchors.rightMargin: 5
-                            spacing: 4
-
-                            Label {
-                                id: tabTitle
-                                Layout.fillWidth: true
-                                text: moduleTab.moduleName
-                                color: window.activeModule === moduleTab.moduleName
-                                       ? window.textPrimary : window.textSecondary
-                                font.pixelSize: 11
-                                elide: Text.ElideRight
-                            }
-                            ToolButton {
-                                visible: moduleTab.moduleName !== "Home"
-                                text: "×"
-                                font.pixelSize: 14
-                                implicitWidth: 23
-                                implicitHeight: 26
-                                onClicked: window.closeModule(moduleTab.moduleName)
-                            }
-                        }
-                        MouseArea {
-                            anchors.fill: parent
-                            anchors.rightMargin: moduleTab.moduleName === "Home" ? 0 : 27
-                            onClicked: window.openModule(moduleTab.moduleName)
-                        }
-                    }
-                }
-
-                ToolButton {
-                    text: "+ Nova visualização"
-                    height: 38
-                    onClicked: window.openModule("Visualização")
-                }
-                ToolButton {
-                    text: "Reprodução"
-                    height: 38
-                    onClicked: window.openModule("Reprodução")
-                }
-            }
-        }
 
         Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
-            Flickable {
+            HomeDashboard {
                 id: homeScreen
                 anchors.fill: parent
                 visible: window.activeModule === "Home"
-                clip: true
-                contentWidth: width
-                contentHeight: homeLayout.implicitHeight + 60
-                ScrollBar.vertical: ScrollBar {}
-
-                ColumnLayout {
-                    id: homeLayout
-                    x: 24
-                    y: 26
-                    width: homeScreen.width - 48
-                    spacing: 14
-
-                    Label {
-                        text: "Central de operação"
-                        color: window.textPrimary
-                        font.pixelSize: 24
-                        font.bold: true
-                    }
-                    Label {
-                        text: "SENTRIUM VMS  •  Plataforma de gerenciamento de vídeo"
-                        color: window.textSecondary
-                        font.pixelSize: 12
-                    }
-                    Label {
-                        Layout.topMargin: 16
-                        text: "OPERAÇÃO"
-                        color: window.textSecondary
-                        font.pixelSize: 10
-                    }
-                    GridLayout {
-                        Layout.fillWidth: true
-                        columns: 4
-                        rowSpacing: 10
-                        columnSpacing: 10
-
-                        Repeater {
-                            model: [
-                                { title: "Visualização", glyph: "◉", module: "Visualização" },
-                                { title: "Reprodução", glyph: "▶", module: "Reprodução" },
-                                { title: "Dispositivos", glyph: "▦", module: "Dispositivos" },
-                                { title: "Eventos", glyph: "ϟ", module: "Eventos" },
-                                { title: "Regras IA", glyph: "◇", module: "Regras IA" },
-                                { title: "Mídia", glyph: "▣", module: "Mídia" },
-                                { title: "LPR", glyph: "▤", module: "LPR" },
-                                { title: "Configurações", glyph: "⚙", module: "Configurações" }
-                            ]
-
-                            delegate: Rectangle {
-                                id: homeCard
-                                required property var modelData
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: 120
-                                radius: 5
-                                color: cardMouse.containsMouse ? "#253247" : window.panelColor
-                                border.color: cardMouse.containsMouse ? window.accent : window.borderColor
-                                ColumnLayout {
-                                    anchors.fill: parent
-                                    anchors.margins: 14
-                                    spacing: 4
-                                    Label {
-                                        text: homeCard.modelData.glyph
-                                        color: window.accent
-                                        font.pixelSize: 19
-                                    }
-                                    Label {
-                                        text: homeCard.modelData.title
-                                        color: window.textPrimary
-                                        font.pixelSize: 14
-                                        font.bold: true
-                                    }
-                                    Item { Layout.fillHeight: true }
-                                    Label {
-                                        Layout.alignment: Qt.AlignRight
-                                        text: "Abrir  →"
-                                        color: window.accent
-                                        font.pixelSize: 11
-                                    }
-                                }
-                                MouseArea {
-                                    id: cardMouse
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: window.openModule(homeCard.modelData.module)
-                                }
-                            }
-                        }
-                    }
-                    Label {
-                        Layout.topMargin: 18
-                        text: "ESTADO OPERACIONAL"
-                        color: window.textSecondary
-                        font.pixelSize: 10
-                    }
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: 10
-
-                        Repeater {
-                            model: [
-                                { title: "Dispositivos cadastrados", value: String(deviceController.devices.length) },
-                                { title: "Sessões conectadas", value: String(window.connectedCount()) },
-                                { title: "Registro Automático", value: deviceController.registrationListening ? "Ativo" : "Inativo" },
-                                { title: "Cloud / P2P", value: "Em implementação" }
-                            ]
-                            delegate: Rectangle {
-                                required property var modelData
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: 90
-                                color: window.panelColor
-                                border.color: window.borderColor
-                                radius: 4
-                                ColumnLayout {
-                                    anchors.fill: parent
-                                    anchors.margins: 12
-                                    Label {
-                                        text: modelData.title
-                                        color: window.textSecondary
-                                        font.pixelSize: 10
-                                    }
-                                    Label {
-                                        text: modelData.value
-                                        color: window.textPrimary
-                                        font.pixelSize: 15
-                                        font.bold: true
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    Label {
-                        Layout.topMargin: 10
-                        text: "Conectividade real por LAN e Registro Automático em evolução. Recursos sem backend permanecem identificados como indisponíveis."
-                        color: window.textSecondary
-                        font.pixelSize: 11
-                        wrapMode: Text.WordWrap
-                        Layout.fillWidth: true
-                    }
-                }
+                devices: deviceController.devices
+                registrationListening: deviceController.registrationListening
+                panelColor: window.panelColor
+                borderColor: window.borderColor
+                textPrimary: window.textPrimary
+                textSecondary: window.textSecondary
+                accent: window.accent
+                onNavigate: function(moduleName) { window.openModule(moduleName) }
             }
 
-            Rectangle {
+            DevicesWorkspace {
                 id: devicesModule
                 anchors.fill: parent
                 visible: window.activeModule === "Dispositivos"
-                color: "#0f1319"
+                devices: deviceController.devices
+                textPrimary: window.textPrimary
+                textSecondary: window.textSecondary
+                panelColor: window.panelColor
+                panelAltColor: window.panelAltColor
+                borderColor: window.borderColor
+                accent: window.accent
 
-                ColumnLayout {
-                    anchors.fill: parent
-                    anchors.margins: 14
-                    spacing: 10
-
-                    RowLayout {
-                        Layout.fillWidth: true
-                        Label {
-                            text: "Dispositivos"
-                            color: window.textPrimary
-                            font.bold: true
-                            font.pixelSize: 21
-                        }
-                        Item { Layout.fillWidth: true }
-                        Label {
-                            text: "Cadastrados: " + deviceController.devices.length
-                                  + "    Conectados: " + window.connectedCount()
-                            color: window.textSecondary
-                            font.pixelSize: 11
-                        }
-                    }
-                    Label {
-                        text: "Cadastro, conexão e diagnóstico de gravadores e câmeras"
-                        color: window.textSecondary
-                        font.pixelSize: 11
-                    }
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: 8
-                        TextField {
-                            id: deviceSearch
-                            Layout.preferredWidth: 300
-                            placeholderText: "Pesquisar dispositivo"
-                        }
-                        Item { Layout.fillWidth: true }
-                        Button { text: "Novo"; onClicked: addDeviceDialog.open() }
-                        Button {
-                            text: "Conectar"
-                            enabled: window.selectedDevice() !== null
-                                     && (window.selectedDevice().state === "Disconnected"
-                                         || window.selectedDevice().state === "Failed")
-                            onClicked: deviceController.connectDevice(window.selectedDeviceId)
-                        }
-                        Button {
-                            text: "Desconectar"
-                            enabled: window.selectedDevice() !== null
-                                     && window.selectedDevice().state === "Connected"
-                            onClicked: deviceController.disconnectDevice(window.selectedDeviceId)
-                        }
-                        Button {
-                            text: "Excluir"
-                            enabled: window.selectedDevice() !== null
-                            onClicked: {
-                                deviceController.removeDevice(window.selectedDeviceId)
-                                window.selectedDeviceId = ""
-                            }
-                        }
-                    }
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 30
-                        color: window.panelAltColor
-                        border.color: window.borderColor
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.leftMargin: 12
-                            anchors.rightMargin: 12
-                            Label { text: "Dispositivo"; Layout.fillWidth: true; color: window.textSecondary; font.pixelSize: 11 }
-                            Label { text: "Tipo de conexão"; Layout.preferredWidth: 165; color: window.textSecondary; font.pixelSize: 11 }
-                            Label { text: "Canais"; Layout.preferredWidth: 90; color: window.textSecondary; font.pixelSize: 11 }
-                            Label { text: "Estado"; Layout.preferredWidth: 120; color: window.textSecondary; font.pixelSize: 11 }
-                        }
-                    }
-                    ListView {
-                        id: devicesTable
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        clip: true
-                        spacing: 4
-                        model: deviceController.devices
-
-                        delegate: Rectangle {
-                            id: deviceRow
-                            property var item: modelData
-                            width: devicesTable.width
-                            height: (!deviceSearch.text
-                                     || item.name.toLowerCase().indexOf(deviceSearch.text.toLowerCase()) >= 0)
-                                    ? 48 : 0
-                            visible: height > 0
-                            radius: 3
-                            color: window.selectedDeviceId === item.id ? "#273449" : window.panelColor
-                            border.color: window.selectedDeviceId === item.id ? window.accent : window.borderColor
-
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.leftMargin: 12
-                                anchors.rightMargin: 12
-                                spacing: 8
-                                ColumnLayout {
-                                    Layout.fillWidth: true
-                                    spacing: 0
-                                    Label {
-                                        text: deviceRow.item.name
-                                        color: window.textPrimary
-                                        font.pixelSize: 12
-                                        font.bold: true
-                                        elide: Text.ElideRight
-                                    }
-                                    Label {
-                                        text: deviceRow.item.connectionLabel
-                                        color: window.textSecondary
-                                        font.pixelSize: 10
-                                        elide: Text.ElideRight
-                                    }
-                                }
-                                Label {
-                                    Layout.preferredWidth: 165
-                                    text: deviceRow.item.method
-                                    color: window.textSecondary
-                                    font.pixelSize: 11
-                                }
-                                Label {
-                                    Layout.preferredWidth: 90
-                                    text: String(deviceRow.item.channels.length)
-                                    color: window.textSecondary
-                                    font.pixelSize: 11
-                                }
-                                Label {
-                                    Layout.preferredWidth: 120
-                                    text: deviceRow.item.state
-                                    color: deviceRow.item.state === "Connected"
-                                            ? "#7dd3a7" : window.textSecondary
-                                    font.pixelSize: 11
-                                }
-                            }
-                            MouseArea {
-                                anchors.fill: parent
-                                onClicked: window.selectedDeviceId = deviceRow.item.id
-                            }
-                        }
-                    }
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 146
-                        radius: 4
-                        color: window.panelColor
-                        border.color: window.borderColor
-                        ColumnLayout {
-                            anchors.fill: parent
-                            anchors.margins: 12
-                            spacing: 7
-                            Label {
-                                text: "Dispositivo selecionado"
-                                color: window.textPrimary
-                                font.bold: true
-                                font.pixelSize: 12
-                            }
-                            Label {
-                                Layout.fillWidth: true
-                                text: window.selectedDevice() !== null
-                                      ? window.selectedDevice().name + "  •  " + window.selectedDevice().method
-                                        + "  •  " + window.selectedDevice().state
-                                      : "Selecione um dispositivo na tabela"
-                                color: window.textSecondary
-                                font.pixelSize: 11
-                                elide: Text.ElideRight
-                            }
-                            Label {
-                                Layout.fillWidth: true
-                                text: window.selectedDevice() !== null
-                                      ? window.selectedDevice().diagnostic : ""
-                                color: window.textSecondary
-                                font.pixelSize: 11
-                                wrapMode: Text.WordWrap
-                            }
-                            Label {
-                                Layout.fillWidth: true
-                                text: window.selectedDevice() !== null
-                                      ? "Canais retornados pelo NetSDK: " + window.selectedDevice().channels.length
-                                      : ""
-                                color: window.textSecondary
-                                font.pixelSize: 11
-                            }
-                        }
-                    }
+                onAddDevice: addDeviceDialog.open()
+                onConnectDevice: function(deviceId) { deviceController.connectDevice(deviceId) }
+                onDisconnectDevice: function(deviceId) { deviceController.disconnectDevice(deviceId) }
+                onRemoveDevice: function(deviceId) { deviceController.removeDevice(deviceId) }
+                onOpenCamera: function(deviceId, channelIndex, extra) {
+                    let tabs = window.openModules.filter(function(name) {
+                        return name.indexOf("Visualização") === 0
+                    })
+                    if (tabs.length > 0)
+                        window.activeModule = tabs[0]
+                    else
+                        window.newVisualization()
+                    window.openCamera(deviceId, channelIndex, extra)
                 }
             }
 
@@ -1173,8 +948,8 @@ ApplicationWindow {
                 orientation: Qt.Horizontal
 
         Rectangle {
-            SplitView.preferredWidth: 310
-            SplitView.minimumWidth: 250
+            SplitView.preferredWidth: 268
+            SplitView.minimumWidth: 205
             color: window.panelColor
             border.color: window.borderColor
 
@@ -1182,293 +957,39 @@ ApplicationWindow {
                 anchors.fill: parent
                 spacing: 0
 
-                RowLayout {
-                    Layout.fillWidth: true
-                    Layout.leftMargin: 14
-                    Layout.rightMargin: 10
-                    Layout.topMargin: 10
-                    Layout.bottomMargin: 8
-
-                    Label {
-                        text: "DISPOSITIVOS"
-                        color: window.textSecondary
-                        font.pixelSize: 11
-                        font.bold: true
-                    }
-
-                    Item { Layout.fillWidth: true }
-
-                    Button {
-                        id: addDeviceButton
-                        text: "+ Adicionar"
-                        Layout.preferredWidth: 106
-                        Layout.preferredHeight: 32
-                        padding: 0
-                        hoverEnabled: true
-                        background: Rectangle {
-                            radius: 5
-                            color: !addDeviceButton.enabled
-                                   ? window.panelAltColor
-                                   : addDeviceButton.down
-                                     ? "#315db0"
-                                     : addDeviceButton.hovered
-                                       ? "#386dc6" : window.accent
-                            border.color: addDeviceButton.enabled
-                                          ? "#6da4ff" : window.borderColor
-                        }
-                        contentItem: Label {
-                            text: addDeviceButton.text
-                            color: "white"
-                            font.pixelSize: 11
-                            font.bold: true
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                        onClicked: addDeviceDialog.open()
-                    }
-                }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    height: 1
-                    color: window.borderColor
-                }
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    Layout.leftMargin: 12
-                    Layout.rightMargin: 12
-                    Layout.topMargin: 5
-                    Layout.bottomMargin: 5
-
-                    Label {
-                        Layout.fillWidth: true
-                        elide: Text.ElideRight
-                        text: deviceController.registrationListening
-                              ? "Registro Automático ativo"
-                              : "Registro Automático inativo"
-                        color: deviceController.registrationListening
-                               ? "#7dd3a7" : window.textSecondary
-                        font.pixelSize: 10
-                    }
-
-                    ToolButton {
-                        text: "Abrir"
-                        onClicked: window.openModule("Configurações")
-                    }
-                }
-
-                Rectangle {
-                    visible: deviceController.lastError.length > 0
-                    Layout.fillWidth: true
-                    implicitHeight: errorLabel.implicitHeight + 16
-                    color: "#352126"
-
-                    Label {
-                        id: errorLabel
-                        anchors.fill: parent
-                        anchors.margins: 8
-                        text: deviceController.lastError
-                        color: "#ffb4b4"
-                        wrapMode: Text.WordWrap
-                        font.pixelSize: 11
-                    }
-                }
-
-                Item {
-                    visible: deviceController.devices.length === 0
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-
-                    Column {
-                        anchors.centerIn: parent
-                        width: parent.width - 48
-                        spacing: 8
-
-                        Label {
-                            width: parent.width
-                            horizontalAlignment: Text.AlignHCenter
-                            text: "Nenhum dispositivo"
-                            color: window.textPrimary
-                            font.pixelSize: 14
-                            font.bold: true
-                        }
-
-                        Label {
-                            width: parent.width
-                            horizontalAlignment: Text.AlignHCenter
-                            wrapMode: Text.WordWrap
-                            text: "Adicione um gravador por LAN ou Registro Automático. Cloud/P2P independente está em desenvolvimento."
-                            color: window.textSecondary
-                            font.pixelSize: 12
-                        }
-                    }
-                }
-
-                ListView {
-                    id: deviceList
-                    visible: deviceController.devices.length > 0
+                DeviceExplorer {
+                    id: deviceExplorer
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     Layout.margins: 8
-                    clip: true
-                    spacing: 6
-                    model: deviceController.devices
-
-                    delegate: Item {
-                        id: deviceDelegate
-                        width: deviceList.width
-                        height: deviceCard.implicitHeight + 2
-                        property var deviceData: modelData
-
-                        Rectangle {
-                            id: deviceCard
-                            width: parent.width
-                            implicitHeight: deviceContent.implicitHeight + 20
-                            radius: 6
-                            color: window.panelAltColor
-                            border.color: window.borderColor
-
-                            ColumnLayout {
-                                id: deviceContent
-                                anchors.left: parent.left
-                                anchors.right: parent.right
-                                anchors.top: parent.top
-                                anchors.margins: 10
-                                spacing: 5
-
-                                RowLayout {
-                                    Layout.fillWidth: true
-
-                                    Label {
-                                        Layout.fillWidth: true
-                                        text: deviceDelegate.deviceData.name
-                                        color: window.textPrimary
-                                        font.bold: true
-                                        elide: Text.ElideRight
-                                    }
-
-                                    Label {
-                                        text: deviceDelegate.deviceData.state
-                                        color: deviceDelegate.deviceData.state === "Connected"
-                                               ? "#7dd3a7"
-                                               : deviceDelegate.deviceData.state === "Failed"
-                                                 ? "#ff9d9d"
-                                                 : window.textSecondary
-                                        font.pixelSize: 10
-                                    }
-                                }
-
-                                // Cloud status comes from measured tunnel telemetry only.
-                                // Unknown never becomes Direct merely because a port exists.
-                                Label {
-                                    visible: deviceDelegate.deviceData.method === "Cloud"
-                                             && deviceDelegate.deviceData.state === "Connected"
-                                             && deviceDelegate.deviceData.cloudRoute !== "Unknown"
-                                    Layout.fillWidth: true
-                                    text: deviceDelegate.deviceData.cloudRoute === "Relay"
-                                          ? "Cloud / Relay" : "Cloud / P2P direto"
-                                    color: deviceDelegate.deviceData.cloudRoute === "Relay"
-                                           ? "#f6cf74" : "#6da4ff"
-                                    font.pixelSize: 10
-                                }
-
-                                Label {
-                                    Layout.fillWidth: true
-                                    text: deviceDelegate.deviceData.connectionLabel
-                                    color: window.textSecondary
-                                    font.pixelSize: 11
-                                    elide: Text.ElideRight
-                                }
-
-                                Label {
-                                    visible: deviceDelegate.deviceData.diagnostic.length > 0
-                                    Layout.fillWidth: true
-                                    text: deviceDelegate.deviceData.diagnostic
-                                    color: deviceDelegate.deviceData.state === "Failed"
-                                           ? "#ffb4b4"
-                                           : window.textSecondary
-                                    wrapMode: Text.WordWrap
-                                    font.pixelSize: 10
-                                }
-
-                                Repeater {
-                                    model: deviceDelegate.deviceData.channels
-
-                                    delegate: RowLayout {
-                                        Layout.fillWidth: true
-                                        spacing: 7
-
-                                        Rectangle {
-                                            width: 6
-                                            height: 6
-                                            radius: 3
-                                            color: "#596579"
-                                        }
-
-                                        Label {
-                                            text: modelData.name
-                                            color: window.textSecondary
-                                            font.pixelSize: 11
-                                            Layout.fillWidth: true
-                                        }
-                                        Button {
-                                            text: "▶ Extra"
-                                            enabled: deviceDelegate.deviceData.state === "Connected"
-                                            onClicked: window.openCamera(
-                                                deviceDelegate.deviceData.id, modelData.index, true)
-                                            ToolTip.visible: hovered
-                                            ToolTip.text: "Abre o canal Extra dentro do mosaico."
-                                        }
-                                        Button {
-                                            text: "▶ Principal"
-                                            enabled: deviceDelegate.deviceData.state === "Connected"
-                                            onClicked: window.openCamera(
-                                                deviceDelegate.deviceData.id, modelData.index, false)
-                                            ToolTip.visible: hovered
-                                            ToolTip.text: "Abre o canal Principal dentro do mosaico."
-                                        }
-                                    }
-                                }
-
-                                RowLayout {
-                                    Layout.fillWidth: true
-
-                                    Button {
-                                        text: "Abrir canais"
-                                        visible: deviceDelegate.deviceData.state === "Connected"
-                                        enabled: deviceDelegate.deviceData.channels.length > 0
-                                        onClicked: window.openRecorder(deviceDelegate.deviceData)
-                                        ToolTip.visible: hovered
-                                        ToolTip.text: "Preenche o mosaico com os canais disponíveis (fluxo Extra)."
-                                    }
-
-                                    Button {
-                                        text: "Conectar"
-                                        visible: deviceDelegate.deviceData.state === "Disconnected"
-                                                 || deviceDelegate.deviceData.state === "Failed"
-                                        onClicked: deviceController.connectDevice(deviceDelegate.deviceData.id)
-                                    }
-
-                                    Button {
-                                        text: "Desconectar"
-                                        visible: deviceDelegate.deviceData.state === "Connected"
-                                                 || (deviceDelegate.deviceData.method === "AutoRegistration"
-                                                     && deviceDelegate.deviceData.state === "Connecting")
-                                        onClicked: deviceController.disconnectDevice(deviceDelegate.deviceData.id)
-                                    }
-
-                                    Item { Layout.fillWidth: true }
-
-                                    ToolButton {
-                                        text: "Remover"
-                                        enabled: deviceDelegate.deviceData.state !== "Disconnecting"
-                                        onClicked: deviceController.removeDevice(deviceDelegate.deviceData.id)
-                                    }
-                                }
-                            }
-                        }
+                    devices: deviceController.devices
+                    groupNames: deviceController.deviceGroups
+                    mosaicSlots: deviceController.mosaicSlots
+                    liveEventSelections: mosaicWorkspace.liveEventSelections
+                    textPrimary: window.textPrimary
+                    textSecondary: window.textSecondary
+                    accent: window.accent
+                    borderColor: window.borderColor
+                    panelAltColor: window.panelAltColor
+                    onCreateGroup: function(groupName) { deviceController.createDeviceGroup(groupName) }
+                    onMoveDevice: function(deviceId, groupName) {
+                        deviceController.setDeviceGroup(deviceId, groupName)
                     }
+                    onToggleLiveEvents: function(deviceId, channelIndex) {
+                        mosaicWorkspace.toggleLiveEvents(deviceId, channelIndex)
+                    }
+                    onOpenCamera: function(deviceId, channelIndex, extra) {
+                        window.openCamera(deviceId, channelIndex, extra)
+                    }
+                    onOpenRecorder: function(deviceData, extra) {
+                        window.openRecorder(deviceData, extra)
+                    }
+                    onCloseDeviceChannels: function(deviceId) {
+                        deviceController.closeDeviceChannels(deviceId)
+                    }
+                    onConnectDevice: function(deviceId) { deviceController.connectDevice(deviceId) }
+                    onDisconnectDevice: function(deviceId) { deviceController.disconnectDevice(deviceId) }
+                    onRemoveDevice: function(deviceId) { deviceController.removeDevice(deviceId) }
                 }
             }
         }
@@ -1488,7 +1009,264 @@ ApplicationWindow {
                     color: "#0f1319"
                         property var slots: deviceController.mosaicSlots
                         property int capacity: 16
-                        property int columns: capacity === 1 ? 1 : capacity === 4 ? 2 : capacity === 9 ? 3 : 4
+                        property string layoutMode: "grid"
+                        property int focusedSlot: -1
+                        property int tileGap: 2
+                        property int draggedTileSource: -1
+                        property int hoveredTileTarget: -1
+                        property real dragStartScreenX: 0
+                        property real dragStartScreenY: 0
+                        property bool dragActivated: false
+                        // Selection only: does not enable Server IA or create events.
+                        property var liveEventSelections: ({})
+                        function liveEventKey(deviceId, channel) { return deviceId + ":" + channel }
+                        function isLiveEventsSelected(deviceId, channel) {
+                            return liveEventSelections[liveEventKey(deviceId, channel)] === true
+                        }
+                        function toggleLiveEvents(deviceId, channel) {
+                            if (!deviceId || channel < 0) return
+                            const key = liveEventKey(deviceId, channel)
+                            const next = Object.assign({}, liveEventSelections)
+                            if (next[key]) delete next[key]
+                            else next[key] = true
+                            liveEventSelections = next
+                        }
+
+                        property int rightColumns: capacity <= 6 ? 2 : capacity <= 10 ? 3 : 4
+                        property int columns: layoutMode === "grid"
+                            ? Math.round(Math.sqrt(capacity)) : rightColumns + 2
+                        property int rows: layoutMode === "grid"
+                            ? columns : Math.ceil((capacity - 1) / rightColumns)
+
+                        function cellFor(slot) {
+                            if (layoutMode === "grid")
+                                return {col: slot % columns, row: Math.floor(slot / columns),
+                                        colSpan: 1, rowSpan: 1}
+                            if (slot === 0)
+                                return {col: 0, row: 0, colSpan: 2, rowSpan: rows}
+                            const offset = slot - 1
+                            return {col: 2 + offset % rightColumns,
+                                    row: Math.floor(offset / rightColumns),
+                                    colSpan: 1, rowSpan: 1}
+                        }
+
+                        function dropRecorder(deviceId, startSlot) {
+                            if (startSlot < 0 || startSlot >= capacity) return
+                            const records = deviceController.devices
+                            let device = null
+                            for (let i = 0; i < records.length; ++i) {
+                                if (records[i].id === deviceId) {
+                                    device = records[i]
+                                    break
+                                }
+                            }
+                            if (device === null || device.state !== "Connected"
+                                || !device.channels || device.channels.length === 0)
+                                return
+                            const numberOfCameras = Math.min(64, device.channels.length)
+                            // Include all cameras: grow to the smallest grid if the
+                            // requested contiguous range fits. At slot 63, wrap to
+                            // the beginning rather than silently dropping cameras.
+                            const required = Math.min(64, startSlot + numberOfCameras)
+                            if (required > capacity || numberOfCameras > capacity) {
+                                const grids = [1, 4, 9, 16, 25, 36, 49, 64]
+                                for (let j = 0; j < grids.length; ++j) {
+                                    if (grids[j] >= required
+                                        && grids[j] >= numberOfCameras) {
+                                        applyLayout(grids[j], "grid")
+                                        break
+                                    }
+                                }
+                            }
+                            for (let c = 0; c < numberOfCameras; ++c) {
+                                const target = (startSlot + c) % capacity
+                                deviceController.openLiveInSlot(
+                                    deviceId, device.channels[c].index, target, true)
+                            }
+                            window.activeMosaicSlot = -1
+                        }
+
+                        function acceptTreeOrTileDrop(event, targetSlot) {
+                            const source = event.source
+                            if (!source || targetSlot < 0 || targetSlot >= capacity)
+                                return
+                            if (source.payloadKind === "camera") {
+                                deviceController.openLiveInSlot(
+                                    source.payloadDeviceId, source.payloadChannel, targetSlot, true)
+                                window.activeMosaicSlot = -1
+                                event.acceptProposedAction()
+                            } else if (source.payloadKind === "recorder") {
+                                dropRecorder(source.payloadDeviceId, targetSlot)
+                                event.acceptProposedAction()
+                            } else if (source.payloadKind === "tile") {
+                                if (source.payloadSourceSlot !== targetSlot) {
+                                    deviceController.swapLiveSlots(
+                                        source.payloadSourceSlot, targetSlot)
+                                }
+                                event.acceptProposedAction()
+                            }
+                        }
+
+                        // Compute the destination from actual tile coordinates.
+                        // This keeps tile reordering independent of DropArea/
+                        // WindowContainer child HWND drag delivery.
+                        function tileAt(x, y) {
+                            if (x < 0 || y < 0 || x >= videoMosaic.width
+                                || y >= videoMosaic.height)
+                                return -1
+                            for (let i = 0; i < capacity; ++i) {
+                                const tile = mosaicRepeater.itemAt(i)
+                                if (tile && tile.visible
+                                    && x >= tile.x && x < tile.x + tile.width
+                                    && y >= tile.y && y < tile.y + tile.height)
+                                    return i
+                            }
+                            return -1
+                        }
+
+                        function beginTileDrag(sourceSlot) {
+                            if (sourceSlot < 0 || sourceSlot >= capacity
+                                || !slots[sourceSlot] || !slots[sourceSlot].occupied)
+                                return
+                            const cursor = deviceController.cursorScreenPos()
+                            draggedTileSource = sourceSlot
+                            dragStartScreenX = cursor.x
+                            dragStartScreenY = cursor.y
+                            dragActivated = false
+                            hoveredTileTarget = -1
+                        }
+
+                        function resetTileDrag() {
+                            draggedTileSource = -1
+                            hoveredTileTarget = -1
+                            dragActivated = false
+                        }
+
+                        // Poll the actual desktop pointer while dragging. MouseArea
+                        // release and DropArea events are not reliable when a
+                        // native NetSDK QWindow takes the pointer under the tile.
+                        Timer {
+                            interval: 16
+                            running: mosaicWorkspace.draggedTileSource >= 0
+                            repeat: true
+                            onTriggered: {
+                                const cursor = deviceController.cursorScreenPos()
+                                const dx = cursor.x - mosaicWorkspace.dragStartScreenX
+                                const dy = cursor.y - mosaicWorkspace.dragStartScreenY
+                                if (dx * dx + dy * dy >= 64)
+                                    mosaicWorkspace.dragActivated = true
+                                const local = videoMosaic.mapFromGlobal(cursor.x, cursor.y)
+                                const destination = mosaicWorkspace.tileAt(local.x, local.y)
+                                mosaicWorkspace.hoveredTileTarget =
+                                    mosaicWorkspace.dragActivated ? destination : -1
+                                if (!deviceController.isLeftMouseButtonDown()) {
+                                    const source = mosaicWorkspace.draggedTileSource
+                                    const moved = mosaicWorkspace.dragActivated
+                                    mosaicWorkspace.resetTileDrag()
+                                    if (moved && destination >= 0 && destination !== source)
+                                        deviceController.swapLiveSlots(source, destination)
+                                }
+                            }
+                        }
+
+                        function applyLayout(count, mode) {
+                            if (count === capacity && mode === layoutMode) return
+                            // Resize native slots before creating more QML tiles.
+                            deviceController.setMosaicCapacity(count)
+                            capacity = count
+                            layoutMode = mode
+                            focusedSlot = -1
+                            if (window.activeMosaicSlot >= count)
+                                window.activeMosaicSlot = -1
+                        }
+
+                        MosaicLayoutsPopup {
+                            id: allLayoutsPopup
+                            parent: mosaicWorkspace
+                            x: Math.max(4, Math.min(210, mosaicWorkspace.width - width - 8))
+                            y: 41
+                            selectedCapacity: mosaicWorkspace.capacity
+                            selectedMode: mosaicWorkspace.layoutMode
+                            textPrimary: window.textPrimary
+                            textSecondary: window.textSecondary
+                            borderColor: window.borderColor
+                            panelColor: window.panelColor
+                            accent: window.accent
+                            onLayoutSelected: function(count, mode) {
+                                mosaicWorkspace.applyLayout(count, mode)
+                            }
+                        }
+
+                        function openTileContextAt(slot, x, y) {
+                            if (slot < 0 || slot >= capacity) return
+                            cameraContextMenu.targetSlot = slot
+                            // Native Windows child windows may use a different
+                            // coordinate system. Qt positions the menu at the
+                            // real desktop pointer when popup() has no offset.
+                            cameraContextMenu.popup()
+                        }
+
+                        function openTileContext(slot, source, localX, localY) {
+                            const pos = source.mapToItem(mosaicWorkspace, localX, localY)
+                            openTileContextAt(slot, pos.x, pos.y)
+                        }
+
+                        Connections {
+                            target: deviceController
+                            function onVideoSurfaceContextRequested(slot, x, y) {
+                                const pos = mosaicWorkspace.mapFromGlobal(x, y)
+                                mosaicWorkspace.openTileContextAt(slot, pos.x, pos.y)
+                            }
+                            function onVideoSurfaceLeftPressed(slot) {
+                                // Clicking a native video HWND selects it, but
+                                // must not silently enter a drag transaction.
+                                // Movement starts only from the compact title
+                                // strip, so an ordinary click cannot swap streams.
+                                window.activeMosaicSlot = slot
+                            }
+                        }
+
+                        CameraContextMenu {
+                            id: cameraContextMenu
+                            parent: mosaicWorkspace
+                            width: 292
+                            slots: deviceController.mosaicSlots
+                            focusedSlot: mosaicWorkspace.focusedSlot
+                            favorite: hasCamera && deviceExplorer.isFavorite(tile.deviceId, tile.channel)
+                            liveEventsSelected: hasCamera && mosaicWorkspace.isLiveEventsSelected(
+                                tile.deviceId, tile.channel)
+                            liveEventsFeedConnected: false
+
+
+                            onCloseChannel: function(slot) {
+                                deviceController.clearLiveSlot(slot)
+                            }
+                            onCloseAllChannels: {
+                                deviceController.clearAllLive()
+                                window.activeMosaicSlot = -1
+                            }
+                            onSelectTile: function(slot) {
+                                window.activeMosaicSlot = slot
+                            }
+                            onToggleMaximize: function(slot) {
+                                window.activeMosaicSlot = slot
+                                mosaicWorkspace.focusedSlot =
+                                    mosaicWorkspace.focusedSlot === slot ? -1 : slot
+                            }
+                            onSetStream: function(slot, extra) {
+                                if (slot < 0 || slot >= deviceController.mosaicSlots.length) return
+                                const current = deviceController.mosaicSlots[slot]
+                                if (!current.occupied || current.channel < 0) return
+                                deviceController.openLiveInSlot(
+                                    current.deviceId, current.channel, slot, extra)
+                            }
+                            onToggleFavorite: function(deviceId, channelIndex) {
+                                deviceExplorer.toggleFavorite(deviceId, channelIndex)
+                            }
+                            onToggleLiveEvents: function(deviceId, channelIndex) {
+                                mosaicWorkspace.toggleLiveEvents(deviceId, channelIndex)
+                            }
+                        }
 
                         ColumnLayout {
                             anchors.fill: parent
@@ -1518,16 +1296,22 @@ ApplicationWindow {
                                             text: String(modelData)
                                             implicitWidth: 42
                                             implicitHeight: 30
-                                            highlighted: mosaicWorkspace.capacity === modelData
-                                            onClicked: {
-                                                mosaicWorkspace.capacity = modelData
-                                                deviceController.setMosaicCapacity(modelData)
-                                                if (window.activeMosaicSlot >= modelData)
-                                                    window.activeMosaicSlot = -1
-                                            }
+                                            highlighted: mosaicWorkspace.layoutMode === "grid"
+                                                && mosaicWorkspace.capacity === modelData
+                                            onClicked: mosaicWorkspace.applyLayout(modelData, "grid")
                                         }
                                     }
+                                    Button {
+                                        text: "▦  Todos os layouts  ▾"
+                                        implicitHeight: 30
+                                        onClicked: allLayoutsPopup.open()
+                                    }
                                     Item { Layout.fillWidth: true }
+                                    Button {
+                                        text: "Restaurar grade"
+                                        visible: mosaicWorkspace.focusedSlot >= 0
+                                        onClicked: mosaicWorkspace.focusedSlot = -1
+                                    }
                                     Label {
                                         text: "Selecione um tile para direcionar a câmera"
                                         color: window.textSecondary
@@ -1549,78 +1333,142 @@ ApplicationWindow {
                                 Layout.fillHeight: true
                                 clip: true
 
-                                Grid {
+                                Item {
                                     id: videoMosaic
                                     anchors.fill: parent
-                                    columns: mosaicWorkspace.columns
-                                    spacing: 2
+                                    property real cellWidth: Math.max(0,
+                                        (width - mosaicWorkspace.tileGap * (mosaicWorkspace.columns - 1))
+                                        / mosaicWorkspace.columns)
+                                    property real cellHeight: Math.max(0,
+                                        (height - mosaicWorkspace.tileGap * (mosaicWorkspace.rows - 1))
+                                        / mosaicWorkspace.rows)
 
                                     Repeater {
+                                        id: mosaicRepeater
                                         model: mosaicWorkspace.capacity
                                         delegate: Rectangle {
                                             id: mosaicTile
                                             required property int index
                                             property var itemData: mosaicWorkspace.slots[index]
                                             property bool isActiveTile: window.activeMosaicSlot === index
-                                            width: Math.max(0, (videoMosaic.width -
-                                                videoMosaic.spacing * (videoMosaic.columns - 1)) / videoMosaic.columns)
-                                            height: Math.max(0, (videoMosaic.height -
-                                                videoMosaic.spacing * (videoMosaic.columns - 1)) / videoMosaic.columns)
+                                            property var cell: mosaicWorkspace.cellFor(index)
+                                            visible: mosaicWorkspace.focusedSlot < 0
+                                                || mosaicWorkspace.focusedSlot === index
+                                            x: mosaicWorkspace.focusedSlot >= 0 ? 0
+                                               : cell.col * (videoMosaic.cellWidth + mosaicWorkspace.tileGap)
+                                            y: mosaicWorkspace.focusedSlot >= 0 ? 0
+                                               : cell.row * (videoMosaic.cellHeight + mosaicWorkspace.tileGap)
+                                            width: mosaicWorkspace.focusedSlot >= 0
+                                                ? videoMosaic.width
+                                                : cell.colSpan * videoMosaic.cellWidth
+                                                  + (cell.colSpan - 1) * mosaicWorkspace.tileGap
+                                            height: mosaicWorkspace.focusedSlot >= 0
+                                                ? videoMosaic.height
+                                                : cell.rowSpan * videoMosaic.cellHeight
+                                                  + (cell.rowSpan - 1) * mosaicWorkspace.tileGap
                                             color: "#090e15"
-                                            border.color: isActiveTile ? window.accent : "#344354"
+                                            border.color: tileDropArea.containsDrag
+                                                || mosaicWorkspace.hoveredTileTarget === index
+                                                ? "#70baff" : isActiveTile ? window.accent : "#344354"
                                             border.width: isActiveTile ? 2 : 1
                                             clip: true
 
+                                            // Stability fallback: one compact fixed strip,
+                                            // not a focus-stealing popup recreated on hover.
+                                            // This is temporary until live frames render
+                                            // in a composited scene with true overlay support.
                                             Rectangle {
                                                 id: tileHeader
-                                                height: 24
                                                 anchors.top: parent.top
                                                 anchors.left: parent.left
                                                 anchors.right: parent.right
-                                                color: "#101a27"
-                                                Label {
-                                                    anchors.left: parent.left
-                                                    anchors.leftMargin: 7
-                                                    anchors.verticalCenter: parent.verticalCenter
-                                                    width: parent.width - 90
-                                                    text: mosaicTile.itemData.occupied
-                                                        ? mosaicTile.itemData.channelName +
-                                                          " — " + mosaicTile.itemData.deviceName
-                                                        : "Canal " + String(index + 1).padStart(2, "0")
-                                                    elide: Text.ElideRight
-                                                    color: window.textPrimary
-                                                    font.pixelSize: 10
-                                                }
-                                                Label {
-                                                    anchors.right: parent.right
-                                                    anchors.rightMargin: 9
-                                                    anchors.verticalCenter: parent.verticalCenter
-                                                    text: mosaicTile.itemData.occupied
-                                                          ? (mosaicTile.itemData.extra ? "Extra" : "Principal")
-                                                          : ""
-                                                    color: "#9bc3ff"
-                                                    font.pixelSize: 9
+                                                height: mosaicWorkspace.capacity > 16 ? 16 : 19
+                                                color: "#131c29"
+                                                RowLayout {
+                                                    anchors.fill: parent
+                                                    anchors.leftMargin: 5
+                                                    anchors.rightMargin: 5
+                                                    spacing: 4
+                                                    Label {
+                                                        Layout.fillWidth: true
+                                                        Layout.minimumWidth: 9
+                                                        text: mosaicTile.itemData.occupied
+                                                            ? mosaicTile.itemData.channelName
+                                                            : "Canal " + (mosaicTile.index + 1)
+                                                        color: window.textPrimary
+                                                        font.pixelSize: 10
+                                                        elide: Text.ElideRight
+                                                    }
+                                                    Label {
+                                                        visible: mosaicTile.itemData.occupied
+                                                            && mosaicTile.itemData.aiState === "Active"
+                                                        text: "IA"
+                                                        color: "#c1a5ff"
+                                                        font.pixelSize: 9
+                                                    }
+                                                    Label {
+                                                        visible: mosaicTile.itemData.occupied
+                                                            && mosaicWorkspace.isLiveEventsSelected(
+                                                                mosaicTile.itemData.deviceId,
+                                                                mosaicTile.itemData.channel)
+                                                        text: "EVENTOS"
+                                                        color: "#71adff"
+                                                        font.pixelSize: 9
+                                                    }
+                                                    Label {
+                                                        visible: mosaicTile.itemData.occupied
+                                                        text: mosaicTile.itemData.extra ? "Extra" : "Principal"
+                                                        color: "#9bc3ff"
+                                                        font.pixelSize: 9
+                                                    }
                                                 }
                                                 MouseArea {
                                                     anchors.fill: parent
-                                                    onClicked: window.activeMosaicSlot = index
+                                                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                                    preventStealing: true
+                                                    onPressed: function(mouse) {
+                                                        if (mouse.button === Qt.LeftButton)
+                                                            mosaicWorkspace.beginTileDrag(mosaicTile.index)
+                                                    }
+                                                    onClicked: function(mouse) {
+                                                        if (mouse.button === Qt.RightButton)
+                                                            mosaicWorkspace.openTileContextAt(
+                                                                mosaicTile.index, mouse.x, mouse.y)
+                                                        else
+                                                            window.activeMosaicSlot = mosaicTile.index
+                                                    }
+                                                    onDoubleClicked: function(mouse) {
+                                                        if (mouse.button === Qt.LeftButton)
+                                                            mosaicWorkspace.focusedSlot =
+                                                                mosaicWorkspace.focusedSlot === mosaicTile.index
+                                                                    ? -1 : mosaicTile.index
+                                                    }
                                                 }
                                             }
 
                                             Item {
                                                 id: videoViewport
+                                                // Compact 16–19px title strip; no bottom
+                                                // footer and no floating/independent window.
                                                 anchors.top: tileHeader.bottom
-                                                anchors.bottom: tileFooter.top
+                                                anchors.bottom: parent.bottom
                                                 anchors.left: parent.left
                                                 anchors.right: parent.right
                                                 clip: true
 
                                                 // Qt 6.12 WindowContainer owns QWindow position, clipping and
                                                 // visibility. NetSDK draws real frames in the child HWND.
-                                                WindowContainer {
+                                                // A native QWindow is attached only for live tiles,
+                                                // rather than creating 64 HWNDs for empty positions.
+                                                Loader {
                                                     anchors.fill: parent
-                                                    window: deviceController.liveSurface(index)
-                                                    visible: mosaicTile.itemData.occupied
+                                                    active: mosaicTile.itemData.occupied
+                                                    sourceComponent: Component {
+                                                        WindowContainer {
+                                                            anchors.fill: parent
+                                                            window: deviceController.liveSurface(mosaicTile.index)
+                                                        }
+                                                    }
                                                 }
 
                                                 Label {
@@ -1630,35 +1478,28 @@ ApplicationWindow {
                                                     font.pixelSize: 10
                                                     visible: !mosaicTile.itemData.occupied
                                                 }
-                                            }
 
-                                            Rectangle {
-                                                id: tileFooter
-                                                anchors.bottom: parent.bottom
-                                                anchors.left: parent.left
-                                                anchors.right: parent.right
-                                                height: 20
-                                                color: "#101a27"
-                                                Row {
-                                                    anchors.left: parent.left
-                                                    anchors.verticalCenter: parent.verticalCenter
-                                                    anchors.leftMargin: 6
-                                                    spacing: 7
-                                                    Label {
-                                                        text: mosaicTile.itemData.occupied
-                                                            ? mosaicTile.itemData.status : "Livre"
-                                                        color: window.textSecondary
-                                                        font.pixelSize: 9
+                                                // Right click overlay, where supported by the native
+                                                // WindowContainer. Header context access is always present.
+                                                MouseArea {
+                                                    anchors.fill: parent
+                                                    acceptedButtons: Qt.RightButton
+                                                    onClicked: function(mouse) {
+                                                        mosaicWorkspace.openTileContext(
+                                                            index, videoViewport, mouse.x, mouse.y)
                                                     }
                                                 }
-                                                ToolButton {
-                                                    anchors.right: parent.right
-                                                    anchors.verticalCenter: parent.verticalCenter
-                                                    implicitWidth: 26
-                                                    implicitHeight: 19
-                                                    text: "×"
-                                                    enabled: mosaicTile.itemData.occupied
-                                                    onClicked: deviceController.clearLiveSlot(index)
+                                            }
+
+                                            // Accept drags on any tile, occupied or empty.
+                                            // Only the affected slots are reopened/replaced.
+                                            DropArea {
+                                                id: tileDropArea
+                                                anchors.fill: parent
+                                                keys: ["sentrium/camera",
+                                                       "sentrium/recorder"]
+                                                onDropped: function(drop) {
+                                                    mosaicWorkspace.acceptTreeOrTileDrop(drop, mosaicTile.index)
                                                 }
                                             }
                                         }

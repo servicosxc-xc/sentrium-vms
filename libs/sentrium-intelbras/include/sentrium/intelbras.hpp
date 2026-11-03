@@ -17,6 +17,7 @@ struct RegistrationNotice {
 };
 
 using RegistrationCallback = std::function<void(const RegistrationNotice&)>;
+using SessionStatusCallback = std::function<void(device::Session, bool online)>;
 
 struct ListenerResult {
     bool success = false;
@@ -48,6 +49,9 @@ public:
         std::uint16_t port,
         RegistrationCallback callback);
     void stopRegistration() noexcept;
+    // NetSDK owns its reconnect attempt. The callback only reports SDK-confirmed
+    // transport transitions so the caller can refresh UI and live previews.
+    void setSessionStatusCallback(SessionStatusCallback callback);
     device::ConnectResult connectRegistered(
         const device::LoginRequest& peer,
         const std::string& expected_registration_id);

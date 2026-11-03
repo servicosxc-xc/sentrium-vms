@@ -4,6 +4,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QTimer>
 
 #include <unordered_map>
 #include <unordered_set>
@@ -45,6 +46,7 @@ signals:
     void registrationReceived(
         const QString& registrationId, const QString& peer, quint16 port, bool disconnected);
     void registrationLost(const QString& id);
+    void sdkSessionStatus(quint64 handle, bool online);
     // Sanitized operational observation. Never include registration ID, peer or credentials.
     void registrationObservation(const QString& message);
     void disconnectFinished(
@@ -55,12 +57,16 @@ signals:
 private slots:
     void onRegistrationReceived(
         const QString& registrationId, const QString& peer, quint16 port, bool disconnected);
+    void onSdkSessionStatus(quint64 handle, bool online);
+    void retryPendingRegistrations();
 
 private:
     struct RegisteredTarget {
         QString registrationId;
         QString username;
         QString password;
+        QString lastPeer;
+        quint16 lastPort = 0;
     };
 
     bool listening_ = false;
@@ -76,4 +82,8 @@ private:
     std::unordered_map<std::string, sentrium::device::Session> sessions_;
     // A failed logout is retried before accepting a new registration.
     std::unordered_set<std::string> stale_registration_sessions_;
+    std::unordered_set<std::string> offline_sessions_;
+    std::unordered_map<std::string, int> session_channel_counts_;
+    QTimer* registration_retry_timer_ = nullptr;
+    void attemptRegisteredLogin(const std::string& id, const RegisteredTarget& target);
 };

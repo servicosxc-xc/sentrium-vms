@@ -1,0 +1,177 @@
+import QtQuick
+import QtQuick.Controls
+
+// Single shared r25-style live-tile context menu, regardless of mosaic size.
+// Unsupported backend actions remain explicitly disabled.
+Menu {
+    id: menu
+
+    // Video tiles embed native QWindows. A Popup.Item would be painted
+    // underneath those child windows; use a separate popup window.
+    popupType: Popup.Window
+    closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+    focus: true
+
+    property int targetSlot: -1
+    property var slots: []
+    property int focusedSlot: -1
+    property bool favorite: false
+    property bool liveEventsSelected: false
+    property bool liveEventsFeedConnected: false
+
+    readonly property var tile: targetSlot >= 0 && targetSlot < slots.length
+        ? slots[targetSlot] : ({ occupied: false, deviceId: "", channel: -1,
+                                extra: true, channelName: "", status: "" })
+    readonly property bool hasCamera: tile.occupied === true
+        && tile.deviceId !== "" && tile.channel >= 0
+    readonly property bool hasAnyCamera: anyCameraOccupied()
+
+    function anyCameraOccupied() {
+        for (let i = 0; i < slots.length; ++i)
+            if (slots[i].occupied === true)
+                return true
+        return false
+    }
+
+    signal closeChannel(int slot)
+    signal closeAllChannels()
+    signal selectTile(int slot)
+    signal toggleMaximize(int slot)
+    signal setStream(int slot, bool extra)
+    signal toggleFavorite(string deviceId, int channelIndex)
+    signal toggleLiveEvents(string deviceId, int channelIndex)
+
+    // Use the Qt Controls menu theme with its matching foreground colors.
+    // Custom dark backgrounds rendered black text in RC03 on Windows.
+
+    MenuItem {
+        text: "Fechar canal"
+        enabled: menu.hasCamera
+        onTriggered: menu.closeChannel(menu.targetSlot)
+    }
+    MenuItem {
+        text: "Fechar todos os canais"
+        enabled: menu.hasAnyCamera
+        onTriggered: menu.closeAllChannels()
+    }
+
+    Menu {
+        title: "Visualização"
+        MenuItem {
+            text: "Selecionar este tile"
+            onTriggered: menu.selectTile(menu.targetSlot)
+        }
+        MenuItem {
+            text: menu.focusedSlot === menu.targetSlot
+                ? "Restaurar mosaico" : "Maximizar este tile"
+            onTriggered: menu.toggleMaximize(menu.targetSlot)
+        }
+    }
+
+    Menu {
+        title: "Stream"
+        MenuItem {
+            text: "Automático (a implementar)"
+            enabled: false
+        }
+        MenuItem {
+            text: (menu.hasCamera && !menu.tile.extra ? "✓ " : "") + "Principal"
+            enabled: menu.hasCamera
+            onTriggered: {
+                if (menu.tile.extra)
+                    menu.setStream(menu.targetSlot, false)
+            }
+        }
+        MenuItem {
+            text: (menu.hasCamera && menu.tile.extra ? "✓ " : "") + "Extra"
+            enabled: menu.hasCamera
+            onTriggered: {
+                if (!menu.tile.extra)
+                    menu.setStream(menu.targetSlot, true)
+            }
+        }
+    }
+
+    Menu {
+        title: "Áudio"
+        MenuItem {
+            text: "Ouvir áudio (não implementado)"
+            enabled: false
+        }
+        MenuItem {
+            text: "Áudio bidirecional (não implementado)"
+            enabled: false
+        }
+    }
+
+    Menu {
+        title: "Gravação / captura"
+        MenuItem {
+            text: "Capturar foto (não implementado)"
+            enabled: false
+        }
+        MenuItem {
+            text: "Gravar vídeo (não implementado)"
+            enabled: false
+        }
+        MenuItem {
+            text: "Reprodução instantânea (não implementado)"
+            enabled: false
+        }
+    }
+
+    Menu {
+        title: "Inteligência de vídeo"
+        MenuItem {
+            text: "Ativar IA no Ao Vivo (não implementado)"
+            enabled: false
+        }
+        MenuItem {
+            text: "Configurar regra IA (não implementado)"
+            enabled: false
+        }
+        MenuItem {
+            text: "Overlay de detecções (não implementado)"
+            enabled: false
+        }
+        MenuSeparator {}
+        MenuItem {
+            text: menu.liveEventsSelected
+                ? "Desmarcar câmera do painel Eventos ao vivo"
+                : "Incluir câmera no painel Eventos ao vivo"
+            enabled: menu.hasCamera
+            onTriggered: menu.toggleLiveEvents(menu.tile.deviceId, menu.tile.channel)
+        }
+        MenuItem {
+            text: menu.liveEventsFeedConnected
+                ? "Feed de eventos conectado" : "Feed de eventos: integração pendente"
+            enabled: false
+        }
+    }
+
+    Menu {
+        title: "Diagnóstico"
+        MenuItem {
+            text: menu.hasCamera ? "Câmera: " + menu.tile.channelName : "Sem câmera neste tile"
+            enabled: false
+        }
+        MenuItem {
+            text: menu.hasCamera ? "Estado: " + menu.tile.status : "Canal não selecionado"
+            enabled: false
+        }
+        MenuItem {
+            text: menu.hasCamera ? "Stream: " + (menu.tile.extra ? "Extra" : "Principal") : "Stream indisponível"
+            enabled: false
+        }
+    }
+
+    MenuItem {
+        text: menu.favorite ? "Remover dos favoritos" : "Adicionar aos favoritos"
+        enabled: menu.hasCamera
+        onTriggered: menu.toggleFavorite(menu.tile.deviceId, menu.tile.channel)
+    }
+    MenuItem {
+        text: "Configuração do canal (não implementado)"
+        enabled: false
+    }
+}
