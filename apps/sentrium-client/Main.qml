@@ -1290,8 +1290,9 @@ ApplicationWindow {
                                     }
                                     onClicked: function(mouse) {
                                         if (mouse.button === Qt.RightButton) {
-                                            const p = tileHoverHud.mapToItem(
-                                                mosaicWorkspace, mouse.x, mouse.y)
+                                            const cursor = deviceController.cursorScreenPos()
+                                            const p = mosaicWorkspace.mapFromGlobal(
+                                                cursor.x, cursor.y)
                                             const slot = tileHoverHud.targetSlot
                                             tileHoverHud.close()
                                             mosaicWorkspace.openTileContextAt(slot, p.x, p.y)
@@ -1320,6 +1321,13 @@ ApplicationWindow {
                                         font.pixelSize: 10
                                         font.bold: true
                                         elide: Text.ElideRight
+                                        HoverHandler { id: hudNameHover }
+                                        ToolTip.visible: hudNameHover.hovered
+                                        ToolTip.text: tileHoverHud.tileData.occupied
+                                            ? tileHoverHud.tileData.deviceName + " · "
+                                              + tileHoverHud.tileData.channelName + " · "
+                                              + tileHoverHud.tileData.status
+                                            : "Posição livre"
                                     }
                                     Label {
                                         visible: tileHoverHud.width > 250
