@@ -125,6 +125,8 @@ ApplicationWindow {
 
         onOpened: {
             connectionMethod.currentIndex = 0
+            deviceGroupChoice.currentIndex = 0
+            deviceGroupChoice.editText = "SEM GRUPO"
             deviceName.forceActiveFocus()
         }
 
@@ -135,7 +137,8 @@ ApplicationWindow {
                     deviceHost.text,
                     devicePort.value,
                     deviceUser.text,
-                    devicePassword.text)
+                    devicePassword.text,
+                    deviceGroupChoice.editText)
             } else if (connectionMethod.currentIndex === 1) {
                 deviceController.addCloudBridgeAndConnect(
                     deviceName.text,
@@ -147,7 +150,8 @@ ApplicationWindow {
                     deviceName.text,
                     registrationDeviceId.text,
                     registrationUser.text,
-                    registrationPassword.text)
+                    registrationPassword.text,
+                    deviceGroupChoice.editText)
                 // The server is managed independently in Configurações.
                 // Registering a device does not implicitly open a network port.
             }
@@ -203,6 +207,30 @@ ApplicationWindow {
                 placeholderText: "Nome do dispositivo"
                 text: "NVR Intelbras"
                 maximumLength: 128
+            }
+
+            Label {
+                text: "Grupo / local"
+                color: window.textSecondary
+                font.pixelSize: 11
+            }
+
+            ComboBox {
+                id: deviceGroupChoice
+                Layout.fillWidth: true
+                editable: true
+                model: ["SEM GRUPO"].concat(deviceController.deviceGroups)
+                currentIndex: 0
+                selectTextByMouse: true
+                onActivated: function(index) {
+                    if (index >= 0)
+                        editText = model[index]
+                }
+                // Accept an existing case-insensitive name or a new group.
+                // Uniqueness and membership are enforced atomically in C++.
+                ToolTip.visible: hovered
+                ToolTip.text: "Selecione um grupo existente ou digite outro. "
+                    + "Não são permitidos grupos duplicados."
             }
 
             TextField {
