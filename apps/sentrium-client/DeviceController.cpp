@@ -1,7 +1,11 @@
 #include "DeviceController.hpp"
 #include "DeviceWorker.hpp"
 
+#include <Windows.h>
+
 #include <QByteArray>
+#include <QCoreApplication>
+#include <QCursor>
 #include <QMetaObject>
 #include <QQmlEngine>
 #include <QColor>
@@ -25,6 +29,10 @@ QString qstring(std::string_view value) {
 } // namespace
 
 DeviceController::DeviceController(QObject* parent) : QObject(parent) {
+    // Observe mouse input on NetSDK native preview HWNDs. Ordinary QML
+    // MouseArea and DropArea cannot reliably sit over WindowContainer.
+    if (auto* app = QCoreApplication::instance())
+        app->installNativeEventFilter(this);
     worker_ = new DeviceWorker;
     worker_->moveToThread(&worker_thread_);
 
@@ -85,6 +93,8 @@ DeviceController::DeviceController(QObject* parent) : QObject(parent) {
 }
 
 DeviceController::~DeviceController() {
+    if (auto* app = QCoreApplication::instance())
+        app->removeNativeEventFilter(this);
     shutdown();
     // Controller outlives the QQmlApplicationEngine in main.cpp.
     for (auto& surface : surfaces_) {
@@ -161,6 +171,47 @@ QVariantList DeviceController::mosaicSlots() const {
         result.push_back(item);
     }
     return result;
+}
+
+bool DeviceController::nativeEventFilter(
+    const QByteArray& eventType, void* message, qintptr*) {
+    if (shutdown_ || eventType != QByteArrayLiteral("windows_generic_MSG")
+        || message == nullptr)
+        return false;
+
+    const auto* msg = static_cast<const MSG*>(message);
+    if (msg->message != WM_RBUTTONUP && msg->message != WM_LBUTTONDOWN)
+        return false;
+
+    // Never read credentials, manipulate NetSDK handles or swallow native
+    // messages. Match only a QWindow created for one mosaic tile.
+    for (int slot = 0; slot < max_mosaic_slots_; ++slot) {
+        const auto& surface = surfaces_[static_cast<std::size_t>(slot)];
+        if (!surface || reinterpret_cast<HWND>(surface->winId()) != msg->hwnd)
+            continue;
+
+        if (msg->message == WM_RBUTTONUP) {
+            const QPoint screen = QCursor::pos();
+            QMetaObject::invokeMethod(this, [this, slot, screen] {
+                if (!shutdown_)
+                    emit videoSurfaceContextRequested(slot, screen.x(), screen.y());
+            }, Qt::QueuedConnection);
+        } else if (msg->message == WM_LBUTTONDOWN) {
+            QMetaObject::invokeMethod(this, [this, slot] {
+                if (!shutdown_) emit videoSurfaceLeftPressed(slot);
+            }, Qt::QueuedConnection);
+        }
+        break;
+    }
+    return false;
+}
+
+bool DeviceController::isLeftMouseButtonDown() const {
+    return (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+}
+
+QPoint DeviceController::cursorScreenPos() const {
+    return QCursor::pos();
 }
 
 QWindow* DeviceController::liveSurface(int slot) {
