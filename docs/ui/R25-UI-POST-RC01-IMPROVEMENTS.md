@@ -47,3 +47,21 @@ Usuário encontrou falha de operação real: depois da primeira autenticação, 
 Mudanças implementadas em `feature/r25-ui-parity`: callback NetSDK propagado ao Worker com Qt QueuedConnection e mutex; retry QTimer a cada 15s para dispositivo já cadastrado com endpoint real conhecido; reciclagem controlada do login antigo após queda; UI retorna para Connecting e restaura slots/canais/streams quando login é confirmado; deslogar manualmente cancela a intenção de reconectar; stream 16→64 em worker. A documentação do NetSDK indica que login Server Conn/AutoRegister não possui a mesma reconexão automática nativa que TCP; o retry explícito é necessário. Os detalhes e critérios estão em `docs/foundation-005/F005-AUTOREG-RECOVERY-RC02.md`.
 
 **Ainda NÃO testado no Windows nem validado em NVR.** Não lançar nova versão até autorização específica. RC01 e branch principal preservadas.
+
+
+## Melhoria 5 — RC02: clique direito e arraste nativo dos tiles; setas sem fundo (03/11/2026)
+
+**Relato real após testar RC02:** Registro Automático *aparentemente* melhorou (ainda não homologado por testes de queda repetidos); o operador rejeitou o botão de três pontos no tile, quer menu com botão direito igual à árvore de dispositivos, verificou preenchimento da seta de expandir e informou que tile→tile continuou sem funcionar.
+
+**Causa estrutural:** `WindowContainer` apresenta um `QWindow` nativo acima dos itens Qt Quick; o handler de drag anterior dependia de `MouseArea.onReleased` no cabeçalho e do Qt Quick receber eventos sobre HWNDs. Botão `⋯` foi alternativa rejeitada pelo usuário. Qt 6.12 documenta limitação de stacking de child windows. Qt Quick Item suporta `mapFromGlobal()` para transformar ponteiro global em coordenadas locais do mosaico.
+
+**Alterações na branch `feature/r25-ui-parity`, sem modificar RC02:**
+
+- `DeviceController.hpp/.cpp`: `QAbstractNativeEventFilter` instalado na GUI thread. Intercepta **somente** WM_RBUTTONUP e WM_LBUTTONDOWN das superfícies `QWindow` associadas aos tiles (inclusive child HWND do SDK via `IsChild`); nunca consome as mensagens e não interfere nos callbacks NetSDK. Qt QueuedConnection envia `videoSurfaceContextRequested(slot, globalX, globalY)` ou `videoSurfaceLeftPressed(slot)` à QML. `isLeftMouseButtonDown()` lê estado real da tecla esquerda por WinAPI e `cursorScreenPos()` obtém coordenada lógica do cursor pelo Qt.
+- `Main.qml`: removido completamente o botão `⋯`. Clique direito no cabeçalho abre o menu pelo `MouseArea`; clique direito em vídeo nativo é encaminhado pelo novo filtro de mensagens, posicionando o mesmo `CameraContextMenu` no local do cursor. Nenhuma ação foi simulada.
+- `Main.qml`: arrastar vídeo pelo cabeçalho **ou pela imagem** inicia monitor de ponteiro global a cada 16 ms, com limiar de movimento de 8px. Ao soltar em tile válido, `swapLiveSlots()` existente move/troca canais. `videoMosaic.mapFromGlobal()` e `Repeater.itemAt()` dão destino inclusive quando o HWND de vídeo não envia `MouseArea.onReleased` ao QML. Sem QML `Drag.drop` para tile→tile.
+- `DeviceExplorer.qml`: `ToolButton` da seta da árvore com `background: Item {}` e ícone exclusivamente texto `▾`/`▸`; sem preenchimento, mantendo clique de expandir/recolher.
+
+**Segurança/limites:** eventos nativos não carregam host, ID de registro, senha ou frames de vídeo; o filtro não toca NetSDK em thread de callback. Permanecem eventuais limitações de recebimento de `WM_RBUTTONUP` em superfícies que usem subclasse customizada do SDK: precisa validar em Windows. A visualização de recepção de eventos e o drag não foram compilados nem testados no Windows depois desse patch. Não afirmar que o bug está definitivamente resolvido até o próximo teste real.
+
+**Estado:** somente branch de desenvolvimento atualizada. `release-candidate/visualizacao-r25-rc02`, RC01, F005 e main preservadas. Não criar RC03 até autorização expressa.
