@@ -187,7 +187,10 @@ bool DeviceController::nativeEventFilter(
     // messages. Match only a QWindow created for one mosaic tile.
     for (int slot = 0; slot < max_mosaic_slots_; ++slot) {
         const auto& surface = surfaces_[static_cast<std::size_t>(slot)];
-        if (!surface || reinterpret_cast<HWND>(surface->winId()) != msg->hwnd)
+        if (!surface) continue;
+        const HWND nativeVideoWindow = reinterpret_cast<HWND>(surface->winId());
+        if (nativeVideoWindow != msg->hwnd
+            && !IsChild(nativeVideoWindow, msg->hwnd))
             continue;
 
         if (msg->message == WM_RBUTTONUP) {
