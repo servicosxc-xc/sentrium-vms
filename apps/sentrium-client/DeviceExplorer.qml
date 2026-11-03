@@ -427,10 +427,19 @@ Rectangle {
                     anchors.rightMargin: 4
                     spacing: 5
                     ToolButton {
+                        id: treeExpandArrow
                         visible: !nodeRow.isCamera
                         implicitWidth: visible ? 16 : 0
                         implicitHeight: 23
                         padding: 0
+                        background: Item {}
+                        contentItem: Label {
+                            text: treeExpandArrow.text
+                            color: explorer.textSecondary
+                            font.pixelSize: 12
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
                         text: nodeRow.isGroup
                             ? (explorer.groupExpanded(node.group) || cameraSearch.text.length
                                 || explorer.favoritesOnly ? "▾" : "▸")
