@@ -50,7 +50,8 @@ public:
         const QString& host,
         int port,
         const QString& username,
-        const QString& password);
+        const QString& password,
+        const QString& groupName = {});
     // Experimental bridge: a separate, operator-owned Cloud tunnel exposes a
     // local TCP endpoint. NetSDK authenticates through that endpoint.
     // This does NOT implement or manage the Cloud/P2P tunnel.
@@ -62,7 +63,8 @@ public:
 
     Q_INVOKABLE bool addAutoRegistration(
         const QString& displayName, const QString& registrationId,
-        const QString& username, const QString& password);
+        const QString& username, const QString& password,
+        const QString& groupName = {});
     Q_INVOKABLE void startRegistrationServer(const QString& bindAddress, int port);
     Q_INVOKABLE void stopRegistrationServer();
     Q_INVOKABLE void connectDevice(const QString& id);
@@ -147,6 +149,7 @@ private:
     void setError(const QString& error);
     void erase(const QString& id);
     void clearLiveForDevice(const QString& id);
+    bool resolveDeviceGroup(const QString& input, QString& resolved);
 
     struct ResumeSlot {
         int slot = -1;
