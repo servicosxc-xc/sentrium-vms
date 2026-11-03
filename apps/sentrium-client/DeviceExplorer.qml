@@ -493,25 +493,7 @@ Rectangle {
 
                 Menu {
 
-                    // A separate native popup stays above the embedded NetSDK video HWND.
-
                     popupType: Popup.Window
-
-                    palette.text: explorer.textPrimary
-
-                    palette.buttonText: explorer.textPrimary
-
-                    palette.highlight: "#2e4d78"
-
-                    background: Rectangle {
-
-                        color: "#161f2b"
-
-                        border.color: "#41516a"
-
-                        radius: 5
-
-                    }
                     id: groupMenu
                     MenuItem {
                         text: "Criar grupo / local..."
@@ -534,25 +516,7 @@ Rectangle {
 
                 Menu {
 
-                    // A separate native popup stays above the embedded NetSDK video HWND.
-
                     popupType: Popup.Window
-
-                    palette.text: explorer.textPrimary
-
-                    palette.buttonText: explorer.textPrimary
-
-                    palette.highlight: "#2e4d78"
-
-                    background: Rectangle {
-
-                        color: "#161f2b"
-
-                        border.color: "#41516a"
-
-                        radius: 5
-
-                    }
                     id: deviceMenu
                     MenuItem {
                         text: "Conectar / Desconectar"
@@ -574,25 +538,7 @@ Rectangle {
 
                     Menu {
 
-                        // A separate native popup stays above the embedded NetSDK video HWND.
-
                         popupType: Popup.Window
-
-                        palette.text: explorer.textPrimary
-
-                        palette.buttonText: explorer.textPrimary
-
-                        palette.highlight: "#2e4d78"
-
-                        background: Rectangle {
-
-                            color: "#161f2b"
-
-                            border.color: "#41516a"
-
-                            radius: 5
-
-                        }
                         title: "Canais"
                         MenuItem {
                             text: "Abrir todas as câmeras em stream Extra"
@@ -616,25 +562,7 @@ Rectangle {
 
                     Menu {
 
-                        // A separate native popup stays above the embedded NetSDK video HWND.
-
                         popupType: Popup.Window
-
-                        palette.text: explorer.textPrimary
-
-                        palette.buttonText: explorer.textPrimary
-
-                        palette.highlight: "#2e4d78"
-
-                        background: Rectangle {
-
-                            color: "#161f2b"
-
-                            border.color: "#41516a"
-
-                            radius: 5
-
-                        }
                         title: "Stream padrão"
                         MenuItem {
                             text: "Principal (a implementar)"
@@ -648,25 +576,7 @@ Rectangle {
 
                     Menu {
 
-                        // A separate native popup stays above the embedded NetSDK video HWND.
-
                         popupType: Popup.Window
-
-                        palette.text: explorer.textPrimary
-
-                        palette.buttonText: explorer.textPrimary
-
-                        palette.highlight: "#2e4d78"
-
-                        background: Rectangle {
-
-                            color: "#161f2b"
-
-                            border.color: "#41516a"
-
-                            radius: 5
-
-                        }
                         title: "Áudio"
                         MenuItem {
                             text: "Áudio bidirecional (não implementado)"
@@ -676,25 +586,7 @@ Rectangle {
 
                     Menu {
 
-                        // A separate native popup stays above the embedded NetSDK video HWND.
-
                         popupType: Popup.Window
-
-                        palette.text: explorer.textPrimary
-
-                        palette.buttonText: explorer.textPrimary
-
-                        palette.highlight: "#2e4d78"
-
-                        background: Rectangle {
-
-                            color: "#161f2b"
-
-                            border.color: "#41516a"
-
-                            radius: 5
-
-                        }
                         title: "Dispositivo"
                         MenuItem {
                             text: "Informações"
@@ -728,25 +620,7 @@ Rectangle {
 
                 Menu {
 
-                    // A separate native popup stays above the embedded NetSDK video HWND.
-
                     popupType: Popup.Window
-
-                    palette.text: explorer.textPrimary
-
-                    palette.buttonText: explorer.textPrimary
-
-                    palette.highlight: "#2e4d78"
-
-                    background: Rectangle {
-
-                        color: "#161f2b"
-
-                        border.color: "#41516a"
-
-                        radius: 5
-
-                    }
                     id: cameraMenu
                     MenuItem {
                         text: "Abrir no mosaico — Extra"
@@ -760,16 +634,7 @@ Rectangle {
                     }
                     MenuSeparator {}
                     Menu {
-                        // A separate native popup stays above the embedded NetSDK video HWND.
                         popupType: Popup.Window
-                        palette.text: explorer.textPrimary
-                        palette.buttonText: explorer.textPrimary
-                        palette.highlight: "#2e4d78"
-                        background: Rectangle {
-                            color: "#161f2b"
-                            border.color: "#41516a"
-                            radius: 5
-                        }
                         title: "Inteligência de vídeo"
                         MenuItem {
                             text: nodeRow.isCamera &&
