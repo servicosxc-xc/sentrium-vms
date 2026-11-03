@@ -3,6 +3,9 @@
 #include <sentrium/device.hpp>
 
 #include <QObject>
+#include <QAbstractNativeEventFilter>
+#include <QByteArray>
+#include <QPoint>
 #include <QPointer>
 #include <QThread>
 #include <QVariantList>
@@ -16,7 +19,7 @@
 class DeviceWorker;
 class QWindow;
 
-class DeviceController final : public QObject {
+class DeviceController final : public QObject, public QAbstractNativeEventFilter {
     Q_OBJECT
     Q_PROPERTY(QVariantList devices READ devices NOTIFY devicesChanged)
     Q_PROPERTY(QStringList deviceGroups READ deviceGroups NOTIFY devicesChanged)
@@ -30,6 +33,8 @@ class DeviceController final : public QObject {
 public:
     explicit DeviceController(QObject* parent = nullptr);
     ~DeviceController() override;
+    bool nativeEventFilter(const QByteArray& eventType, void* message,
+                           qintptr* result) override;
 
     QVariantList devices() const;
     QStringList deviceGroups() const { return device_groups_; }
@@ -64,6 +69,8 @@ public:
     Q_INVOKABLE void disconnectDevice(const QString& id);
     // Native NetSDK preview embedded in Qt Quick WindowContainer mosaic.
     Q_INVOKABLE QWindow* liveSurface(int slot);
+    Q_INVOKABLE bool isLeftMouseButtonDown() const;
+    Q_INVOKABLE QPoint cursorScreenPos() const;
     Q_INVOKABLE void openLive(const QString& id, int channel, bool extra = true);
     Q_INVOKABLE void openLiveInSlot(
         const QString& id, int channel, int slot, bool extra = true);
@@ -85,6 +92,10 @@ signals:
     void lastErrorChanged();
     void registrationStatusChanged();
     void registrationEventsChanged();
+    // Pointer events originating in native QWindow video surfaces, which
+    // WindowContainer keeps above the Qt Quick scene.
+    void videoSurfaceContextRequested(int slot, qreal globalX, qreal globalY);
+    void videoSurfaceLeftPressed(int slot);
     void auditEvent(const QString& eventId, const QString& message);
 
     void requestConnect(
