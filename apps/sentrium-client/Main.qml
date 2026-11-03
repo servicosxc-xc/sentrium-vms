@@ -222,6 +222,17 @@ ApplicationWindow {
                 model: ["SEM GRUPO"].concat(deviceController.deviceGroups)
                 currentIndex: 0
                 selectTextByMouse: true
+                palette.text: window.textPrimary
+                palette.buttonText: window.textPrimary
+                palette.base: "#111722"
+                palette.window: window.panelColor
+                palette.windowText: window.textPrimary
+                background: Rectangle {
+                    color: "#111722"
+                    radius: 5
+                    border.color: deviceGroupChoice.activeFocus
+                        ? window.accent : window.borderColor
+                }
                 onActivated: function(index) {
                     if (index >= 0)
                         editText = model[index]
