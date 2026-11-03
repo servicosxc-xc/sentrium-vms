@@ -261,7 +261,8 @@ void DeviceController::addAndConnect(
     const QString& host,
     int port,
     const QString& username,
-    const QString& password) {
+    const QString& password,
+    const QString& groupName) {
 
     if (shutdown_) {
         setError(QStringLiteral("Device runtime is shutting down"));
@@ -283,6 +284,19 @@ void DeviceController::addAndConnect(
             utf8(password)};
         request.validate();
 
+        for (const auto& existing : records_) {
+            if (!existing.auto_registration
+                && QString::fromUtf8(existing.device.host).compare(
+                       host.trimmed(), Qt::CaseInsensitive) == 0
+                && existing.device.port == port) {
+                setError(QStringLiteral("Este dispositivo IP/porta já está cadastrado"));
+                return;
+            }
+        }
+
+        QString assignedGroup;
+        if (!resolveDeviceGroup(groupName, assignedGroup)) return;
+
         const QString id = QUuid::createUuid().toString(QUuid::WithoutBraces);
 
         Record record;
@@ -293,6 +307,7 @@ void DeviceController::addAndConnect(
         record.device.state = sentrium::device::ConnectionState::Connecting;
         record.username = request.username;
         record.password = request.password;
+        record.group_name = assignedGroup;
 
         records_.push_back(std::move(record));
         setError({});
@@ -326,7 +341,8 @@ void DeviceController::addCloudBridgeAndConnect(
 
 bool DeviceController::addAutoRegistration(
     const QString& displayName, const QString& registrationId,
-    const QString& username, const QString& password) {
+    const QString& username, const QString& password,
+    const QString& groupName) {
     if (shutdown_) return false;
     const QString cleanRegistrationId = registrationId.trimmed();
     if (displayName.trimmed().isEmpty() || displayName.size() > 128
@@ -352,6 +368,9 @@ bool DeviceController::addAutoRegistration(
         }
     }
 
+    QString assignedGroup;
+    if (!resolveDeviceGroup(groupName, assignedGroup)) return false;
+
     const QString id = QUuid::createUuid().toString(QUuid::WithoutBraces);
     Record record;
     record.auto_registration = true;
@@ -359,6 +378,7 @@ bool DeviceController::addAutoRegistration(
     record.device.id = utf8(id);
     record.device.display_name = utf8(displayName.trimmed());
     record.registration_id = utf8(cleanRegistrationId);
+    record.group_name = assignedGroup;
     record.username = utf8(username);
     record.password = utf8(password);
     record.device.state = sentrium::device::ConnectionState::Connecting;
@@ -659,20 +679,49 @@ void DeviceController::disconnectDevice(const QString& id) {
     }
 }
 
-bool DeviceController::createDeviceGroup(const QString& name) {
-    if (shutdown_) return false;
-    const QString normalized = name.trimmed();
-    if (normalized.isEmpty() || normalized.size() > 80
-        || normalized.compare(QStringLiteral("Sem grupo"), Qt::CaseInsensitive) == 0) {
-        setError(QStringLiteral("Nome de grupo inválido (máximo 80 caracteres)"));
+bool DeviceController::resolveDeviceGroup(
+    const QString& input, QString& resolved) {
+    const QString normalized = input.simplified();
+    // SEM GRUPO is the default / reserved virtual group. Do not register it.
+    if (normalized.isEmpty()
+        || normalized.compare(QStringLiteral("SEM GRUPO"), Qt::CaseInsensitive) == 0) {
+        resolved.clear();
+        return true;
+    }
+    if (normalized.size() > 80) {
+        setError(QStringLiteral("Nome de grupo excede 80 caracteres"));
         return false;
     }
-    for (const QChar character : normalized) {
-        if (!character.isPrint() || character == QLatin1Char('/')
-            || character == QLatin1Char('\\')) {
+    for (const QChar ch : normalized) {
+        if (!ch.isPrint() || ch == QLatin1Char('/')
+            || ch == QLatin1Char('\\')) {
             setError(QStringLiteral("Nome de grupo contém caracteres inválidos"));
             return false;
         }
+    }
+    // Case-insensitive comparison prevents duplicates such as Portaria/portaria,
+    // while returning the existing canonical label for editable ComboBox input.
+    for (const QString& registered : device_groups_) {
+        if (registered.compare(normalized, Qt::CaseInsensitive) == 0) {
+            resolved = registered;
+            return true;
+        }
+    }
+    device_groups_.append(normalized);
+    resolved = normalized;
+    emit auditEvent(QStringLiteral("device-group-added"),
+                    QStringLiteral("Organizational group created in memory"));
+    emit devicesChanged();
+    return true;
+}
+
+bool DeviceController::createDeviceGroup(const QString& name) {
+    if (shutdown_) return false;
+    const QString normalized = name.simplified();
+    if (normalized.isEmpty()
+        || normalized.compare(QStringLiteral("SEM GRUPO"), Qt::CaseInsensitive) == 0) {
+        setError(QStringLiteral("Grupo reservado: SEM GRUPO"));
+        return false;
     }
     for (const QString& existing : device_groups_) {
         if (existing.compare(normalized, Qt::CaseInsensitive) == 0) {
@@ -680,11 +729,9 @@ bool DeviceController::createDeviceGroup(const QString& name) {
             return false;
         }
     }
-    device_groups_.append(normalized);
+    QString resolved;
+    if (!resolveDeviceGroup(normalized, resolved)) return false;
     setError({});
-    emit devicesChanged();
-    emit auditEvent(QStringLiteral("device-group-added"),
-                    QStringLiteral("Organizational group created in memory"));
     return true;
 }
 
@@ -695,9 +742,10 @@ bool DeviceController::setDeviceGroup(const QString& id, const QString& name) {
         setError(QStringLiteral("Dispositivo não encontrado"));
         return false;
     }
-    const QString normalized = name.trimmed();
+    const QString normalized = name.simplified();
     QString target;
-    if (!normalized.isEmpty()) {
+    if (!normalized.isEmpty()
+        && normalized.compare(QStringLiteral("SEM GRUPO"), Qt::CaseInsensitive) != 0) {
         for (const QString& group : device_groups_) {
             if (group.compare(normalized, Qt::CaseInsensitive) == 0) {
                 target = group;
