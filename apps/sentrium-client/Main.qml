@@ -1218,7 +1218,10 @@ ApplicationWindow {
                                 mosaicWorkspace.openTileContextAt(slot, pos.x, pos.y)
                             }
                             function onVideoSurfaceLeftPressed(slot) {
-                                mosaicWorkspace.beginTileDrag(slot)
+                                // Clicking a native video HWND selects it, but
+                                // must not silently enter a drag transaction.
+                                // Movement starts only from the compact title
+                                // strip, so an ordinary click cannot swap streams.
                                 window.activeMosaicSlot = slot
                             }
                         }
